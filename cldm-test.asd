@@ -6,4 +6,7 @@
   :depends-on (#:cldm #:stefil)
   :components ((:module "test"
 			:components
-			((:file "test")))))
+			((:file "package")
+			 (:file "test")
+			 (:file "version"))
+			:serial t)))

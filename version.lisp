@@ -69,31 +69,10 @@
   (with-output-to-string (s)
     (print-version version s)))
 
-(defvar *previous-readtables* nil)
-
-(defmacro enable-version-syntax ()
-  '(eval-when (:compile-toplevel :load-toplevel :execute)
-    (push *readtable* *previous-readtables*)
-    (setq *readtable* (copy-readtable))
-    (set-dispatch-macro-character
-     #\# #\v
-     (lambda (stream subchar arg)
-       (declare (ignore subchar arg))
-       (read-version-from-string (read stream t))))))
-
-#.(set-dispatch-macro-character
-     #\# #\v
-     (lambda (stream subchar arg)
-       (declare (ignore subchar arg))
-       (read-version-from-string (read stream t))))
-    
-(defmacro disable-version-syntax ()
-  '(eval-when (:compile-toplevel :load-toplevel :execute)
-    (setq *readtable* (pop *previous-readtables*))))
-
 (defmethod print-object ((version semantic-version) stream)
   (format stream "#v\"~A\"" (print-version-to-string version)))
 
+;; Version comparison
 (defun version= (version1 version2)
   (and (equalp (version-major version1)
 	       (version-major version2))
@@ -149,3 +128,42 @@
 		 :patch patch
 		 :pre-release pre-release
 		 :build build))
+
+;; Version syntax
+
+(defvar *previous-readtables* nil)
+(defun version-syntax-reader (stream subchar arg)
+  (declare (ignore subchar arg))
+  (read-version-from-string (read stream t)))
+
+(defun %enable-version-syntax ()
+  "Internal function used to enable reader syntax and store current
+readtable on stack."
+  (push *readtable*
+        *previous-readtables*)
+  (setq *readtable* (copy-readtable))
+  (set-dispatch-macro-character #\# #\v #'version-syntax-reader)
+  (values))
+
+(defun %disable-version-syntax ()
+  "Internal function used to restore previous readtable." 
+  (if *previous-readtables*
+    (setq *readtable* (pop *previous-readtables*))
+    (setq *readtable* (copy-readtable nil)))
+  (values))
+
+(defmacro enable-version-syntax ()
+  "Enable version reader syntax."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+    (%enable-version-syntax)))
+
+(defmacro disable-version-syntax ()
+  "Restore readtable which was active before last call to
+ENABLE-VERSION-SYNTAX. If there was no such call, the standard
+readtable is used."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+    (%disable-version-syntax)))
+
+
+#+nil(defsyntax version-syntax
+  (:dispatch-macro-char #\# #\v #'version-syntax-reader))
