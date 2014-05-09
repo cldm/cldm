@@ -32,18 +32,28 @@
 	  :documentation "The build version number"))
   (:documentation "Instances represent a full version according to the semantic version specs (version 2.0.0-rc1 of the spec). http://semver.org/ . The main features of this class are validation and version comparison."))
 
+(defparameter +version-re+ "^(\\d+).(\\d+).(\\d+)(?:-([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$")
+
+(defun version-valid-p (string)
+  (not (null (ppcre:scan +version-re+ string))))
+
 (defun read-version-from-string (string &optional (class 'semantic-version))
-  (let ((version-re "^(\\d+).(\\d+).(\\d+)(?:-([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"))
-    (when (not (ppcre:scan version-re string))
-      (error "Could not parse version string ~S" string))
-    (ppcre:register-groups-bind (major minor patch pre-release build)
-	(version-re string)
-      (make-instance class
-		     :major (parse-integer major)
-		     :minor (parse-integer minor)
-		     :patch (parse-integer patch)
-		     :pre-release pre-release
-		     :build build))))
+  (when (not (version-valid-p string))
+    (error "Could not parse version string ~S" string))
+  (ppcre:register-groups-bind (major minor patch pre-release build)
+      (+version-re+ string)
+    (make-instance class
+		   :major (parse-integer major)
+		   :minor (parse-integer minor)
+		   :patch (parse-integer patch)
+		   :pre-release pre-release
+		   :build build)))
+
+(defmethod initialize-instance :after ((version semantic-version) &rest initargs)
+  ;; Validate the version
+  (let ((version-string (print-version-to-string version)))
+    (when (not (version-valid-p version-string))
+      (error "Version ~S is not valid" version-string))))
 
 (defun print-version (version stream)
   (format stream "~A.~A.~A"
@@ -59,11 +69,27 @@
   (with-output-to-string (s)
     (print-version version s)))
 
-(set-dispatch-macro-character
- #\# #\v
- (lambda (stream subchar arg)
-   (declare (ignore subchar arg))
-   (read-version-from-string (read stream t))))
+(defvar *previous-readtables* nil)
+
+(defmacro enable-version-syntax ()
+  '(eval-when (:compile-toplevel :load-toplevel :execute)
+    (push *readtable* *previous-readtables*)
+    (setq *readtable* (copy-readtable))
+    (set-dispatch-macro-character
+     #\# #\v
+     (lambda (stream subchar arg)
+       (declare (ignore subchar arg))
+       (read-version-from-string (read stream t))))))
+
+#.(set-dispatch-macro-character
+     #\# #\v
+     (lambda (stream subchar arg)
+       (declare (ignore subchar arg))
+       (read-version-from-string (read stream t))))
+    
+(defmacro disable-version-syntax ()
+  '(eval-when (:compile-toplevel :load-toplevel :execute)
+    (setq *readtable* (pop *previous-readtables*))))
 
 (defmethod print-object ((version semantic-version) stream)
   (format stream "#v\"~A\"" (print-version-to-string version)))
@@ -74,14 +100,52 @@
        (equalp (version-minor version1)
 	       (version-minor version2))
        (equalp (version-patch version1)
-	       (version-patch version2))
+	       (version-patch version2))))
+
+(defun version== (version1 version2)
+  (and (version= version1 version2)
        (equalp (version-pre-release version1)
 	       (version-pre-release version2))
        (equalp (version-build version1)
 	       (version-build version2))))
 
+(defun version/= (version1 version2)
+  (not (version= version1 version2)))
+
+(defun version/== (version1 version2)
+  (not (version== version1 version2)))
+
+(defun tuple< (t1 t2)
+  (when (and t1 t2)
+    (let ((v1 (first t1))
+	  (v2 (first t2)))
+      (or (< v1 v2)
+	  (tuple< (rest t1)
+		  (rest t2))))))
+
 (defun version< (version1 version2)
-  )
+  (tuple< (list (version-major version1)
+		(version-minor version1)
+		(version-patch version1))
+	  (list (version-major version2)
+		(version-minor version2)
+		(version-patch version2))))
+
+(defun version<= (version1 version2)
+  (or (version= version1 version2)
+      (version< version1 version2)))
 
 (defun version> (version1 version2)
-  )
+  (not (version<= version1 version2)))
+
+(defun version>= (version1 version2)
+  (or (version= version1 version2)
+      (version> version1 version2)))
+
+(defun make-semantic-version (major minor patch &optional pre-release build)
+  (make-instance 'semantic-version
+		 :major major
+		 :minor minor
+		 :patch patch
+		 :pre-release pre-release
+		 :build build))
