@@ -8,5 +8,6 @@
 			:components
 			((:file "package")
 			 (:file "test")
-			 (:file "version"))
+			 (:file "version")
+			 (:file "library"))
 			:serial t)))
