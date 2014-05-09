@@ -3,7 +3,7 @@
   :description "Common Lisp Dependency Manager tests"
   :author "Mariano Montone"
   :license "MIT"
-  :depends-on (#:cldm #:alexandria #:ironclad #:md5 #:stefil)
+  :depends-on (#:cldm #:stefil)
   :components ((:module "test"
 			:components
 			((:file "test")))))

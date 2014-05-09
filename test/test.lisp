@@ -1,7 +1,14 @@
 (defpackage cldm.test
-  (:use :cl :cldm :alexandria :stefil))
+  (:use :cl :cldm :alexandria :stefil)
+  (:export :cldm-test))
 
 (in-package :cldm.test)
+
+(in-root-suite)
+
+(defsuite cldm-test)
+
+(in-suite cldm-test)
 
 (deftest version-parsing-test ()
   (let ((valid-versions (list "1.2.0" "0.1.2"
@@ -13,7 +20,9 @@
 
   (let ((invalid-versions (list "1.2" "1.2.a")))
     (loop for version in invalid-versions
-	 do (is (not (valid-version-p version))))))
+	 do (is (not (valid-version-p version)))))
+  (let ((pre-releases (list "1.0.0-alpha" "1.0.0-alpha.1" "1.0.0-0.3.7" "1.0.0-x.7.z.92")))
+    ))
 
 (deftest version-construction-test ()
   (let ((v1 (read-version-from-string "1.2.0" 'semantic-version))
@@ -117,3 +126,15 @@
   (is (not (version> :max-version :max-version)))
   (is (version>= :max-version :max-version))
   (is (version= :max-version :max-version)))
+
+(deftest build-metadata-version-precedence-test ()
+  "Build metadata SHOULD be ignored when determining version precedence. Thus two versions that differ only in the build metadata, have the same precedence. Examples: 1.0.0-alpha+001, 1.0.0+20130313144700, 1.0.0-beta+exp.sha.5114f85."
+  (let ((versions (mapcar #'read-version-from-string
+			  (list "1.0.0-alpha+001"
+				"1.0.0+20130313144700"
+				"1.0.0-beta+exp.sha.5114f85"))))
+    (loop for v1 in versions
+	 for v2 in (cdr versions)
+	 do (progn
+	      (is (not (version< v1 v2)))
+	      (is (not (version> v1 v2)))))))
