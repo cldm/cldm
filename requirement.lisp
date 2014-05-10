@@ -6,9 +6,9 @@
 	 :accessor requirement-name
 	 :type string
 	 :documentation "The library name")
-   (specs :initarg :specs
-	  :initform (error "Provide the specs")
-	  :accessor requirement-specs
+   (version-constraints :initarg :version-constraints
+	  :initform (list :any)
+	  :accessor requirement-version-constraints
 	  :documentation "A list of constraints")
    (min-bound :initform :min-version
 	      :accessor min-bound
@@ -18,16 +18,60 @@
 	      :documentation "Max version bound"))
   (:documentation "Requirements instances represent a 'library requirement', that is a library + version constraints."))
 
-(defun read-requirement-from-string (string)
-  (multiple-value-bind (name version) (parse-library-full-name string)
-    (make-instance 'requirement :name name
-		   :version (list :equal version))))
+(defun make-requirement (name &rest version-constraints)
+  (make-instance 'requirement
+		 :name name
+		 :version-constraints version-constraints))		 
 
-(defmethod requirement-matches ((requirement requirement) (provider requirement))
-  "Return T if provide requirement and this requirement are compatible"
-  (when (not (equalp (requirement-name requirement)
-		     (requirement-name provider)))
-    (return-from requirement-matches nil)))
+(defun read-requirement-from-string (string)
+  (let ((constraints (parse-requirement-string string)))
+    (let* ((distribution-names (mapcar #'first constraints))
+	   (distribution-name (first distribution-names)))
+
+      ;; Check distribution names are all the same
+      (mapcar (lambda (name)
+		(when (not (equalp distribution-name name))
+		  (error "Invalid distribution names in requirement ~S" string)))
+	      distribution-names)
+
+      (let ((version-constraints (mapcar #'second constraints)))
+	(make-instance 'requirement
+		       :name distribution-name
+		       :version-constraints
+		       (normalize-version-constraints
+			version-constraints))))))
+
+(defun normalize-version-constraints (version-constraints)
+  ;; TODO
+  version-constraints)
+
+(defun print-requirement (requirement stream)
+  (flet ((print-version-constraint (version-constraint stream)
+	   (when (not (equalp version-constraint :any))
+	     (destructuring-bind (operation version) version-constraint
+	       (format stream "~A ~A"
+		       operation
+		       (format nil "~A.~A.~A"
+			       (first version)
+			       (second version)
+			       (third version))))))) 
+    (format stream "~A " (requirement-name requirement))
+    (print-version-constraint (first (requirement-version-constraints requirement)) stream)
+
+    (loop for version-constraint in (rest (requirement-version-constraints requirement))
+       do (progn
+	    (format stream ", ~A " (requirement-name requirement))
+	    (print-version-constraint version-constraint stream)))))
+
+(defun print-requirement-to-string (requirement)
+  (with-output-to-string (s)
+    (print-requirement requirement s)))
+
+(defmethod print-object ((requirement requirement) stream)
+  (print-unreadable-object (requirement stream :type t :identity t)
+    (print-requirement requirement stream)))
+
+;; Requirements parser
 
 (defrule decimal (+ (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))
   (:function (lambda (list)
@@ -39,22 +83,22 @@
 
 (defrule version== "==" (:function (lambda (match)
 					 (declare (ignore match))
-					 :==)))
+					 '==)))
 (defrule version>= ">=" (:function (lambda (match)
 				     (declare (ignore match))
-				     :>=)))
+				     '>=)))
 (defrule version<= "<=" (:function (lambda (match)
 				     (declare (ignore match))
-				     :<=)))
+				     '<=)))
 (defrule version> ">" (:function (lambda (match)
 				   (declare (ignore match))
-				   :>)))
+				   '>)))
 (defrule version< "<" (:function (lambda (match)
 				   (declare (ignore match))
-				   :<)))
+				   '<)))
 (defrule version!= "!=" (:function (lambda (match)
 				     (declare (ignore match))
-				     :!=)))
+				     '!=)))
 
 (defrule version-comparison (or version==
 				version!=
@@ -92,22 +136,16 @@
 		   (cons constraint (when more (nth 3 more)))))))
 
 (defun parse-requirement-string (string)
-  (parse '(and distribution-name version-equal) string))
+  (parse 'requirement string))
 
-(parse 'version== "==")
-
-(parse 'distribution-name "asdf2-asdf")
-
-(parse-requirement-string "asdfad==")
-
-(parse 'version-number "2.3.4")
-
-(parse 'version-constraint ">=   2.3.4")
-
-(parse 'distribution-constraint "hunchentoot >= 1.2.0")
-(parse 'distribution-constraint "hunchentoot == 1.2.0")
-
-(parse 'requirement "hunchentoot, hunchentoot <= 1.2.3")
-
-(parse 'requirement "hunchentoot >= 1.2.0")
-(parse 'requirement "hunchentoot >= 1.2.0 , hunchentoot <= 1.3.0 , hunchentoot")
+(defun requirement-universal-p (requirement)
+  "Returns true if the requirement matches any version"
+  (equalp (requirement-version-constraints requirement)
+	  (list :any)))
+  
+;; Matching
+(defmethod requirement-matches ((requirement requirement) (provider requirement))
+  ;; Return false if names dont match
+  (when (not (equalp (requirement-name requirement)
+		     (requirement-name provider)))
+    (return-from requirement-matches nil)))
