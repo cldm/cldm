@@ -3,7 +3,7 @@
   :description "Common Lisp Dependency Manager"
   :author "Mariano Montone"
   :license "MIT"
-  :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax)
+  :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax #:esrap)
   :components ((:file "package")
                (:file "cldm")
 	       (:file "version")))

@@ -1,5 +1,5 @@
 (defpackage #:cldm
-  (:use #:cl #:alexandria #:cl-syntax)
+  (:use #:cl #:alexandria #:cl-syntax #:esrap)
   (:export #:read-version-from-string
 	   #:print-version
 	   #:print-version-to-string
