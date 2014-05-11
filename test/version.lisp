@@ -49,31 +49,28 @@
        do (is (equalp (print-version-to-string (read-version-from-string version-string 'semantic-version))
 		      version-string)))))
 
-(eval-when (:load-toplevel :execute)
-
-  (deftest version-comparison-test ()
-    (is (version= #v"1.2.0" #v"1.2.0"))
-    (is (not (version= #v"1.2.0" #v"1.2.1")))
+(deftest version-comparison-test ()
+  (is (version= #v"1.2.0" #v"1.2.0"))
+  (is (not (version= #v"1.2.0" #v"1.2.1")))
   
-    (is (version/= #v"1.2.0" #v"1.2.1"))
-    (is (not (version/= #v"1.2.0" #v"1.2.0")))
+  (is (version/= #v"1.2.0" #v"1.2.1"))
+  (is (not (version/= #v"1.2.0" #v"1.2.0")))
 
-    (is (version> #v"1.2.1" #v"1.2.0"))
-    (is (not (version> #v"1.2.0" #v"1.2.0")))
-    (is (not (version> #v"1.2.0" #v"1.2.1")))
+  (is (version> #v"1.2.1" #v"1.2.0"))
+  (is (not (version> #v"1.2.0" #v"1.2.0")))
+  (is (not (version> #v"1.2.0" #v"1.2.1")))
 
-    (is (version>= #v"1.2.1" #v"1.2.0"))
-    (is (version>= #v"1.2.0" #v"1.2.0"))
-    (is (not (version>= #v"1.2.0" #v"1.2.1")))
+  (is (version>= #v"1.2.1" #v"1.2.0"))
+  (is (version>= #v"1.2.0" #v"1.2.0"))
+  (is (not (version>= #v"1.2.0" #v"1.2.1")))
 
-    (is (version< #v"1.2.0" #v"1.2.1"))
-    (is (not (version< #v"1.2.0" #v"1.2.0")))
-    (is (not (version< #v"1.2.1" #v"1.2.0")))
+  (is (version< #v"1.2.0" #v"1.2.1"))
+  (is (not (version< #v"1.2.0" #v"1.2.0")))
+  (is (not (version< #v"1.2.1" #v"1.2.0")))
 
-    (is (version<= #v"1.2.0" #v"1.2.1"))
-    (is (version<= #v"1.2.0" #v"1.2.0"))
-    (is (not (version<= #v"1.2.1" #v"1.2.0"))))
-  )
+  (is (version<= #v"1.2.0" #v"1.2.1"))
+  (is (version<= #v"1.2.0" #v"1.2.0"))
+  (is (not (version<= #v"1.2.1" #v"1.2.0"))))
 
 (deftest rfc-example-test ()
   (let ((increasing-versions (mapcar #'read-version-from-string
@@ -112,17 +109,18 @@
   (is (not (version< :max-version #v"99.99.99")))
   (is (not (version<= :max-version #v"99.99.99")))
 
-  (is (not (version< :min-version :min-version)))
-  (is (version<= :min-version :min-version))
-  (is (not (version> :min-version :min-version)))
-  (is (version>= :min-version :min-version))
-  (is (version= :min-version :min-version))
+  ;; (is (not (version< :min-version :min-version)))
+  ;; (is (version<= :min-version :min-version))
+  ;; (is (not (version> :min-version :min-version)))
+  ;; (is (version>= :min-version :min-version))
+  ;; (is (version= :min-version :min-version))
 
-  (is (not (version< :max-version :max-version)))
-  (is (version<= :max-version :max-version))
-  (is (not (version> :max-version :max-version)))
-  (is (version>= :max-version :max-version))
-  (is (version= :max-version :max-version)))
+  ;; (is (not (version< :max-version :max-version)))
+  ;; (is (version<= :max-version :max-version))
+  ;; (is (not (version> :max-version :max-version)))
+  ;; (is (version>= :max-version :max-version))
+  ;; (is (version= :max-version :max-version))
+  )
 
 (deftest build-metadata-version-precedence-test ()
   "Build metadata SHOULD be ignored when determining version precedence. Thus two versions that differ only in the build metadata, have the same precedence. Examples: 1.0.0-alpha+001, 1.0.0+20130313144700, 1.0.0-beta+exp.sha.5114f85."
