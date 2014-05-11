@@ -209,6 +209,10 @@
 				  provider-interval)))))
       (some #'interval-proper-p intersection-intervals))))
 
+(defun requirement-cannot-match-p (requirement)
+  (let ((intervals (make-requirement-version-intervals requirement)))
+    (not (some #'interval-proper-p intervals))))
+
 (defun requirement= (req1 req2)
   (and (equalp (requirement-name req1)
 	       (requirement-name req2))

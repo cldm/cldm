@@ -24,6 +24,14 @@
 (defun lexical-<=* (x y)
   (lexical-< x y car cdr))
 
+(defun tuple< (t1 t2)
+  (when (and t1 t2)
+    (let ((v1 (first t1))
+	  (v2 (first t2)))
+      (or (< v1 v2)
+	  (tuple< (rest t1)
+		  (rest t2))))))
+
 (defun split (chars str &optional (lst nil) (accm ""))
   (cond
     ((= (length str) 0) (reverse (cons accm lst)))

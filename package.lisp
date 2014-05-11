@@ -24,4 +24,13 @@
 	   #:disable-version-syntax
 
 	   #:read-requirement-from-string
-	   #:requirement-matches))
+	   #:read-requirement-from-library-string
+	   #:requirement-matches
+	   #:print-requirement
+	   #:requirement
+	   #:print-requirement-to-string
+	   #:requirement-name
+	   #:requirement=
+	   #:requirement-version-constraints
+	   #:requirement-cannot-match-p
+	   #:make-requirement))

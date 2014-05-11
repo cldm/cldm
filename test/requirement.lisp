@@ -1,20 +1,22 @@
 (in-package :cldm.test)
 
+#.(enable-version-syntax)
+
 (in-suite cldm-test)
 
 (deftest requirement-parser-test ()
   (let ((requirement (read-requirement-from-string "hunchentoot >= 1.3.0")))
     (is (equalp (requirement-name requirement) "hunchentoot"))
-    (is (equalp (requirement-spec requirement) '((>= #v"1.3.0"))))
+    (is (equalp (requirement-version-constraints requirement) '((>= #v"1.3.0"))))
     (is (requirement= requirement (make-instance 'requirement
 						 :name "hunchentoot"
-						 :spec `((>= #v"1.3.0")))))
+						 :version-constraints `((>= #v"1.3.0")))))
 
     (let ((requirement (read-requirement-from-string
 			"hunchentoot >= 1.3.0, hunchentoot <= 2.0.0")))
       (is (equalp (requirement-name requirement) "hunchentoot"))
-      (is (equalp (requirement-spec requirement) '((>= #v"1.3.0")
-						   (<= #v"2.0.0" ))))
+      (is (equalp (requirement-version-constraints requirement) '((>= #v"1.3.0")
+								  (<= #v"2.0.0" ))))
       (is (requirement= requirement (make-requirement "hunchentoot"
 						      '(>= #v"1.3.0")
 						      '(<= #v"2.0.0")))))
@@ -22,19 +24,19 @@
     (let ((requirement (read-requirement-from-string
 			"hunchentoot == 1.3.0")))
       (is (equalp (requirement-name requirement) "hunchentoot"))
-      (is (equalp (requirement-spec requirement)) '((== #v"1.3.0")))
+      (is (equalp (requirement-version-constraints requirement) '((== #v"1.3.0"))))
       (is (requirement= requirement (make-requirement "hunchentoot" '(== #v"1.3.0")))))  
 
     (let ((requirement (read-requirement-from-string
 			"hunchentoot == 1.3.0, hunchentoot == 1.4.0")))
       (is (equalp (requirement-name requirement) "hunchentoot"))
-      (is (equalp (requirement-spec requirement)) '((== #v"1.3.0")
-						    (== #v"1.4.0")))
+      (is (equalp (requirement-version-constraints requirement) '((== #v"1.3.0")
+								  (== #v"1.4.0"))))
       (is (requirement-cannot-match-p requirement)))
 
     (let ((requirement (read-requirement-from-string "hunchentoot")))
       (is (equalp (requirement-name requirement) "hunchentoot"))
-      (is (equalp (requirement-spec requirement) nil))
+      (is (equalp (requirement-version-constraints requirement) nil))
       (is (requirement= requirement (make-requirement "hunchentoot"))))
 
     (signals error
@@ -108,3 +110,5 @@
     (let ((requirement (req "hunchentoot == 1.3.0"))
 	  (lib-requirement (read-requirement-from-library-string "hunchentoot-1.3.0")))
       (is (requirement= requirement lib-requirement)))))
+
+#.(disable-version-syntax)

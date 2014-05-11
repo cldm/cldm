@@ -103,14 +103,6 @@
 (defmethod version/== ((version1 version) (version2 version))
   (not (version== version1 version2)))
 
-(defun tuple< (t1 t2)
-  (when (and t1 t2)
-    (let ((v1 (first t1))
-	  (v2 (first t2)))
-      (or (< v1 v2)
-	  (tuple< (rest t1)
-		  (rest t2))))))
-
 (defmethod version< ((version1 (eql :min-version)) version2)
   t)
 (defmethod version< (version1 (version2 (eql :max-version)))
@@ -181,6 +173,13 @@ readtable is used."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
     (%disable-version-syntax)))
 
+(defmethod make-load-form ((version version) &optional environment)
+  (declare (ignore environment))
+  (with-slots (major minor patch)
+      version
+    `(make-instance 'semantic-version :major ,major
+		    :minor ,minor
+		    :patch ,patch)))
 
 #+nil(defsyntax version-syntax
   (:dispatch-macro-char #\# #\v #'version-syntax-reader))

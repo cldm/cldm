@@ -9,5 +9,6 @@
 			((:file "package")
 			 (:file "test")
 			 (:file "version")
+			 (:file "requirement")
 			 (:file "library"))
 			:serial t)))
