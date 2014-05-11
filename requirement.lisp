@@ -21,7 +21,8 @@
 (defun make-requirement (name &rest version-constraints)
   (make-instance 'requirement
 		 :name name
-		 :version-constraints version-constraints))		 
+		 :version-constraints (or version-constraints
+					  (list :any))))
 
 (defun read-requirement-from-string (string)
   (let ((constraints (parse-requirement-string string)))
@@ -42,22 +43,23 @@
 			version-constraints))))))
 
 (defun normalize-version-constraints (version-constraints)
-  ;; TODO
   version-constraints)
 
 (defun print-requirement (requirement stream)
   (flet ((print-version-constraint (version-constraint stream)
 	   (when (not (equalp version-constraint :any))
 	     (destructuring-bind (operation version) version-constraint
-	       (format stream "~A ~A"
+	       (format stream " ~A ~A"
 		       operation
 		       (print-version-to-string version)))))) 
-    (format stream "~A " (requirement-name requirement))
-    (print-version-constraint (first (requirement-version-constraints requirement)) stream)
+    (format stream "~A" (requirement-name requirement))
+    (let ((version-constraint (first (requirement-version-constraints requirement))))
+      (when version-constraint
+	(print-version-constraint version-constraint stream)))
 
     (loop for version-constraint in (rest (requirement-version-constraints requirement))
        do (progn
-	    (format stream ", ~A " (requirement-name requirement))
+	    (format stream ", ~A" (requirement-name requirement))
 	    (print-version-constraint version-constraint stream)))))
 
 (defun print-requirement-to-string (requirement)
@@ -80,22 +82,22 @@
 
 (defrule version== "==" (:function (lambda (match)
 					 (declare (ignore match))
-					 '==)))
+					 :==)))
 (defrule version>= ">=" (:function (lambda (match)
 				     (declare (ignore match))
-				     '>=)))
+				     :>=)))
 (defrule version<= "<=" (:function (lambda (match)
 				     (declare (ignore match))
-				     '<=)))
+				     :<=)))
 (defrule version> ">" (:function (lambda (match)
 				   (declare (ignore match))
-				   '>)))
+				   :>)))
 (defrule version< "<" (:function (lambda (match)
 				   (declare (ignore match))
-				   '<)))
+				   :<)))
 (defrule version!= "!=" (:function (lambda (match)
 				     (declare (ignore match))
-				     '!=)))
+				     :!=)))
 
 (defrule version-comparison (or version==
 				version!=
@@ -148,49 +150,49 @@
        do (when (not (equalp version-constraint :any))
 	    (destructuring-bind (operation version) version-constraint
 	      (ecase operation
-		(== (let ((==interval (make-interval :from version :to version)))
+		(:== (let ((==interval (make-interval :from version :to version)))
+		       (setf intervals
+			     (remove-if-not #'interval-proper-p
+					    (loop for interval in intervals
+					       collect (interval-intersection ==interval interval))))))						   
+		(:!= (let ((!=intervals (list (make-interval :from :min-version
+							     :to version
+							     :to-type :opened)
+					      (make-interval :from version
+							     :from-type :opened
+							     :to :max-version))))
+		       (setf intervals
+			     (remove-if-not #'interval-proper-p
+					    (loop for interval in intervals
+					       appending
+						 (loop for !=interval in !=intervals
+						    collect (interval-intersection interval !=interval)))))))
+		(:<= (let ((<=interval (make-interval :from :min-version
+						      :to version)))
+		       (setf intervals
+			     (remove-if-not #'interval-proper-p
+					    (loop for interval in intervals
+					       collect (interval-intersection interval <=interval))))))
+		(:< (let ((<interval (make-interval :from :min-version
+						    :to version
+						    :to-type :opened)))
 		      (setf intervals
 			    (remove-if-not #'interval-proper-p
 					   (loop for interval in intervals
-					      collect (interval-intersection ==interval interval))))))						   
-		(!= (let ((!=intervals (list (make-interval :from :min-version
-							    :to version
-							    :to-type :opened)
-					     (make-interval :from version
-							    :from-type :opened
-							    :to :max-version))))
+					      collect (interval-intersection interval <interval))))))
+		(:>= (let ((>=interval (make-interval :from version
+						      :to :max-version)))
+		       (setf intervals
+			     (remove-if-not #'interval-proper-p
+					    (loop for interval in intervals
+					       collect (interval-intersection interval >=interval))))))
+		(:> (let ((>interval (make-interval :from version
+						    :from-type :opened
+						    :to :max-version)))
 		      (setf intervals
 			    (remove-if-not #'interval-proper-p
 					   (loop for interval in intervals
-					      appending
-						(loop for !=interval in !=intervals
-						   collect (interval-intersection interval !=interval)))))))
-		(<= (let ((<=interval (make-interval :from :min-version
-						     :to version)))
-		      (setf intervals
-			    (remove-if-not #'interval-proper-p
-					   (loop for interval in intervals
-					      collect (interval-intersection interval <=interval))))))
-		(< (let ((<interval (make-interval :from :min-version
-						   :to version
-						   :to-type :opened)))
-		     (setf intervals
-			   (remove-if-not #'interval-proper-p
-					  (loop for interval in intervals
-					     collect (interval-intersection interval <interval))))))
-		(>= (let ((>=interval (make-interval :from version
-						     :to :max-version)))
-		      (setf intervals
-			    (remove-if-not #'interval-proper-p
-					   (loop for interval in intervals
-					      collect (interval-intersection interval >=interval))))))
-		(> (let ((>interval (make-interval :from version
-						   :from-type :opened
-						   :to :max-version)))
-		     (setf intervals
-			   (remove-if-not #'interval-proper-p
-					  (loop for interval in intervals
-					     collect (interval-intersection interval >interval))))))))))
+					      collect (interval-intersection interval >interval))))))))))
     intervals))       
 
 (defmethod requirement-matches ((requirement requirement) (provider requirement))
@@ -257,4 +259,4 @@
 	(parse-library-string string)
       (if (equalp version :any)
 	  (make-requirement name)
-	  (make-requirement name (list '== version))))))
+	  (make-requirement name (list :== version))))))

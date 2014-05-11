@@ -59,6 +59,7 @@
   (is (version> #v"1.2.1" #v"1.2.0"))
   (is (not (version> #v"1.2.0" #v"1.2.0")))
   (is (not (version> #v"1.2.0" #v"1.2.1")))
+  (is (version> #v"3.0.0" #v"1.2.0"))
 
   (is (version>= #v"1.2.1" #v"1.2.0"))
   (is (version>= #v"1.2.0" #v"1.2.0"))
@@ -67,6 +68,7 @@
   (is (version< #v"1.2.0" #v"1.2.1"))
   (is (not (version< #v"1.2.0" #v"1.2.0")))
   (is (not (version< #v"1.2.1" #v"1.2.0")))
+  (is (not (version< #v"3.0.0" #v"1.3.0")))
 
   (is (version<= #v"1.2.0" #v"1.2.1"))
   (is (version<= #v"1.2.0" #v"1.2.0"))
