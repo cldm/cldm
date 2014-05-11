@@ -21,4 +21,7 @@
 	   #:version>
 	   #:version>=
 	   #:enable-version-syntax
-	   #:disable-version-syntax))
+	   #:disable-version-syntax
+
+	   #:read-requirement-from-string
+	   #:requirement-matches))
