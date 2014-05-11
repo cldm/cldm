@@ -9,14 +9,8 @@
    (version-constraints :initarg :version-constraints
 	  :initform (list :any)
 	  :accessor requirement-version-constraints
-	  :documentation "A list of constraints")
-   (min-bound :initform :min-version
-	      :accessor min-bound
-	      :documentation "Min version bound")
-   (max-bound :initform :max-version
-	      :accessor max-bound
-	      :documentation "Max version bound"))
-  (:documentation "Requirements instances represent a 'library requirement', that is a library + version constraints."))
+	  :documentation "A list of constraints"))
+   (:documentation "Requirements instances represent a 'library requirement', that is a library + version constraints."))
 
 (defun make-requirement (name &rest version-constraints)
   (make-instance 'requirement
