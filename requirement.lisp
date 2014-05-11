@@ -51,10 +51,7 @@
 	     (destructuring-bind (operation version) version-constraint
 	       (format stream "~A ~A"
 		       operation
-		       (format nil "~A.~A.~A"
-			       (first version)
-			       (second version)
-			       (third version))))))) 
+		       (print-version-to-string version)))))) 
     (format stream "~A " (requirement-name requirement))
     (print-version-constraint (first (requirement-version-constraints requirement)) stream)
 
@@ -110,7 +107,7 @@
 (defrule version-number (and decimal #\. decimal #\. decimal)
   (:function (lambda (match)
 	       (destructuring-bind (major dot1 minor dot2 patch) match
-		 (list major minor patch)))))
+		 (make-semantic-version major minor patch)))))
 
 (defrule spaces (+ #\ ))
 
@@ -144,8 +141,70 @@
 	  (list :any)))
   
 ;; Matching
+(defun make-requirement-version-intervals (requirement)
+  (let ((intervals (list (make-interval :from t
+					:to t))))
+    (loop for version-constraint in (requirement-version-constraints requirement)
+       do (when (not (equalp version-constraint :any))
+	    (destructuring-bind (operation version) version-constraint
+	      (ecase operation
+		(== (let ((==interval (make-interval :from version :to version)))
+		      (setf intervals
+			    (remove-if-not #'interval-proper-p
+					   (loop for interval in intervals
+					      collect (interval-intersection ==interval interval))))))						   
+		(!= (let ((!=intervals (list (make-interval :from :min-version
+							    :to version
+							    :to-type :opened)
+					     (make-interval :from version
+							    :from-type :opened
+							    :to :max-version))))
+		      (setf intervals
+			    (remove-if-not #'interval-proper-p
+					   (loop for interval in intervals
+					      appending
+						(loop for !=interval in !=intervals
+						   collect (interval-intersection interval !=interval)))))))
+		(<= (let ((<=interval (make-interval :from :min-version
+						     :to version)))
+		      (setf intervals
+			    (remove-if-not #'interval-proper-p
+					   (loop for interval in intervals
+					      collect (interval-intersection interval <=interval))))))
+		(< (let ((<interval (make-interval :from :min-version
+						   :to version
+						   :to-type :opened)))
+		     (setf intervals
+			   (remove-if-not #'interval-proper-p
+					  (loop for interval in intervals
+					     collect (interval-intersection interval <interval))))))
+		(>= (let ((>=interval (make-interval :from version
+						     :to :max-version)))
+		      (setf intervals
+			    (remove-if-not #'interval-proper-p
+					   (loop for interval in intervals
+					      collect (interval-intersection interval >=interval))))))
+		(> (let ((>interval (make-interval :from version
+						   :from-type :opened
+						   :to :max-version)))
+		     (setf intervals
+			   (remove-if-not #'interval-proper-p
+					  (loop for interval in intervals
+					     collect (interval-intersection interval >interval))))))))))
+    intervals))       
+
 (defmethod requirement-matches ((requirement requirement) (provider requirement))
   ;; Return false if names dont match
   (when (not (equalp (requirement-name requirement)
 		     (requirement-name provider)))
-    (return-from requirement-matches nil)))
+    (return-from requirement-matches nil))
+
+  (let ((requirement-intervals (make-requirement-version-intervals requirement))
+	(provider-intervals (make-requirement-version-intervals provider)))
+    (let ((intersection-intervals
+	   (loop for requirement-interval in requirement-intervals
+		appending
+		(loop for provider-interval in provider-intervals
+		   collect (interval-intersection requirement-interval
+				  provider-interval)))))
+      (some #'interval-proper-p intersection-intervals))))
