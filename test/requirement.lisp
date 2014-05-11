@@ -66,7 +66,7 @@
       (is (not (requirement-matches requirement (req "hunchentoot == 1.5.0"))))
 
       ;; different library name
-      (is (not (requirement-matches requirement (req "cl-ppcre == 130"))))
+      (is (not (requirement-matches requirement (req "cl-ppcre == 1.3.0"))))
 
       ;; range
       (is (requirement-matches requirement (req "hunchentoot >= 1.3.0")))

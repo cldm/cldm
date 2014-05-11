@@ -208,3 +208,49 @@
 		   collect (interval-intersection requirement-interval
 				  provider-interval)))))
       (some #'interval-proper-p intersection-intervals))))
+
+(defun requirement= (req1 req2)
+  (and (equalp (requirement-name req1)
+	       (requirement-name req2))
+       (set-equal (requirement-version-constraints req1)
+		  (requirement-version-constraints req2)
+		  :test
+		  (lambda (constraint1 constraint2)
+		    (or (equalp constraint1 constraint2)
+			(and (listp constraint1)
+			     (listp constraint2)
+			     (equalp (first constraint1)
+				     (first constraint2))
+			     (version= (second constraint1)
+				       (second constraint2))))))))
+
+
+(defrule library (and distribution-name (! (or (and #\- version-number)
+					       (and decimal #\.)))
+		      (? (and #\- version-number)))
+  (:function
+   (lambda (match)
+     (destructuring-bind (distribution-name ignore version-number) match
+       (if (not version-number)
+	   (list distribution-name :any)
+	   (list distribution-name (second version-number)))))))
+
+(defun read-requirement-from-library-string (string)
+  (flet ((parse-library-string (string)
+	   (let ((split
+		  (split (list #\-) string)))
+	     (let ((version (first (last split))))
+	       (if (ignore-errors (parse 'version-number version))
+		   ;; Version parsing was successful
+		   (values
+		    (parse 'distribution-name (join "-" (butlast split)))
+		    (parse 'version-number version))
+		   ;; else, no version could be parsed
+		   (values
+		    (parse 'distribution-name string)
+		    :any))))))
+    (multiple-value-bind (name version)
+	(parse-library-string string)
+      (if (equalp version :any)
+	  (make-requirement name)
+	  (make-requirement name (list '== version))))))

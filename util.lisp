@@ -24,3 +24,28 @@
 (defun lexical-<=* (x y)
   (lexical-< x y car cdr))
 
+(defun split (chars str &optional (lst nil) (accm ""))
+  (cond
+    ((= (length str) 0) (reverse (cons accm lst)))
+    (t
+     (let ((c (char str 0)))
+       (if (member c chars)
+	   (split chars (subseq str 1) (cons accm lst) "")
+	   (split chars (subseq str 1) 
+		  lst 
+		  (concatenate 'string
+			       accm
+			       (string c))))
+       ))))
+
+(defun join (str lst &optional (jstr ""))
+  (cond
+    ((null lst) jstr)
+    (t (let ((news (concatenate 'string
+				jstr
+				(first lst)
+				(if (null (rest lst))
+				    ""
+				    str))))
+	 (join str (rest lst) news)))))
+
