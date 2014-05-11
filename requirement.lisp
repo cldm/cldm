@@ -142,8 +142,8 @@
   
 ;; Matching
 (defun make-requirement-version-intervals (requirement)
-  (let ((intervals (list (make-interval :from t
-					:to t))))
+  (let ((intervals (list (make-interval :from :min-version
+					:to :max-version))))
     (loop for version-constraint in (requirement-version-constraints requirement)
        do (when (not (equalp version-constraint :any))
 	    (destructuring-bind (operation version) version-constraint

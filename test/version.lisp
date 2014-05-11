@@ -49,31 +49,31 @@
        do (is (equalp (print-version-to-string (read-version-from-string version-string 'semantic-version))
 		      version-string)))))
 
-;; (eval-when (:load-toplevel :execute)
+(eval-when (:load-toplevel :execute)
 
-;;   (deftest version-comparison-test ()
-;;     (is (version= #v"1.2.0" #v"1.2.0"))
-;;     (is (not (version= #v"1.2.0" #v"1.2.1")))
+  (deftest version-comparison-test ()
+    (is (version= #v"1.2.0" #v"1.2.0"))
+    (is (not (version= #v"1.2.0" #v"1.2.1")))
   
-;;     (is (version/= #v"1.2.0" #v"1.2.1"))
-;;     (is (not (version/= #v"1.2.0" #v"1.2.0")))
+    (is (version/= #v"1.2.0" #v"1.2.1"))
+    (is (not (version/= #v"1.2.0" #v"1.2.0")))
 
-;;     (is (version> #v"1.2.1" #v"1.2.0"))
-;;     (is (not (version> #v"1.2.0" #v"1.2.0")))
-;;     (is (not (version> #v"1.2.0" #v"1.2.1")))
+    (is (version> #v"1.2.1" #v"1.2.0"))
+    (is (not (version> #v"1.2.0" #v"1.2.0")))
+    (is (not (version> #v"1.2.0" #v"1.2.1")))
 
-;;     (is (version>= #v"1.2.1" #v"1.2.0"))
-;;     (is (version>= #v"1.2.0" #v"1.2.0"))
-;;     (is (not (version>= #v"1.2.0" #v"1.2.1")))
+    (is (version>= #v"1.2.1" #v"1.2.0"))
+    (is (version>= #v"1.2.0" #v"1.2.0"))
+    (is (not (version>= #v"1.2.0" #v"1.2.1")))
 
-;;     (is (version< #v"1.2.0" #v"1.2.1"))
-;;     (is (not (version< #v"1.2.0" #v"1.2.0")))
-;;     (is (not (version< #v"1.2.1" #v"1.2.0")))
+    (is (version< #v"1.2.0" #v"1.2.1"))
+    (is (not (version< #v"1.2.0" #v"1.2.0")))
+    (is (not (version< #v"1.2.1" #v"1.2.0")))
 
-;;     (is (version<= #v"1.2.0" #v"1.2.1"))
-;;     (is (version<= #v"1.2.0" #v"1.2.0"))
-;;     (is (not (version<= #v"1.2.1" #v"1.2.0"))))
-;;   )
+    (is (version<= #v"1.2.0" #v"1.2.1"))
+    (is (version<= #v"1.2.0" #v"1.2.0"))
+    (is (not (version<= #v"1.2.1" #v"1.2.0"))))
+  )
 
 (deftest rfc-example-test ()
   (let ((increasing-versions (mapcar #'read-version-from-string

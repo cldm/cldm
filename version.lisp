@@ -73,7 +73,9 @@
   (format stream "#v\"~A\"" (print-version-to-string version)))
 
 ;; Version comparison
-(defun version= (version1 version2)
+(defmethod version= (version1 version2)
+  nil)
+(defmethod version= ((version1 version) (version2 version))
   (and (equalp (version-major version1)
 	       (version-major version2))
        (equalp (version-minor version1)
@@ -81,17 +83,24 @@
        (equalp (version-patch version1)
 	       (version-patch version2))))
 
-(defun version== (version1 version2)
+(defmethod version== (version1 version2)
+  nil)
+(defmethod version== ((version1 version) (version2 version))
   (and (version= version1 version2)
        (equalp (version-pre-release version1)
 	       (version-pre-release version2))
        (equalp (version-build version1)
 	       (version-build version2))))
 
-(defun version/= (version1 version2)
+(defmethod version/= (version1 version2)
+  t)
+
+(defmethod version/= ((version1 version) (version2 version))
   (not (version= version1 version2)))
 
-(defun version/== (version1 version2)
+(defmethod version/== (version1 version2)
+  t)
+(defmethod version/== ((version1 version) (version2 version))
   (not (version== version1 version2)))
 
 (defun tuple< (t1 t2)
@@ -102,7 +111,15 @@
 	  (tuple< (rest t1)
 		  (rest t2))))))
 
-(defun version< (version1 version2)
+(defmethod version< ((version1 (eql :min-version)) version2)
+  t)
+(defmethod version< (version1 (version2 (eql :max-version)))
+  t)
+(defmethod version< ((version1 (eql :max-version)) version2)
+  nil)
+(defmethod version< (version1 (version2 (eql :min-version)))
+  nil)
+(defmethod version< ((version1 version) (version2 version))
   (tuple< (list (version-major version1)
 		(version-minor version1)
 		(version-patch version1))

@@ -18,8 +18,6 @@
 	    (:closed "]")
 	    (:opened ")"))))
 
-(make-interval :from 1 :to 2)
-
 (defun set-interval-from (interval from &optional from-type)
   (setf (interval-from interval) from)
   (when from-type
@@ -69,8 +67,8 @@
 
 (defun interval-proper-p (interval)
   "A degenerate interval is any set consisting of a single real number. Some authors include the empty set in this definition. A real interval that is neither empty nor degenerate is said to be proper, and has infinitely many elements."
-  (or (version< (interval-to interval)
-		(interval-from interval))
+  (or (version< (interval-from interval)
+		(interval-to interval))
       (and (version= (interval-from interval)
 		     (interval-to interval))
 	   (and (equalp (interval-from-type interval) :closed)
