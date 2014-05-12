@@ -42,33 +42,133 @@
 	       :accessor library-repository
 	       :type repository
 	       :documentation "The library repository"))
-
   (:documentation "library-info instances contain all the metadata needed for dependency management"))
 
-(defun parse-library-string (string))
+(defrule requirement-type (or "depends" "provides" "suggests" "conflicts" "replaces")
+  (:function (lambda (match)
+	       (make-keyword (string-upcase match)))))
+
+(defrule library-requirements
+    (and requirement-type
+	 spaces
+	 #\(
+	 distribution-constraint
+	 (* (and #\, spaces distribution-constraint))
+	 #\))
+  (:function (lambda (match)
+	       (destructuring-bind (requirement-type
+				    spaces
+				    open-paren
+				    constraint
+				    constraints
+				    close-paren) match
+		 (list requirement-type (cons constraint (mapcar #'third constraints)))))))
+
+(defrule library (and library-unique-name (* (and #\; spaces library-requirements)))
+  (:function (lambda (match)
+	       (destructuring-bind (name requirements) match
+		   (list name (mapcar #'third requirements))))))
+
+(defun read-library-from-string (string)
+  (destructuring-bind (unique-name requirements)
+      (parse 'library string)
+    (make-instance 'library
+		   :name (first unique-name)
+		   :version (second unique-name)
+		   :dependencies
+		   (let ((depends (mapcar #'caadr
+					  (remove-if-not (lambda (reqs)
+							   (equalp (first reqs) :depends))
+							 requirements))))
+		     (loop for constraint in depends
+			collect (make-requirement (first constraint) (second constraint))))
+		   :provides
+		   (let ((provides (mapcar #'caadr
+					  (remove-if-not (lambda (reqs)
+							   (equalp (first reqs) :provides))
+							 requirements))))
+		     (loop for constraint in provides
+			collect (make-requirement (first constraint) (second constraint))))
+		   :conflicts
+		   (let ((conflicts (mapcar #'caadr
+					  (remove-if-not (lambda (reqs)
+							   (equalp (first reqs) :conflicts))
+							 requirements))))
+		     (loop for constraint in conflicts
+			collect (make-requirement (first constraint) (second constraint))))
+		   :suggests
+		   (let ((suggests (mapcar #'caadr
+					  (remove-if-not (lambda (reqs)
+							   (equalp (first reqs) :suggests))
+							 requirements))))
+		     (loop for constraint in suggests
+			collect (make-requirement (first constraint) (second constraint))))
+		   :replaces
+		   (let ((replaces (mapcar #'caadr
+					  (remove-if-not (lambda (reqs)
+							   (equalp (first reqs) :replaces))
+							 requirements))))
+		     (loop for constraint in replaces
+			collect (make-requirement (first constraint) (second constraint))))
+		   :repository nil)))
 
 (defun library-unique-name (library)
-  (format nil "~A - ~A"
+  (format nil "~A~@[-~A~]"
 	  (library-name library)
-	  (library-version library)))
+	  (when (library-version library)
+	    (print-version-to-string (library-version library)))))
 
 (defmethod describe-object ((library library) stream)
-  (format stream "~A~%~%" (library-unique-name library))
+  (format stream "~A library ~%~%" (library-unique-name library))
   (format stream "Dependencies: ~{~a~^, ~}~%"
-	  (mapcar #'requirement-string
-		  (library-dependencies library)))
+	  (or
+	   (mapcar #'print-requirement-to-string
+		   (library-dependencies library))
+	   (list "None")))
   (format stream "Provides: ~{~a~^, ~}~%"
-	  (mapcar #'requirement-string
-		  (library-provides library)))
+	  (or
+	   (mapcar #'print-requirement-to-string
+		   (library-provides library))
+	   (list "None")))
   (format stream "Conflicts: ~{~a~^, ~}~%"
-	  (mapcar #'requirement-string
-		  (library-dependencies library)))
+	  (or
+	   (mapcar #'print-requirement-to-string
+		   (library-dependencies library))
+	   (list "None")))
   (format stream "Replaces: ~{~a~^, ~}~%"
-	  (mapcar #'requirement-string
-		  (library-replaces library)))
+	  (or
+	   (mapcar #'print-requirement-to-string
+		   (library-replaces library))
+	   (list "None")))
   (format stream "Suggests: ~{~a~^, ~}~%"
-	  (mapcar #'requirement-string
-		  (library-suggests library))))
+	  (or
+	   (mapcar #'print-requirement-to-string
+		   (library-suggests library))
+	   (list "None"))))
+
+(defun print-library (library stream)
+  (format stream "~A" (library-unique-name library))
+  (when (library-dependencies library)
+    (format stream "; depends (~{~a~^, ~})"
+	    (mapcar #'print-requirement-to-string
+		    (library-dependencies library))))
+  (when (library-provides library)
+    (format stream "; provides (~{~a~^, ~})"
+	    (mapcar #'print-requirement-to-string
+		    (library-provides library))))
+  (when (library-replaces library)
+    (format stream "; replaces (~{~a~^, ~})"
+	    (mapcar #'print-requirement-to-string
+		    (library-replaces library))))
+  )
+
+(defun print-library-to-string (library)
+  (with-output-to-string (s)
+    (print-library library s)))
+
+(defmethod print-object ((library library) stream)
+  (print-unreadable-object (library stream :type t :identity t)
+    (print-library library stream)))
 
 (defmethod library-matches ((library library) (requirement requirement))
   "Checks whether the candidate library matches the requirement, either directly or through provides.
@@ -81,7 +181,7 @@
 			      (library-unique-name library))))
     (if (equalp (requirement-name requirement)
 		(library-name library))
-      	(if (or (universal-p requirement)
+      	(if (or (requirement-universal-p requirement)
 		(requirement-matches library-requirement requirement))
 	    :match
 					;else
