@@ -9,5 +9,6 @@
 	       (:file "util")
 	       (:file "version")
 	       (:file "interval")
-	       (:file "requirement"))
+	       (:file "requirement")
+	       (:file "library"))
   :serial t)
