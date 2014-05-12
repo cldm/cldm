@@ -2,7 +2,7 @@
 
 (defclass library ()
   ((id :initarg :id
-       :initform -1
+       :initform nil
        :accessor library-id
        :type integer
        :documentation "The library id")
@@ -38,7 +38,7 @@
 	     :documentation "List of requirements the library suggests")
 
    (repository :initarg :repository
-	       :initform (error "Provide the library repository")
+	       :initform nil ;(error "Provide the library repository")
 	       :accessor library-repository
 	       :type repository
 	       :documentation "The library repository"))
@@ -76,41 +76,42 @@
 		   :name (first unique-name)
 		   :version (second unique-name)
 		   :dependencies
-		   (let ((depends (mapcar #'caadr
-					  (remove-if-not (lambda (reqs)
-							   (equalp (first reqs) :depends))
-							 requirements))))
+		   (let ((depends (cadar
+				   (remove-if-not (lambda (reqs)
+						    (equalp (first reqs) :depends))
+						  requirements))))
 		     (loop for constraint in depends
-			collect (make-requirement (first constraint) (second constraint))))
+			collect (progn
+					;(break "~A" constraint)
+				  (make-requirement (first constraint) (second constraint)))))
 		   :provides
-		   (let ((provides (mapcar #'caadr
-					  (remove-if-not (lambda (reqs)
-							   (equalp (first reqs) :provides))
-							 requirements))))
+		   (let ((provides (cadar
+				    (remove-if-not (lambda (reqs)
+						     (equalp (first reqs) :provides))
+						   requirements))))
 		     (loop for constraint in provides
 			collect (make-requirement (first constraint) (second constraint))))
 		   :conflicts
-		   (let ((conflicts (mapcar #'caadr
-					  (remove-if-not (lambda (reqs)
-							   (equalp (first reqs) :conflicts))
-							 requirements))))
+		   (let ((conflicts (cadar
+				     (remove-if-not (lambda (reqs)
+						      (equalp (first reqs) :conflicts))
+						    requirements))))
 		     (loop for constraint in conflicts
 			collect (make-requirement (first constraint) (second constraint))))
 		   :suggests
-		   (let ((suggests (mapcar #'caadr
-					  (remove-if-not (lambda (reqs)
-							   (equalp (first reqs) :suggests))
-							 requirements))))
+		   (let ((suggests (cadar
+				    (remove-if-not (lambda (reqs)
+						     (equalp (first reqs) :suggests))
+						   requirements))))
 		     (loop for constraint in suggests
 			collect (make-requirement (first constraint) (second constraint))))
 		   :replaces
-		   (let ((replaces (mapcar #'caadr
-					  (remove-if-not (lambda (reqs)
-							   (equalp (first reqs) :replaces))
-							 requirements))))
+		   (let ((replaces (cadar
+				    (remove-if-not (lambda (reqs)
+						     (equalp (first reqs) :replaces))
+						   requirements))))
 		     (loop for constraint in replaces
-			collect (make-requirement (first constraint) (second constraint))))
-		   :repository nil)))
+			collect (make-requirement (first constraint) (second constraint)))))))
 
 (defun library-unique-name (library)
   (format nil "~A~@[-~A~]"
@@ -197,3 +198,22 @@
 	  (loop for replace in (library-replaces library)
 	     when (requirement-matches requirement replace)
 	     do (return-from library-matches :match-replace))))))
+
+(defun library= (lib1 lib2)
+  (and (equalp (library-unique-name lib1)
+	       (library-unique-name lib2))
+       (set-equal (library-dependencies lib1)
+		  (library-dependencies lib2)
+		  :test #'requirement=)
+       (set-equal (library-provides lib1)
+		  (library-provides lib2)
+		  :test #'requirement=)
+       (set-equal (library-suggests lib1)
+		  (library-suggests lib2)
+		  :test #'requirement=)
+       (set-equal (library-replaces lib1)
+		  (library-replaces lib2)
+		  :test #'requirement=)
+       (set-equal (library-conflicts lib1)
+		  (library-conflicts lib2)
+		  :test #'requirement=)))
