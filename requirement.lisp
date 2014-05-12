@@ -74,6 +74,10 @@
 				  (character-ranges (#\a #\z) (#\A #\Z) #\_ #\-)))
   (:text t))
 
+(defrule distribution-name-part (* (or (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
+				       (character-ranges (#\a #\z) (#\A #\Z) #\_)))
+  (:text t))
+
 (defrule version== "==" (:function (lambda (match)
 					 (declare (ignore match))
 					 :==)))
@@ -224,33 +228,22 @@
 			     (version= (second constraint1)
 				       (second constraint2))))))))
 
+(defrule library-unique-name (and distribution-name-part (? (and #\- (or version-number library-unique-name))))
+  (:function (lambda (match)
+	       (destructuring-bind (dnp rest) match
+		 (if (or (null (second rest))
+			 (typep (second rest) 'version))
+		     (list dnp (second rest))
+					;else
+		     (list (format nil "~A-~A" dnp (first (second rest)))
+			   (second (second rest))))))))
 
-(defrule library (and distribution-name (! (or (and #\- version-number)
-					       (and decimal #\.)))
-		      (? (and #\- version-number)))
-  (:function
-   (lambda (match)
-     (destructuring-bind (distribution-name ignore version-number) match
-       (if (not version-number)
-	   (list distribution-name :any)
-	   (list distribution-name (second version-number)))))))
+(defun parse-library-string (string)
+  (values-list (parse 'library-unique-name string)))
 
 (defun read-requirement-from-library-string (string)
-  (flet ((parse-library-string (string)
-	   (let ((split
-		  (split (list #\-) string)))
-	     (let ((version (first (last split))))
-	       (if (ignore-errors (parse 'version-number version))
-		   ;; Version parsing was successful
-		   (values
-		    (parse 'distribution-name (join "-" (butlast split)))
-		    (parse 'version-number version))
-		   ;; else, no version could be parsed
-		   (values
-		    (parse 'distribution-name string)
-		    :any))))))
     (multiple-value-bind (name version)
 	(parse-library-string string)
       (if (equalp version :any)
 	  (make-requirement name)
-	  (make-requirement name (list :== version))))))
+	  (make-requirement name (list :== version)))))
