@@ -10,6 +10,5 @@
 			 (:file "test")
 			 (:file "version")
 			 (:file "requirement")
-			 ;(:file "library")
-			 )
+			 (:file "library"))
 			:serial t)))

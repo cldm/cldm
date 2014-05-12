@@ -31,7 +31,7 @@
 			    :version #v"1.0.0")))
     (is (equalp (print-library-to-string lib) "hunchentoot-1.0.0"))))
 
-(deftest read-library-from-string ()
+(deftest read-library-from-string-test ()
   (let ((lib-string "hunchentoot-1.0.0"))
     (let ((lib (read-library-from-string lib-string)))
       (is (library= lib (make-instance 'library
@@ -46,7 +46,7 @@
 	  (lib2 (make-instance 'library
 			       :name "hunchentoot"
 			       :version #v"1.0.0"
-			       :depends (list (read-requirement-from-string "chunga >= 1.2.0")))))
+			       :dependencies (list (read-requirement-from-string "chunga >= 1.2.0")))))
       (is (library= lib1 lib2))
       (is (equalp lib-string (print-library-to-string lib1))))))
 
@@ -66,5 +66,8 @@
 			       :version #v"1.0.0"
 			       :dependencies (list (read-requirement-from-string "chunga >= 1.0.0")
 						   (read-requirement-from-string "cffi >= 2.0.0")))))
+      (is (set-equal (library-dependencies lib1) (library-dependencies lib2) :test #'requirement=))
       (is (library= lib1 lib2))
       (is (equalp (print-library-to-string lib2) lib-string)))))
+
+#.(disable-version-syntax)
