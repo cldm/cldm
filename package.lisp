@@ -33,4 +33,19 @@
 	   #:requirement=
 	   #:requirement-version-constraints
 	   #:requirement-cannot-match-p
-	   #:make-requirement))
+	   #:make-requirement
+
+	   #:library
+	   #:library-name
+	   #:library-dependencies
+	   #:library-provides
+	   #:library-conflicts
+	   #:library-suggests
+	   #:library-replaces
+	   #:library-unique-name
+	   #:library-version
+	   #:print-library
+	   #:print-library-to-string
+	   #:read-library-from-string
+	   #:library=
+	   ))
