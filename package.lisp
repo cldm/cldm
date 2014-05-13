@@ -49,4 +49,13 @@
 	   #:read-library-from-string
 	   #:library=
 	   #:library-matches
+
+	   #:repository
+	   #:repository-name
+	   #:find-library
+	   #:find-libraries
+	   #:has-library-named
+	   #:has-library
+	   #:repository-libraries
+	   #:repository-length
 	   ))
