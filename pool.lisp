@@ -40,12 +40,12 @@
 
 	  ;; Add provided libraries
 	  (loop for provide in (library-provides library)
-	     do (push provide (gethash (requirement-name provide)
+	     do (push library (gethash (requirement-name provide)
 				       (libraries-by-name pool))))
 
 	  ;; Add replacement libraries
-	  (loop for replace in (library-provides library)
-	     do (push replace (gethash (requirement-name replace)
+	  (loop for replace in (library-replaces library)
+	     do (push library (gethash (requirement-name replace)
 				       (libraries-by-name pool)))))))
 
 (defmethod find-library-by-id ((pool pool) id &optional (error-p t))
