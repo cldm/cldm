@@ -11,5 +11,6 @@
 	       (:file "interval")
 	       (:file "requirement")
 	       (:file "library")
-	       (:file "repository"))
+	       (:file "repository")
+	       (:file "pool"))
   :serial t)

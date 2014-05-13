@@ -49,6 +49,7 @@
 	   #:read-library-from-string
 	   #:library=
 	   #:library-matches
+	   #:library-id
 
 	   #:repository
 	   #:repository-name
@@ -58,4 +59,12 @@
 	   #:has-library
 	   #:repository-libraries
 	   #:repository-length
+
+	   #:pool
+	   #:pool-repositories
+	   #:add-repository
+	   #:find-library-by-id
+	   #:has-library
+	   #:what-provides
+	   
 	   ))

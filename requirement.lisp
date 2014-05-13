@@ -247,3 +247,12 @@
       (if (equalp version :any)
 	  (make-requirement name)
 	  (make-requirement name (list :== version)))))
+
+;; WARNING: this is a polymorphism hack. REMOVE
+
+(defmethod library-name ((requirement requirement))
+  (requirement-name requirement))
+
+(defmethod library-matches ((requirement requirement) provider)
+  (requirement-matches requirement provider))
+

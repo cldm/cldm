@@ -11,5 +11,6 @@
 			 (:file "version")
 			 (:file "requirement")
 			 (:file "library")
-			 (:file "repository"))
+			 (:file "repository")
+			 (:file "pool"))
 			:serial t)))

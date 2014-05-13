@@ -40,20 +40,23 @@
 
 	  ;; Add provided libraries
 	  (loop for provide in (library-provides library)
-	     do (setf (gethash (library-name provide)  (library-provides library))
-		      provide))
+	     do (push provide (gethash (requirement-name provide)
+				       (libraries-by-name pool))))
 
 	  ;; Add replacement libraries
 	  (loop for replace in (library-provides library)
-	     do (setf (gethash (library-name replace)  (library-replaces library))
-		      replace)))))
+	     do (push replace (gethash (requirement-name replace)
+				       (libraries-by-name pool)))))))
 
-(defmethod find-library-by-id ((pool pool) id &optional error-p)
+(defmethod find-library-by-id ((pool pool) id &optional (error-p t))
   "Retrieve a library from its id"
   (let ((library (gethash id (libraries-by-id pool))))
     (when (and (null library) error-p)
       (error "Library with id ~A not found in ~A" id pool))
     library))
+
+(defmethod has-library ((pool pool) library)
+  (not (null (find-library-by-id pool (library-id library) nil))))
 
 (defmethod what-provides ((pool pool) requirement &optional (mode :composer))
   "Returns a list of libraries that provide the given requirement.
@@ -72,7 +75,8 @@
   (let ((name-match nil)
 	(strict-matches nil)
 	(provided-match nil))
-    (loop for library in (gethash (requirement-name requirement) (libraries-by-name pool))
+    (loop for library in (gethash (requirement-name requirement)
+				  (libraries-by-name pool))
        do (let ((match (library-matches library requirement)))
 	    (case match
 	      (:match-name (setf name-match t))
@@ -85,4 +89,11 @@
 			     strict-matches
 			     (append strict-matches provided-match)))
 	      (:direct-only strict-matches)
-	      (:include-indirect (append strict-matches provided-match)))))))
+	      (:include-indirect (append strict-matches provided-match)))))
+
+    (ecase mode
+      (:composer (if name-match
+		     strict-matches
+		     (append strict-matches provided-match)))
+      (:direct-only strict-matches)
+      (:include-indirect (append strict-matches provided-match)))))
