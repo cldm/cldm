@@ -48,4 +48,5 @@
 	   #:print-library-to-string
 	   #:read-library-from-string
 	   #:library=
+	   #:library-matches
 	   ))

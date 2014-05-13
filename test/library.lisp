@@ -70,4 +70,35 @@
       (is (library= lib1 lib2))
       (is (equalp (print-library-to-string lib2) lib-string)))))
 
+(deftest library-matching-test ()
+  (let ((hunchentoot-1.0.0 (read-library-from-string "hunchentoot-1.0.0")))
+    (setf (library-provides hunchentoot-1.0.0)
+	  (list (read-requirement-from-string "cl-ppcre")))
+    (setf (library-replaces hunchentoot-1.0.0)
+	  (list (read-requirement-from-string "webserver")))
+    (is (not (library-matches hunchentoot-1.0.0 (read-requirement-from-string "chunga"))))
+    (is (not (library-matches hunchentoot-1.0.0 (read-requirement-from-string "alexandria"))))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "hunchentoot"))
+	 :match))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-library-string "hunchentoot-2.0.0"))
+	 :match-name))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "cl-ppcre"))
+	 :match-provide))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "webserver"))
+	 :match-replace))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "webserver == 2.3.0"))
+	 :match-replace))
+
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "hunchentoot >= 2.0.0"))
+	 :match-name))
+    (is (equalp
+	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "hunchentoot <= 2.0.0"))
+	 :match))))
+
 #.(disable-version-syntax)

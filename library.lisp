@@ -178,26 +178,28 @@
            - :match if both name and version match
            - :match-provide if the match is through the library provides
            - nil if there's no match"
-  (let ((library-requirement (read-requirement-from-string
+  (let ((library-requirement (read-requirement-from-library-string
 			      (library-unique-name library))))
     (if (equalp (requirement-name requirement)
 		(library-name library))
       	(if (or (requirement-universal-p requirement)
 		(requirement-matches library-requirement requirement))
-	    :match
+	    (values :match nil)
 					;else
-	    :match-name)
+	    (values :match-name (requirement-name requirement)))
 					;else
 	(progn
 	  ;; look for providers
 	  (loop for provide in (library-provides library)
 	     when (requirement-matches requirement provide)
-	     do (return-from library-matches :match-provide))
+	     do (return-from library-matches
+		  (values :match-provide provide)))
 
 	  ;; look for replaces
 	  (loop for replace in (library-replaces library)
 	     when (requirement-matches requirement replace)
-	     do (return-from library-matches :match-replace))))))
+	     do (return-from library-matches
+		  (values :match-replace replace)))))))
 
 (defun library= (lib1 lib2)
   (and (equalp (library-unique-name lib1)
