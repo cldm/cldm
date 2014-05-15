@@ -44,6 +44,7 @@
 	   #:library-replaces
 	   #:library-unique-name
 	   #:library-version
+	   #:valid-library-name-p
 	   #:print-library
 	   #:print-library-to-string
 	   #:read-library-from-string

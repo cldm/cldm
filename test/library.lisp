@@ -101,4 +101,14 @@
 	 (library-matches hunchentoot-1.0.0 (read-requirement-from-string "hunchentoot <= 2.0.0"))
 	 :match))))
 
+(deftest valid-library-name-test ()
+  (let ((valid (list "chunga" "chunga-1.2.3"
+		     "md5-3.4.5")))
+    (loop for string in valid
+       do (is (valid-library-name-p string))))
+  (let ((invalid (list "" 23 nil t "lala-" "-0.2.1" "chunga-1.2"
+		       "chunga-1.2.a")))
+    (loop for string in invalid
+	 do (is (not (valid-library-name-p string))))))
+
 #.(disable-version-syntax)

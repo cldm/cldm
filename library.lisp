@@ -119,6 +119,11 @@
 	  (when (library-version library)
 	    (print-version-to-string (library-version library)))))
 
+(defun valid-library-name-p (string)
+  (not (null
+	(ignore-errors
+	  (parse 'library-unique-name string)))))
+
 (defmethod describe-object ((library library) stream)
   (format stream "~A library ~%~%" (library-unique-name library))
   (format stream "Dependencies: ~{~a~^, ~}~%"
