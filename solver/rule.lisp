@@ -32,6 +32,20 @@
    
   (:documentation "A Rule where literals are library ids attached to a pool. It essentially allows for pretty-printing package names instead of internal ids as used by the SAT solver underneath."))
 
+(defmethod initialize-instance :after ((rule library-rule) &rest initargs)
+  (declare (ignore initargs))
+  (case (rule-reason rule)
+    (:job-install (when (not (valid-library-name-p (rule-reason-details rule)))
+		    (error "reason-details must be a valid library name for :job-install rule")))
+    (:package-requires
+     (handler-case
+	 (read-requirement-from-string (rule-reason-details rule))
+       (error ()
+	 (error "Invalid requirement string ~S" (rule-reason-details rule))))))
+
+  (setf (rule-literals rule)
+	(sort (rule-literals rule) #'<)))       
+
 (defrule rule-literal (and (or #\+ #\-) library-unique-name)
   (:function (lambda (match)
 	       (destructuring-bind (operation library) match
@@ -81,3 +95,51 @@
 		   :reason-details reason-details
 		   :job job
 		   :id id)))
+
+(defun rules-from-libraries (pool libraries reason
+			     &optional (reason-details "")
+			       job
+			       (id -1))
+  (let ((literals (mapcar #'library-id libraries)))
+    (make-instance 'library-rule
+		   :pool pool
+		   :literals literals
+		   :reason reason
+		   :reason-details reason-details
+		   :job job
+		   :id id)))
+
+(defun rule-hash (rule)
+  (md5:md5sum-string (format nil "~{~a~^, ~}" (rule-literals rule))))
+
+(defun assertion-p (rule)
+  (equalp (length (rule-literals rule)) 1))
+
+(defun required-library-name (rule)
+  (case (rule-reason rule)
+    (:job-install (rule-reason-details rule))
+    (:library-requires (read-requirement-from-string (rule-reason-details rule)))
+    (t "")))
+
+(defmethod rules-equivalent-p ((rule1 library-rule) (rule2 library-rule))
+  "Two rules are considered equivalent if they have the same literals."
+
+  ;; Order doesn't matter. Should we use set-equal here??
+  (equalp (rule-literals rule1)
+	  (rule-literals rule2)))
+
+(defun print-rule (rule stream)
+  (let ((pool (rule-pool rule)))
+    (format stream "(~{~a~^ | ~})"
+	    (mapcar (lambda (id)
+		      (let ((library
+			     (find-library-by-id pool id)))
+			(format nil "~A~A" (if (plusp id)
+					       "+"
+					       "-")
+				(print-library-to-string library))))
+		    (rule-literals rule)))))
+
+(defun print-rule-to-string (rule)
+  (with-output-to-string (s)
+    (print-rule rule s)))
