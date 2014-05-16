@@ -1,5 +1,5 @@
 (defpackage #:cldm
-  (:use #:cl #:alexandria #:cl-syntax #:esrap)
+  (:use #:cl #:alexandria #:cl-syntax #:esrap #:puri)
   (:export #:read-version-from-string
 	   #:print-version
 	   #:print-version-to-string
@@ -67,5 +67,6 @@
 	   #:find-library-by-id
 	   #:has-library
 	   #:what-provides
-	   
+
+	   #:deflibrary	   
 	   ))

@@ -1,0 +1,38 @@
+;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-
+
+(deflibrary hunchentoot
+  :author "Dr. Edmund Weitz"
+  :description "Hunchentoot is a HTTP server based on USOCKET and
+  BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a
+  simple framework for user-defined handlers and can be extended
+  through subclassing."
+  :cld (asdf:system-relative-pathname :cldm "test/system/basic/chunga.cld")
+  :versions
+  ((:version "1.2.26"
+	     :stability :beta
+	     :description "Latest version"
+	     :repositories
+	     ((:official (:url "http://weitz.de/files/hunchentoot.tar.gz"))
+	      (:quicklisp (:directory (merge-pathnames "dists/quicklisp/software/hunchentoot-1.2.26/"
+						       ql:*quicklisp-home*)))
+	      (:github (:git "https://github.com/edicl/hunchentoot.git"
+			     :commit "8885f17a15333d1c247a099ee3ced9e49a94103f")))
+	     :depends-on
+	     ((:chunga :version "1.1.5"
+		       :cld (asdf:system-relative-pathname :cldm "test/system/basic/chunga.cld"))
+	      :cl-base64
+	      :cl-fad
+	      :cl-ppcre
+	      :flexi-streams
+	      #-(or :lispworks :hunchentoot-no-ssl) :cl+ssl
+	      :md5
+	      :rfc2388
+	      :trivial-backtrace
+	      #-:lispworks :usocket
+	      #-:lispworks :bordeaux-threads))
+   (:version "1.2.0"
+	     :description "Stable release"
+	     :stability :stable
+	     :repositories
+	     ((:github (:git "https://github.com/edicl/hunchentoot.git"
+			     :commit "2a36b12532958d50ecf0948f8c20b6cff84c4300"))))))
