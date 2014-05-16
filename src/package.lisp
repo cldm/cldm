@@ -68,5 +68,8 @@
 	   #:has-library
 	   #:what-provides
 
-	   #:deflibrary	   
+	   #:deflibrary
+	   #:list-cld-libraries
+	   #:find-cld-library
+	   #:setup
 	   ))

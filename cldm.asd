@@ -13,6 +13,7 @@
 			 (:file "requirement")
 			 (:file "library")
 			 (:file "repository")
-			 (:file "pool"))
+			 (:file "pool")
+			 (:file "deflibrary"))
 			:serial t))
     :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax #:esrap))
