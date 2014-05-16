@@ -3,14 +3,16 @@
   :description "Common Lisp Dependency Manager"
   :author "Mariano Montone"
   :license "MIT"
-  :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax #:esrap)
-  :components ((:file "package")
-               (:file "cldm")
-	       (:file "util")
-	       (:file "version")
-	       (:file "interval")
-	       (:file "requirement")
-	       (:file "library")
-	       (:file "repository")
-	       (:file "pool"))
-  :serial t)
+  :components ((:module :src
+			:components
+			((:file "package")
+			 (:file "cldm")
+			 (:file "util")
+			 (:file "version")
+			 (:file "interval")
+			 (:file "requirement")
+			 (:file "library")
+			 (:file "repository")
+			 (:file "pool"))
+			:serial t))
+    :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax #:esrap))

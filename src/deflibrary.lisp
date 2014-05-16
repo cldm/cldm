@@ -1,5 +1,12 @@
 (in-package :cldm)
 
+(unless *load-truename*
+  (error "This file must be LOADed to set up CLDM."))
+
+(defvar *cldm-home*
+  (make-pathname :name nil :type nil
+                 :defaults *load-truename*))
+
 (defparameter *cld-libraries* (make-hash-table :test #'equalp))
 
 (defun find-cld-library (name)
