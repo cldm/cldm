@@ -1,16 +1,18 @@
 (in-package :cldm)
 
-(unless *load-truename*
-  (error "This file must be LOADed to set up CLDM."))
+;; (unless *load-truename*
+;;   (error "This file must be LOADed to set up CLDM."))
 
-(defvar *cldm-home*
-  (make-pathname :name nil :type nil
-                 :defaults *load-truename*))
+;; (defvar *cldm-home*
+;;   (make-pathname :name nil :type nil
+;;                  :defaults *load-truename*))
 
 (defparameter *cld-libraries* (make-hash-table :test #'equalp))
 
-(defun find-cld-library (name)
-  (gethash name *cld-libraries*))
+(defun find-cld-library (name &optional (error-p t))
+  (or (gethash name *cld-libraries*)
+      (when error-p
+	(error "Library ~A not found" name))))
 
 (defun list-cld-libraries ()
   (loop for library being the hash-values of *cld-libraries*
@@ -18,6 +20,13 @@
 
 (defun register-cld-library (library)
   (setf (gethash (library-name library) *cld-libraries*) library))
+
+(defun find-cld-library-version (library version &optional (error-p t))
+  (loop for version in (library-versions library)
+       when (equalp (version version) version)
+       do (return-from find-cld-library-version version))
+  (when error-p
+    (error "~A version ~A not found" library version)))
 
 (defclass cld-library ()
   ((name :initarg :name
@@ -199,7 +208,9 @@
 	   (if (listp dependency)
 	       (destructuring-bind (library-name &key version cld) dependency
 		 `(make-instance 'cld-library-version-dependency
-				 :library-name ,library-name
+				 :library-name ',(if (symbolp library-name)
+						     (string-downcase (symbol-name library-name))
+						     library-name)
 				 :version ,version
 				 :cld ,cld))
 	       ;else
@@ -261,3 +272,127 @@
      `(make-instance 'url-repository-address
 		     :url ,(second address)))
     (t (error "Invalid repository ~A" address))))
+
+(defun setup (library-name &optional version)
+  (let ((library (find-cld-library library-name)))
+    (format t "Loading ~A.~%" library)
+    (let ((library-version (if version
+			       (find-cld-library-version library version)
+			       (first (library-versions library)))))
+      ;; Load libraries metadata
+      (load-library-version library-version)
+
+      ;; Calculate list of library-versions to load
+      (let ((library-versions
+	     (calculate-library-versions library-version)))
+
+	;; Validate the library versions list
+	(validate-library-versions-list library-versions)
+
+	;; Check the version existance and download if not
+	;; After that, push to asdf:*central-registry*
+	(loop for version in library-versions
+	   do
+	     (let ((pathname (cache-library-version library-version)))
+	       (push pathname asdf:*central-registry*))))))
+  (format t "Done.~%"))
+
+(defun load-library-version (library-version)
+  (format t "Loading ~A.~%" library-version)
+  (loop for dependency in (dependencies library-version)
+     do (progn
+	  (format t "Handling ~A.~%" dependency)
+	  (if (find-cld-library (library-name dependencies) nil)
+	      (progn
+		(format t "Metadata for ~A is already loaded~%" (library-name dependency)))
+	      ;; else
+	      (let ((cld (cld dependency)))
+		(if (not cld)
+		    (format t "Not metadata to load.")
+					;else
+		    (progn
+		      (format t "Loading metadata from ~A~%" cld)
+		      (load-cld cld)
+		      (let ((library (find-cld-library (library-name dependency))))
+			(let ((library-version (find-cld-library-version library
+									 (library-version dependency))))
+			  (load-library-version library-version))))))))))
+
+
+(defun calculate-library-versions (library-version &optional visited)
+  (loop for dependency in (library-dependencies library-version)
+       appending
+       (if (find (library-name dependency) visited
+		 :key #'library-name
+		 :test #'equalp)
+	   (error "Cyclic dependency on ~A" dependency)
+					;else
+	   (let ((library (find-cld-library (library-name dependency))))
+	     (let ((library-version
+		    (find-cld-library-version
+		     library
+		     (library-version dependency))))
+	       (calculate-library-versions library-version (cons dependency visited)))))))
+
+(defun validate-library-versions-list (versions-list)
+  (loop for i from 0 to (1- (length versions-list))
+       for vi = (elt versions-list i)
+       do
+       (loop for j from 1 to (1- (length versions-list))
+	    for vj = (elt versions-list j)
+	    when (and (not (equalp i j))
+		      (and (equalp (library-name (library vi))
+				   (library-name (library vj)))
+			   (and (version vi)
+				(version vj)
+				(not (equalp (version vi)
+					     (version vj))))))
+	    do (error "Cannot load ~A and ~A" vi vj))))
+
+(defparameter *repositories-directory*
+  (asdf:system-relative-pathname :cldm "cache/repositories"))
+
+(defun cache-library-version (library-version)
+  (ensure-directories-exist *repositories-directory*)
+  (let ((repository-name (format nil "~A-~A"
+				 (library-name (library library-version))
+				 (version library-version))))
+  (let ((repository-directory (merge-pathnames
+			       (make-pathname (format nil "~A/" repository-name)
+					      *repositories-directory*))))
+    (if (probe-file repository-directory)
+	(format t "Repository for ~A already exists in ~A"
+		library-version
+		repository-directory)
+	;else
+	(progn
+	  (format t "Repository does not exist for ~A. Caching..." library-version)
+	  (let ((done nil))
+	    (loop for repository in (repositories library-version)
+		 while (not done)
+	       do (setf done (cache-repository repository repository-directory)))
+	    (if (not done)
+		(error "Couldn't cache repository from ~{~A~}" (repositories library-version))
+		;else
+		(return-from cache-library-version repository-directory))))))))
+
+(defmethod cache-repository (repository directory)
+  (multiple-value-bind (pathspec created-p)
+      (ensure-directories-exist directory)
+    (when (not created-p)
+      (error "Couldn't create directory ~A"))
+
+    (cache-repository-from-address (repository-address repository)
+				   repository directory)))
+
+(defmethod cache-repository-from-address (repository-address repository directory)
+  nil)
+
+(defmethod cache-repository-from-address ((repository-address directory-repository-address)
+					  repository directory)
+  (multiple-value-bind (result code)
+      (external-program:run "ln" "-s"
+			    (princ-to-string (repository-directory repository-address)) ;; target directory
+			    (princ-to-string directory))
+    (and (equalp result :exited)
+	 (zerop code))))
