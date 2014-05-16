@@ -97,3 +97,11 @@
 		     (append strict-matches provided-match)))
       (:direct-only strict-matches)
       (:include-indirect (append strict-matches provided-match)))))
+
+(defun library-id-to-string (pool library-id)
+  "Convert a library id to a nice string representation"
+
+  (let ((library (find-library-by-id (abs library-id))))
+    (if (> library-id 0)
+	(format nil "+~A" (library-unique-name library))
+	(format nil "-~A" (library-unique-name library)))))
