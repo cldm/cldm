@@ -1,0 +1,4 @@
+- Consider changing name from CLDM to Librarian ??
+- Try distributed repositories like Smalltalk Metacello. Decide between .cld or .lib extension for metadata description
+- Experiment with distributed repository files design (Metacello) in a separate branch
+
