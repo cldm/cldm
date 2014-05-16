@@ -1,17 +1,17 @@
 ;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-
 
-(deflibrary trivial-gray-streams
-    :description "Compatibility layer for Gray Streams (see http://www.cliki.net/Gray%20streams)."
-    :license "MIT"
-    :author "David Lichteblau"
-    :maintainer "Anton Vodonosov <avodonosov@yandex.ru>"
-    :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld")
-    :versions
-    ((:version "2.0.0"
-	       :stability :stable
-	       :description "Latest version"
-	       :repositories
-	       ((:quicklisp (merge-pathnames "dists/quicklisp/software/trivial-gray-streams-20140425-git"
-					     ql:*quicklisp-home*))
-		(:github (:git "https://github.com/trivial-gray-streams/trivial-gray-streams.git"
-			       :sha "9c35cbdaebaca03f024f57f6d92639f07ae71757"))))))
+(cldm:deflibrary trivial-gray-streams
+  :description "Compatibility layer for Gray Streams (see http://www.cliki.net/Gray%20streams)."
+  :license "MIT"
+  :author "David Lichteblau"
+  :maintainer "Anton Vodonosov <avodonosov@yandex.ru>"
+  :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld")
+  :versions
+  ((:version "2.0.0"
+	     :stability :stable
+	     :description "Latest version"
+	     :repositories
+	     ((:quicklisp (:directory (merge-pathnames "dists/quicklisp/software/trivial-gray-streams-20140425-git"
+						       ql:*quicklisp-home*)))
+	      (:github (:git "https://github.com/trivial-gray-streams/trivial-gray-streams.git"
+			     :commit "9c35cbdaebaca03f024f57f6d92639f07ae71757"))))))

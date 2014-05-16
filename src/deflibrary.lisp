@@ -26,31 +26,41 @@
 	 :documentation "The library name")
    (author :initarg :author
 	   :initform nil
-	   :accessor author
+	   :accessor library-author
 	   :documentation "The library author")
+   (maintainer :initarg :maintainer
+	       :initform nil
+	       :accessor library-maintainer
+	       :documentation "The library maintainer")
    (description :initarg :description
 		:initform nil
-		:accessor description
+		:accessor library-description
 		:documentation "The library description")
+   (license :initarg :license
+	    :initform nil
+	    :accessor library-license
+	    :documentation "The library license")
    (cld :initarg :cld
 	:initform (error "Provide the cld")
-	:accessor cld
+	:accessor library-cld
 	:documentation "The library meta description address. Can be a pathname or an url")
    (versions :initarg :versions
 	     :initform (error "Provide a library version at least")
-	     :accessor versions
+	     :accessor library-versions
 	     :documentation "The library versions"))
   (:documentation "A library meta description"))
 
 (defmethod print-object ((library cld-library) stream)
   (print-unreadable-object (library stream :type t :identity t)
-    (format stream "~A" (library-name library))))
+    (format stream "~A (~A)"
+	    (library-name library)
+	    (library-cld library))))
 
 (defmethod initialize-instance :after ((library cld-library) &rest initargs)
   (declare (ignore initargs))
 
   ;; Assign the library to the versions
-  (loop for version in (versions library)
+  (loop for version in (library-versions library)
        do (setf (library version) library))
 
   ;; Register the library
@@ -145,15 +155,17 @@
 	    (cld version-dependency))))	    
 
 (defmacro deflibrary (name &body options)
-  (destructuring-bind (&key author description
-			    cld versions)
+  (destructuring-bind (&key author maintainer description
+			    license cld versions)
       options
     `(make-instance 'cld-library
 		    :name ',(if (symbolp name)
 				(string-downcase (symbol-name name))
 				name)
 		    :author ,author
+		    :maintainer ,maintainer
 		    :description ,description
+		    :license ,license
 		    :cld ,cld
 		    :versions ,(parse-cld-library-versions versions))))
 

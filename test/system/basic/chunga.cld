@@ -1,27 +1,27 @@
 ;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-
 
-(deflibrary chunga
-    :author "Dr.Edmund Weitz"
-    :description "Portable chunked streams for Common Lisp"
-    :cld (asdf:system-relative-pathname :cldm "test/system/basic/chunga.cld")
-    :versions
-    ((:version "1.1.5"
-	       :stability :stable
-	       :repositories
-	       ((:quicklisp (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.5"
-					     ql:*quicklisp-home*))
-		(:github (:git "https://github.com/edicl/chunga.git"
-			       :SHA "461e2c38eefdb988f95d2a90dd3cedef09c39f4e")))
-	       :depends-on
-	       ((:trivial-gray-streams
-		 :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))
-     (:version "1.1.1"
-	       :stability :stable
-	       :repositories
-	       ((:quicklisp (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.1"
-					     ql:*quicklisp-home*))
-		(:github (:git "https://github.com/edicl/chunga.git"
-			       :SHA "367861a2e7dcdef2d518c2c63e6a5070d7b66012")))
-	       :depends-on
-	       ((:trivial-gray-streams
-		 :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))))
+(cldm:deflibrary chunga
+  :author "Dr.Edmund Weitz"
+  :description "Portable chunked streams for Common Lisp"
+  :cld (asdf:system-relative-pathname :cldm "test/system/basic/chunga.cld")
+  :versions
+  ((:version "1.1.5"
+	     :stability :stable
+	     :repositories
+	     ((:quicklisp (:directory (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.5"
+						       ql:*quicklisp-home*)))
+	      (:github (:git "https://github.com/edicl/chunga.git"
+			     :commit "461e2c38eefdb988f95d2a90dd3cedef09c39f4e")))
+	     :depends-on
+	     ((:trivial-gray-streams
+	       :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))
+   (:version "1.1.1"
+	     :stability :stable
+	     :repositories
+	     ((:quicklisp (:directory (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.1"
+						       ql:*quicklisp-home*)))
+	      (:github (:git "https://github.com/edicl/chunga.git"
+			     :commit "367861a2e7dcdef2d518c2c63e6a5070d7b66012")))
+	     :depends-on
+	     ((:trivial-gray-streams
+	       :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))))
