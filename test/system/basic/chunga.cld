@@ -14,6 +14,7 @@
 			     :commit "461e2c38eefdb988f95d2a90dd3cedef09c39f4e")))
 	     :depends-on
 	     ((:trivial-gray-streams
+	       :version "2.0.0"
 	       :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))
    (:version "1.1.1"
 	     :stability :stable
@@ -24,4 +25,5 @@
 			     :commit "367861a2e7dcdef2d518c2c63e6a5070d7b66012")))
 	     :depends-on
 	     ((:trivial-gray-streams
+	       :version "2.0.0"
 	       :cld (asdf:system-relative-pathname :cldm "test/system/basic/trivial-gray-streams.cld"))))))

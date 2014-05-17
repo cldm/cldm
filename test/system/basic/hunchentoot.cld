@@ -6,7 +6,7 @@
   BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a
   simple framework for user-defined handlers and can be extended
   through subclassing."
-  :cld (asdf:system-relative-pathname :cldm "test/system/basic/chunga.cld")
+  :cld (asdf:system-relative-pathname :cldm "test/system/basic/hunchentoot.cld")
   :versions
   ((:version "1.2.26"
 	     :stability :beta
