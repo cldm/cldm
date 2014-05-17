@@ -218,8 +218,10 @@
 				 :library-name ',(if (symbolp library-name)
 						     (string-downcase (symbol-name library-name))
 						     library-name)
-				 :version ,version
-				 :cld ,cld))
+				 ,@(when version
+					 (list :version version))
+				 ,@(when cld
+					 (list :cld cld))))
 	       ;else
 	       `(make-instance 'cld-library-version-dependency
 			       :library-name ,dependency)))))
