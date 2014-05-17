@@ -400,21 +400,74 @@
   (cache-repository-from-address (repository-address repository)
 				 repository directory))
 
-(defmethod cache-repository-from-address (repository-address repository directory)
+(defmethod cache-repository-from-address (repository-address repository target-directory)
   nil)
 
-(defmethod cache-repository-from-address ((repository-address directory-repository-address)
-					  repository directory)
-  (multiple-value-bind (result code)
-      (external-program:run
+(defun symlink (target linkname)
+  (external-program:run
        "ln"
        (list "-s"
-	     (princ-to-string (repository-directory repository-address)) ;; target directory
-	     (subseq (princ-to-string directory)
-		     0
-		     (1- (length (princ-to-string directory))))))
+	     (princ-to-string target) ;; target directory
+	     (princ-to-string linkname))))
+
+(defun copy-directory (from to)
+  (external-program:run
+   "cp"
+   (list "-r"
+	 (princ-to-string from)
+	 (princ-to-string to))))
+
+(defparameter *address-cache-operation* :symlink)
+
+(defmethod cache-repository-from-address ((repository-address directory-repository-address)
+					  repository target-directory)
+  (multiple-value-bind (result code)
+      (ecase *address-cache-operation*
+	(:symlink
+	 (let ((linkname (subseq (princ-to-string target-directory)
+				 0
+				 (1- (length (princ-to-string target-directory))))))
+	   (format t "Symlinking ~A to ~A~%"
+		   (repository-directory repository-address)
+		   linkname)
+	   (symlink (repository-directory repository-address)
+		    linkname)))
+	(:copy
+	 (format t "Copying directory ~A to ~A~%"
+		 (repository-directory repository-address)
+		 target-directory)
+	 (copy-directory (repository-directory repository-address)
+			 target-directory)))
     (and (equalp result :exited)
 	 (zerop code))))
+
+(defmethod cache-repository-from-address ((repository-address url-repository-address)
+					  repository target-directory)
+  (let ((temporal-file
+	 (merge-pathnames
+	  (file-namestring (url repository-address))
+	  #p"/tmp/")))
+    (format t "Downloading ~A...~%" (url repository-address))
+    (multiple-value-bind (result code)
+	(external-program:run "wget" (list "-O" temporal-file (url repository-address)))
+      (when (not (and (equalp result :exited)
+		      (zerop code)))
+	(return-from cache-repository-from-address nil)))
+    (format t "Extracting...~%")
+    (multiple-value-bind (result code)
+	(external-program:run "mkdir" (list (princ-to-string target-directory)))
+      (when (not (and (equalp result :exited)
+		      (zerop code)))
+	(return-from cache-repository-from-address nil)))
+    (multiple-value-bind (result code)
+	(external-program:run "tar"
+			      (list "zxf" temporal-file
+				    "--strip=1"
+				    "-C" (princ-to-string target-directory)))
+      (when (not (and (equalp result :exited)
+		      (zerop code)))
+	(return-from cache-repository-from-address nil)))
+    t))
 
 (defun load-cld (pathname)
   (load pathname))
