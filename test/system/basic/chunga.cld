@@ -8,10 +8,10 @@
   ((:version "1.1.5"
 	     :stability :stable
 	     :repositories
-	     ((:quicklisp (:directory (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.5"
-						       ql:*quicklisp-home*)))
-	      (:github (:git "https://github.com/edicl/chunga.git"
-			     :commit "461e2c38eefdb988f95d2a90dd3cedef09c39f4e")))
+	     ((:github (:git "https://github.com/edicl/chunga.git"
+			     :commit "461e2c38eefdb988f95d2a90dd3cedef09c39f4e"))
+	      (:quicklisp (:directory (merge-pathnames #p"dists/quicklisp/software/chunga-1.1.5"
+						       ql:*quicklisp-home*))))
 	     :depends-on
 	     ((:trivial-gray-streams
 	       :version "2.0.0"

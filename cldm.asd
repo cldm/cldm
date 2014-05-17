@@ -22,5 +22,5 @@
 		 #:cl-ppcre
 		 #:cl-syntax
 		 #:esrap
-		 #:external-program
+		 #:trivial-shell
 		 #:puri))

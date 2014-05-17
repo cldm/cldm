@@ -400,28 +400,23 @@
   (cache-repository-from-address (repository-address repository)
 				 repository directory))
 
-(defmethod cache-repository-from-address (repository-address repository target-directory)
-  nil)
-
 (defun symlink (target linkname)
-  (external-program:run
-       "ln"
-       (list "-s"
-	     (princ-to-string target) ;; target directory
-	     (princ-to-string linkname))))
+  (trivial-shell:shell-command
+   (format nil "ln -s ~A ~A"
+	   (princ-to-string target) ;; target directory
+	   (princ-to-string linkname))))
 
 (defun copy-directory (from to)
-  (external-program:run
-   "cp"
-   (list "-r"
-	 (princ-to-string from)
-	 (princ-to-string to))))
+  (trivial-shell:shell-command
+   (format nil "cp -r ~A ~A"
+	   (princ-to-string from)
+	   (princ-to-string to))))
 
 (defparameter *address-cache-operation* :symlink)
 
 (defmethod cache-repository-from-address ((repository-address directory-repository-address)
 					  repository target-directory)
-  (multiple-value-bind (result code)
+  (multiple-value-bind (result code status)
       (ecase *address-cache-operation*
 	(:symlink
 	 (let ((linkname (subseq (princ-to-string target-directory)
@@ -438,36 +433,46 @@
 		 target-directory)
 	 (copy-directory (repository-directory repository-address)
 			 target-directory)))
-    (and (equalp result :exited)
-	 (zerop code))))
+    (declare (ignore result))
+    (zerop status)))
 
 (defmethod cache-repository-from-address ((repository-address url-repository-address)
 					  repository target-directory)
-  (let ((temporal-file
-	 (merge-pathnames
-	  (file-namestring (url repository-address))
-	  #p"/tmp/")))
-    (format t "Downloading ~A...~%" (url repository-address))
-    (multiple-value-bind (result code)
-	(external-program:run "wget" (list "-O" temporal-file (url repository-address)))
-      (when (not (and (equalp result :exited)
-		      (zerop code)))
-	(return-from cache-repository-from-address nil)))
-    (format t "Extracting...~%")
-    (multiple-value-bind (result code)
-	(external-program:run "mkdir" (list (princ-to-string target-directory)))
-      (when (not (and (equalp result :exited)
-		      (zerop code)))
-	(return-from cache-repository-from-address nil)))
-    (multiple-value-bind (result code)
-	(external-program:run "tar"
-			      (list "zxf" temporal-file
-				    "--strip=1"
-				    "-C" (princ-to-string target-directory)))
-      (when (not (and (equalp result :exited)
-		      (zerop code)))
-	(return-from cache-repository-from-address nil)))
+  (flet ((run-or-fail (&rest args)
+	   (multiple-value-bind (result code status)
+	       (apply #'trivial-shell:shell-command args)
+	     (when (not (zerop status))
+	       (return-from cache-repository-from-address nil)))))
+    (let ((temporal-file
+	   (merge-pathnames
+	    (file-namestring (url repository-address))
+	    #p"/tmp/")))
+      (format t "Downloading ~A...~%" (url repository-address))
+      (run-or-fail (format nil "wget -O ~A ~A" temporal-file (url repository-address)))
+      (format t "Extracting...~%")
+      (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
+      (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
+			   temporal-file
+			   (princ-to-string target-directory))))
     t))
+
+(defmethod cache-repository-from-address ((repository-address git-repository-address)
+					  repository target-directory)
+  (flet ((run-or-fail (command)
+	   (multiple-value-bind (result code status)
+	       (trivial-shell:shell-command command)
+	     (declare (ignore result))
+	     (when (not (zerop status))
+	       (return-from cache-repository-from-address nil)))))
+    (format t "Cloning repository: ~A...~%" (url repository-address))
+    (run-or-fail (format nil "git clone ~A ~A"
+			 (url repository-address)
+			 (princ-to-string target-directory)))
+    (when (commit repository-address)
+      (format t "Checking out commit ~A~%" (commit repository-address))
+      (run-or-fail (format nil "cd ~A; git checkout ~A"
+			   (princ-to-string target-directory)
+			   (commit repository-address))))))
 
 (defun load-cld (pathname)
   (load pathname))
