@@ -72,4 +72,5 @@
 	   #:list-cld-libraries
 	   #:find-cld-library
 	   #:setup
+	   #:with-repositories-directory
 	   ))

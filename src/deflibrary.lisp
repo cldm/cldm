@@ -9,6 +9,19 @@
 
 (defparameter *cld-libraries* (make-hash-table :test #'equalp))
 
+(defparameter *repositories-directory*
+  (asdf:system-relative-pathname :cldm "cache/repositories/"))
+
+(defun call-with-repositories-directory (pathname function)
+  (let ((*repositories-directory* pathname))
+    (funcall function)))
+
+(defmacro with-repositories-directory (pathname &body body)
+  `(call-with-repositories-directory
+    ,pathname
+    (lambda ()
+      ,@body)))
+
 (defun find-cld-library (name &optional (error-p t))
   (or (gethash name *cld-libraries*)
       (when error-p
@@ -364,9 +377,6 @@
 				(not (equalp (version vi)
 					     (version vj))))))
 	    do (error "Cannot load ~A and ~A" vi vj))))
-
-(defparameter *repositories-directory*
-  (asdf:system-relative-pathname :cldm "cache/repositories/"))
 
 (defun cache-library-version (library-version)
   (ensure-directories-exist *repositories-directory*)
