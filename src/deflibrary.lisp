@@ -310,6 +310,7 @@
     (t (error "Invalid repository ~A" address))))
 
 (defun setup (library-name &optional version)
+  "Setup an already loaded (cld) library and its dependencies"
   (let ((library (find-cld-library library-name)))
     (format t "Loading ~A.~%" library)
     (let ((library-version (if version
@@ -337,6 +338,35 @@
 	     (let ((pathname (cache-library-version version)))
 	       (push pathname asdf:*central-registry*))))))
   (format t "Done.~%"))
+
+(defun load-library (library-name &key version cld)
+  "Tries to find a cld for the library and load it.
+   Then setup the library and its dependencies"
+  
+  (if cld
+      (progn
+	(load-cld cld)
+	(setup library-name version))
+      ;; else
+      (if (find-cld-library library-name nil)
+	  (setup library-name version)
+	  ;; else
+	  (progn
+	    (loop 
+	       for cld-repository in *cld-repositories*
+	       while (not cld)
+	       do (progn
+		    (setf cld (find-cld cld-repository
+					library-name))
+		    (when cld
+		      (format t "~A cld found in ~A~%"
+			      library-name
+			      cld-repository))))
+	    (if cld
+		(progn
+		  (load-cld cld)
+		  (setup library-name version))
+		(format t "Couldn't find a cld for ~A~%" library-name))))))
 
 (defun load-library-version (library-version &key reload)
   (format t "Loading ~A.~%" library-version)
