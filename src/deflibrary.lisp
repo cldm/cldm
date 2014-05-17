@@ -12,6 +12,8 @@
 (defparameter *repositories-directory*
   (asdf:system-relative-pathname :cldm "cache/repositories/"))
 
+(defparameter *cld-repositories* nil)
+
 (defun call-with-repositories-directory (pathname function)
   (let ((*repositories-directory* pathname))
     (funcall function)))
@@ -19,6 +21,16 @@
 (defmacro with-repositories-directory (pathname &body body)
   `(call-with-repositories-directory
     ,pathname
+    (lambda ()
+      ,@body)))
+
+(defun call-with-cld-repositories (repositories function)
+  (let ((*cld-repositories* repositories))
+    (funcall function)))
+
+(defmacro with-cld-repositories (repositories &body body)
+  `(call-with-cld-repositories
+    ',repositories
     (lambda ()
       ,@body)))
 
@@ -312,6 +324,10 @@
 	;; Validate the library versions list
 	(validate-library-versions-list library-versions)
 
+	;; Remove duplicates in depdency list
+	(setf library-versions
+	      (clean-library-versions-list library-versions))
+
 	;; Check the version existance and download if not
 	;; After that, push to asdf:*central-registry*
 	(loop for version in (cons library-version library-versions)
@@ -322,18 +338,34 @@
 
 (defun load-library-version (library-version &key reload)
   (format t "Loading ~A.~%" library-version)
-  (flet ((load-dependency (dependency)
-	   (let ((cld (cld dependency)))
-	     (if (not cld)
-		 (format t "Not metadata to load.~%")
+  (labels ((load-dependency-cld (dependency cld)
+	     (format t "Loading cld: ~A~%" cld)
+	     (load-cld cld)
+	     (let ((library (find-cld-library (library-name dependency))))
+	       (let ((library-version
+		      (find-cld-library-version
+		       library
+		       (library-version dependency))))
+		 (load-library-version library-version :reload reload))))
+	   (load-dependency (dependency)
+	     (let ((cld (cld dependency)))
+	       (if (not cld)
+		   (progn
+		     (format t "No cld specified.~%")
+		     (loop 
+			for cld-repository in *cld-repositories*
+			while (not cld)
+			do (progn
+			     (setf cld (find-cld cld-repository
+						 (library-name dependency)))
+			     (when cld
+			       (format t "~A cld found in ~A~%"
+				       (library-name dependency)
+				       cld-repository))))
+		     (when cld
+		       (load-dependency-cld dependency cld)))
 					;else
-		 (progn
-		   (format t "Loading metadata from ~A~%" cld)
-		   (load-cld cld)
-		   (let ((library (find-cld-library (library-name dependency))))
-		     (let ((library-version (find-cld-library-version library
-								      (library-version dependency))))
-		       (load-library-version library-version))))))))
+		   (load-dependency-cld dependency cld)))))
     (loop for dependency in (dependencies library-version)
        do (progn
 	    (format t "Handling ~A.~%" dependency)
@@ -377,6 +409,11 @@
 				(not (equalp (version vi)
 					     (version vj))))))
 	    do (error "Cannot load ~A and ~A" vi vj))))
+
+(defun clean-library-versions-list (versions-list)
+  ;; TODO
+  versions-list
+  )
 
 (defun cache-library-version (library-version)
   (ensure-directories-exist *repositories-directory*)
@@ -485,6 +522,61 @@
       (run-or-fail (format nil "cd ~A; git checkout ~A"
 			   (princ-to-string target-directory)
 			   (commit repository-address))))))
+
+(defclass cld-repository ()
+  ((name :initarg :name
+	 :accessor name
+	 :initform nil
+	 :documentation "The cld repository name"))
+  (:documentation "A .cld files repository"))
+
+(defclass directory-cld-repository (cld-repository)
+  ((directory :initarg :directory
+	     :initform (error "Provide the cld repository directory")
+	     :accessor repository-directory
+	     :documentation "The cld repository directory"))
+  (:documentation "A local (directory) cld repository"))
+
+(defclass http-cld-repository (cld-repository)
+  ((url :initarg :url
+	:initform (error "Provide the cld repository url address")
+	:accessor repository-url
+	:documentation "The cld repository url address"))
+  (:documentation "A cld repository on http"))
+
+(defclass cached-http-cld-repository (http-cld-repository)
+  ((cache-directory :initarg :cache-directory
+		    :initform (error "Provide the cache directory")
+		    :accessor cache-directory
+		    :documentation "The cache directory"))
+  (:documentation "A cld repository in which a cache is maintained in a local directory"))
+
+(defmethod find-cld ((cld-repository directory-cld-repository) library-name)
+  (let ((cld-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
+				   (repository-directory cld-repository))))
+    (format t "Checking if ~A exists~%" cld-file)
+    (probe-file cld-file)))
+
+(defmethod find-cld ((cld-repository http-cld-repository) library-name)
+  (let ((cld-url-address (format nil "~A/~A.cld"
+				 (repository-url cld-repository)
+				 library-name))
+	(temporal-directory #p"/tmp/"))
+    (format t "Trying to fetch ~A~%" cld-url-address)
+    (let ((command (format nil "wget ~A -C ~A"
+			   cld-url-address
+			   temporal-directory)))
+      (format t "~A~%" command)
+      (multiple-value-bind (result error status)
+	  (trivial-shell:shell-command command)
+	(declare (ignore result error))
+	(if (equalp status 0)
+	    (progn
+	      (format t "~A downloaded.~%" cld-url-address)
+	      (merge-pathnames (pathname (format nil "~A.cld" library-name))
+			       temporal-directory))
+	    ; else
+	    (format t "Failed.~%"))))))
 
 (defun load-cld (pathname)
   (load pathname))
