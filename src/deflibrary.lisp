@@ -30,7 +30,7 @@
 
 (defmacro with-cld-repositories (repositories &body body)
   `(call-with-cld-repositories
-    ',repositories
+    (list ,@repositories)
     (lambda ()
       ,@body)))
 
@@ -249,7 +249,9 @@
 					 (list :cld cld))))
 	       ;else
 	       `(make-instance 'cld-library-version-dependency
-			       :library-name ,dependency)))))
+			       :library-name ,(if (symbolp dependency)
+						  (string-downcase (symbol-name dependency))
+						  dependency))))))
 
 (defclass repository-address ()
   ()
@@ -343,9 +345,14 @@
 	     (load-cld cld)
 	     (let ((library (find-cld-library (library-name dependency))))
 	       (let ((library-version
-		      (find-cld-library-version
-		       library
-		       (library-version dependency))))
+		      (if (not (library-version dependency))
+			  ;; No library version specified in the dependency
+			  ;; Use the latest version
+			  (first (library-versions library))
+			  ;; else, use the library version specified
+			  (find-cld-library-version
+			   library
+			   (library-version dependency)))))
 		 (load-library-version library-version :reload reload))))
 	   (load-dependency (dependency)
 	     (let ((cld (cld dependency)))
@@ -386,14 +393,20 @@
 		 :test #'equalp)
 	   (error "Cyclic dependency on ~A" dependency)
 					;else
-	   (when (library-version dependency)
-	     (let ((library (find-cld-library (library-name dependency))))
-	       (let ((library-version
-		      (find-cld-library-version
-		       library
-		       (library-version dependency))))
-		 (cons library-version
-		       (calculate-library-versions library-version (cons dependency visited)))))))))
+	   (let ((library (find-cld-library (library-name dependency) nil)))
+	     (if library
+		 (let ((library-version
+			(if (library-version dependency)
+			    (find-cld-library-version
+			     library
+			     (library-version dependency))
+			    ; else, use the latest version
+			    (first (library-versions library)))))
+		       (cons library-version
+			     (calculate-library-versions library-version (cons dependency visited))))
+					;else
+		 (format t "WARNING: no ASDF system is being loaded by CLDM for ~A~%"
+			 dependency))))))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))
