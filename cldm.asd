@@ -16,4 +16,10 @@
 			 (:file "pool")
 			 (:file "deflibrary"))
 			:serial t))
-    :depends-on (#:alexandria #:ironclad #:md5 #:cl-ppcre #:cl-syntax #:esrap))
+    :depends-on (#:alexandria
+		 #:ironclad
+		 #:md5
+		 #:cl-ppcre
+		 #:cl-syntax
+		 #:esrap
+		 #:external-program))

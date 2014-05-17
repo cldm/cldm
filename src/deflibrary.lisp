@@ -123,7 +123,7 @@
 	 :documentation "The repository name")
    (address :initarg :address
 	    :initform (error "Provide the repository address")
-	    :accessor address
+	    :accessor repository-address
 	    :documentation "The repository address. Can be a pathname, an url or a git reference"))
   (:documentation "A library version repository"))
 
@@ -133,7 +133,7 @@
 			   stream)
     (format stream " ~A ~A"
 	    (name version-repository)
-	    (address version-repository))))	    
+	    (repository-address version-repository))))
 
 (defclass cld-library-version-dependency ()
   ((library-name :initarg :library-name
@@ -302,7 +302,7 @@
   (loop for dependency in (dependencies library-version)
      do (progn
 	  (format t "Handling ~A.~%" dependency)
-	  (if (find-cld-library (library-name dependencies) nil)
+	  (if (find-cld-library (library-name dependency) nil)
 	      (progn
 		(format t "Metadata for ~A is already loaded~%" (library-name dependency)))
 	      ;; else
@@ -357,30 +357,30 @@
   (let ((repository-name (format nil "~A-~A"
 				 (library-name (library library-version))
 				 (version library-version))))
-  (let ((repository-directory (merge-pathnames
-			       (make-pathname (format nil "~A/" repository-name)
-					      *repositories-directory*))))
-    (if (probe-file repository-directory)
-	(format t "Repository for ~A already exists in ~A"
-		library-version
-		repository-directory)
-	;else
-	(progn
-	  (format t "Repository does not exist for ~A. Caching..." library-version)
-	  (let ((done nil))
-	    (loop for repository in (repositories library-version)
+    (let ((repository-directory (merge-pathnames
+				 (pathname (format nil "~A/" repository-name))
+				 *repositories-directory*)))
+      (if (probe-file repository-directory)
+	  (format t "Repository for ~A already exists in ~A"
+		  library-version
+		  repository-directory)
+					;else
+	  (progn
+	    (format t "Repository does not exist for ~A. Caching..." library-version)
+	    (let ((done nil))
+	      (loop for repository in (repositories library-version)
 		 while (not done)
-	       do (setf done (cache-repository repository repository-directory)))
-	    (if (not done)
-		(error "Couldn't cache repository from ~{~A~}" (repositories library-version))
-		;else
-		(return-from cache-library-version repository-directory))))))))
+		 do (setf done (cache-repository repository repository-directory)))
+	      (if (not done)
+		  (error "Couldn't cache repository from ~{~A~}" (repositories library-version))
+					;else
+		  (return-from cache-library-version repository-directory))))))))
 
 (defmethod cache-repository (repository directory)
   (multiple-value-bind (pathspec created-p)
       (ensure-directories-exist directory)
     (when (not created-p)
-      (error "Couldn't create directory ~A"))
+      (error "Couldn't create directory ~A" directory))
 
     (cache-repository-from-address (repository-address repository)
 				   repository directory)))
@@ -391,8 +391,12 @@
 (defmethod cache-repository-from-address ((repository-address directory-repository-address)
 					  repository directory)
   (multiple-value-bind (result code)
-      (external-program:run "ln" "-s"
-			    (princ-to-string (repository-directory repository-address)) ;; target directory
-			    (princ-to-string directory))
+      (external-program:run "ln"
+			    (list "-s"
+				  (princ-to-string (repository-directory repository-address)) ;; target directory
+				  (princ-to-string directory)))
     (and (equalp result :exited)
 	 (zerop code))))
+
+(defun load-cld (pathname)
+  (load pathname))
