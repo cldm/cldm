@@ -571,14 +571,16 @@
     (probe-file cld-file)))
 
 (defmethod find-cld ((cld-repository http-cld-repository) library-name)
-  (let ((cld-url-address (format nil "~A/~A.cld"
+  (let* ((cld-url-address (format nil "~A/~A.cld"
 				 (repository-url cld-repository)
 				 library-name))
-	(temporal-directory #p"/tmp/"))
+	 (temporal-directory #p"/tmp/")
+	 (temporal-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
+					 temporal-directory)))
     (format t "Trying to fetch ~A~%" cld-url-address)
-    (let ((command (format nil "wget ~A -C ~A"
-			   cld-url-address
-			   temporal-directory)))
+    (let ((command (format nil "wget -O ~A ~A"
+			   temporal-file
+			   cld-url-address)))
       (format t "~A~%" command)
       (multiple-value-bind (result error status)
 	  (trivial-shell:shell-command command)
@@ -586,8 +588,7 @@
 	(if (equalp status 0)
 	    (progn
 	      (format t "~A downloaded.~%" cld-url-address)
-	      (merge-pathnames (pathname (format nil "~A.cld" library-name))
-			       temporal-directory))
+	      temporal-file)
 	    ; else
 	    (format t "Failed.~%"))))))
 
