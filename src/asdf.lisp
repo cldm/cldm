@@ -11,9 +11,9 @@
   (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream))
 
 (defmethod deflibrary-from-asdf-system ((asdf-system asdf:system) cld stream)
-  (format stream "~S" (make-cld-library-form asdf-system cld)))
+  (format stream "~S" (make-cld-library-form asdf-system :cld cld)))
 
-(defun make-cld-library-form (asdf-system cld)
+(defun make-cld-library-form (asdf-system &key cld repositories)
   (let ((system-name (slot-value asdf-system 'asdf::name)))
     `(cldm:deflibrary ,(intern (string-upcase system-name))
        :cld ,cld
@@ -32,6 +32,11 @@
        :versions
        ((:version ,(or (asdf:component-version asdf-system)
 		       "latest")
+		  :repositories ,(if repositories
+				     repositories
+				     (list (list :default
+						 (list :directory
+						       (asdf:system-source-directory asdf-system)))))
 		  :depends-on
 		  ,(loop for dependency in (asdf:component-sideway-dependencies asdf-system)
 		      collect (cond
