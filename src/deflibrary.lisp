@@ -81,7 +81,11 @@
    (versions :initarg :versions
 	     :initform (error "Provide a library version at least")
 	     :accessor library-versions
-	     :documentation "The library versions"))
+	     :documentation "The library versions")
+   (tags :initarg :tags
+	 :initform nil
+	 :accessor library-tags
+	 :documentation "Library tags"))
   (:documentation "A library meta description"))
 
 (defmethod print-object ((library cld-library) stream)
@@ -202,7 +206,7 @@
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
-			    license cld versions)
+			    license cld versions tags)
       options
     `(make-instance 'cld-library
 		    :name ',(if (symbolp name)
@@ -213,7 +217,8 @@
 		    :description ,description
 		    :license ,license
 		    :cld ,cld
-		    :versions ,(parse-cld-library-versions versions))))
+		    :versions ,(parse-cld-library-versions versions)
+		    :tags ',tags)))
 
 (defun parse-cld-library-versions (versions)
   `(list
