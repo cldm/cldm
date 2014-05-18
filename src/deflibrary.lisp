@@ -623,4 +623,5 @@
 	    (format t "Failed.~%"))))))
 
 (defun load-cld (pathname)
-  (load pathname))
+  (let ((*package* (find-package :cldm)))
+    (load pathname)))
