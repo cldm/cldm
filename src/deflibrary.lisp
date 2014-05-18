@@ -130,6 +130,11 @@
 (defmethod initialize-instance :after ((library-version cld-library-version) &rest initargs)
   (declare (ignore initargs))
 
+  ;; Validate the version has a repository at least
+  (assert (plusp (length (repositories library-version)))
+	  nil
+	  "~A version needs to define a repository at least" (version library-version))
+  
   ;; Assign the version to the repositories
   (loop for repository in (repositories library-version)
        do (setf (library-version repository) library-version)))
@@ -221,8 +226,12 @@
 			     :version ,version
 			     :stability ,stability
 			     :description ,description
-			     :repositories ,(parse-version-repositories repositories)
-			     :dependencies ,(parse-version-dependencies depends-on))))))
+			     ,@(let ((repositories (parse-version-repositories repositories)))
+				    (when repositories
+				      (list :repositories repositories)))
+			     ,@(let ((dependencies (parse-version-dependencies depends-on)))
+				    (when dependencies
+				      (list :dependencies dependencies))))))))
 
 (defun parse-version-repositories (repositories)
   `(list
