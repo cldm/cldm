@@ -14,7 +14,8 @@
 			 (:file "library")
 			 (:file "repository")
 			 (:file "pool")
-			 (:file "deflibrary"))
+			 (:file "deflibrary")
+			 (:file "asdf"))		
 			:serial t))
     :depends-on (#:alexandria
 		 #:ironclad
