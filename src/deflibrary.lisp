@@ -520,6 +520,10 @@
 
 (defparameter *address-cache-operation* :symlink)
 
+(defgeneric cache-repository-from-address (repository-address repository target-directory)
+  (:documentation "Cache the given repository from repository-address to target-directory.
+                   Methods of this generic function should return T on success, or NIL on failure."))  
+
 (defmethod cache-repository-from-address ((repository-address directory-repository-address)
 					  repository target-directory)
   (multiple-value-bind (result code status)
@@ -567,7 +571,7 @@
   (flet ((run-or-fail (command)
 	   (multiple-value-bind (result code status)
 	       (trivial-shell:shell-command command)
-	     (declare (ignore result))
+	     (declare (ignore result code))
 	     (when (not (zerop status))
 	       (return-from cache-repository-from-address nil)))))
     (format t "Cloning repository: ~A...~%" (url repository-address))
@@ -576,9 +580,12 @@
 			 (princ-to-string target-directory)))
     (when (commit repository-address)
       (format t "Checking out commit ~A~%" (commit repository-address))
-      (run-or-fail (format nil "cd ~A; git checkout ~A"
+      (let ((command  (format nil "cd ~A; git checkout ~A"
 			   (princ-to-string target-directory)
-			   (commit repository-address))))))
+			   (commit repository-address))))
+	(format t "~A~%" command)
+	(run-or-fail command)))
+    t))
 
 (defclass cld-repository ()
   ((name :initarg :name
