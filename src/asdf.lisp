@@ -1,5 +1,12 @@
 (in-package :cldm)
 
+(defun deflibrary-file-from-asdf-system (asdf-system cld pathname &key (if-exists :supersede))
+  (with-open-file (f pathname
+		     :direction :output
+		     :if-exists if-exists
+		     :if-does-not-exist :create)
+    (deflibrary-from-asdf-system asdf-system cld f)))
+
 (defmethod deflibrary-from-asdf-system ((asdf-system string) cld stream)
   (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream))
 
