@@ -589,12 +589,24 @@
 	     :documentation "The cld repository directory"))
   (:documentation "A local (directory) cld repository"))
 
+(defmethod print-object ((cld-repository directory-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A"
+	    (name cld-repository)
+	    (repository-directory cld-repository))))
+
 (defclass http-cld-repository (cld-repository)
   ((url :initarg :url
 	:initform (error "Provide the cld repository url address")
 	:accessor repository-url
 	:documentation "The cld repository url address"))
   (:documentation "A cld repository on http"))
+
+(defmethod print-object ((cld-repository http-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A"
+	    (name cld-repository)
+	    (repository-url cld-repository))))
 
 (defclass cached-http-cld-repository (http-cld-repository)
   ((cache-directory :initarg :cache-directory
