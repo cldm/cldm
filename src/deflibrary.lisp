@@ -12,7 +12,14 @@
 (defparameter *repositories-directory*
   (asdf:system-relative-pathname :cldm "cache/repositories/"))
 
-(defparameter *cld-repositories* nil)
+(defparameter *address-cache-operation* :symlink "What to do when caching a local file system directory. Can be either :symlink or :copy (copy the directory recursively). Default is :symlink")
+
+(defparameter *github-cld-repository*
+  `(make-instance 'http-cld-repository
+		  :name "Github repository"
+		  :url "http://mmontone.github.io/cldm-repo/cld"))
+
+(defparameter *cld-repositories* (list *github-cld-repository*))
 
 (defun call-with-repositories-directory (pathname function)
   (let ((*repositories-directory* pathname))
@@ -369,7 +376,7 @@
 	    (loop 
 	       for cld-repository in *cld-repositories*
 	       while (not cld)
-	       do (progn
+	       do (let ((cld-repository (eval cld-repository)))
 		    (setf cld (find-cld cld-repository
 					library-name))
 		    (when cld
@@ -406,7 +413,7 @@
 		     (loop 
 			for cld-repository in *cld-repositories*
 			while (not cld)
-			do (progn
+			do (let ((cld-repository (eval cld-repository)))
 			     (setf cld (find-cld cld-repository
 						 (library-name dependency)))
 			     (when cld
@@ -517,8 +524,6 @@
    (format nil "cp -r ~A ~A"
 	   (princ-to-string from)
 	   (princ-to-string to))))
-
-(defparameter *address-cache-operation* :symlink)
 
 (defgeneric cache-repository-from-address (repository-address repository target-directory)
   (:documentation "Cache the given repository from repository-address to target-directory.
