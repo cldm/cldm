@@ -341,14 +341,15 @@
       ;; Calculate list of library-versions to load
       (let ((library-versions
              (calculate-library-versions library-version)))
-        (verbose-msg "Libraries to load: ~A~%" library-versions)
-
+        
         ;; Validate the library versions list
         (validate-library-versions-list library-versions)
 
         ;; Remove duplicates in depdency list
         (setf library-versions
               (clean-library-versions-list library-versions))
+
+	(verbose-msg "Libraries to load: ~A~%" library-versions)
 
         ;; Check the version existance and download if not
         ;; After that, push to asdf:*central-registry*
@@ -474,9 +475,9 @@
           do (error "Cannot load ~A and ~A" vi vj))))
 
 (defun clean-library-versions-list (versions-list)
-  ;; TODO
-  versions-list
-  )
+  (remove-duplicates versions-list :test (lambda (v1 v2)
+					   (equalp (library-name (library v1))
+						   (library-name (library v2))))))
 
 (defun cache-library-version (library-version)
   (ensure-directories-exist *repositories-directory*)
