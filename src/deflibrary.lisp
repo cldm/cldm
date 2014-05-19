@@ -387,7 +387,7 @@
 		(progn
 		  (load-cld cld)
 		  (setup library-name version))
-		(format t "Couldn't find a cld for ~A~%" library-name))))))
+		(error "Couldn't find a cld for ~S library~%" library-name))))))
 
 (defun load-library-version (library-version &key reload)
   (format t "Loading ~A.~%" library-version)
