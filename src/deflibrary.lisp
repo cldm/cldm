@@ -367,7 +367,8 @@
     (if cld
 	(progn
 	  (load-cld cld)
-	  (setup library-name version))
+	  (setup library-name version)
+	  (asdf:operate 'asdf:load-op library-name))
 	;; else
 	(if (find-cld-library library-name nil)
 	    (setup library-name version)
@@ -386,7 +387,8 @@
 	      (if cld
 		  (progn
 		    (load-cld cld)
-		    (setup library-name version))
+		    (setup library-name version)
+		    (asdf:operate 'asdf:load-op library-name))
 		  (error "Couldn't find a cld for ~S library~%" library-name)))))))
 
 (defun load-library-version (library-version &key reload)
