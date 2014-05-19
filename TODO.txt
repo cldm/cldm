@@ -1,0 +1,9 @@
+* Add a default *main-repository* -> http://mmontone.github.io/cldm/cld
+* Add baselines
+* Add versions extension (:version "1.2.3" :extends "1.2.0")
+* Add :default-dependencies-cld option
+* Change :stability for :blessing ?
+* :after and :before install code execution
+* symbolic versions?
+* Add timestamp attribute to versions (date and time when a version was completed)
+* deflibrary unit tests
