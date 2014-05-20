@@ -476,9 +476,47 @@
                                            (version vj))))))
           do (error "Cannot load ~A and ~A" vi vj))))
 
+(defun group-by (list &key
+			(key #'identity)
+			(test #'equal))
+  (let ((groups nil))
+    (loop for item in list
+	 do
+	 (let ((item-key (funcall key item)))
+	   (block find-group
+	     ;; Look for a group for the item
+	     (loop for group in groups
+		   for i from 0
+		when (funcall test item-key (funcall key (first group)))
+		do (progn
+		     (setf (nth i groups) (push item group))
+		     (return-from find-group)))
+	     ;; Group not found for item, create one
+	     (push (list item) groups))))
+    (nreverse groups)))
+
+(defun pick-library-version (library-versions)
+  "Picks a version from a library list of versions"
+  (let ((library-version (first library-versions)))
+    (loop for lib-version in (rest library-versions)
+	 do (setf library-version (best-library-version library-version lib-version)))
+    library-version))
+
+(defun best-library-version (v1 v2)
+  (cond
+    ((not (version v2))
+     v1)
+    ((not (version v1))
+     v2)
+    (t
+     (assert (equalp (version v1) (version v2)) nil "This should not have happened")
+     v1)))  
+
 (defun clean-library-versions-list (versions-list)
-  ;; TODO
-  versions-list)
+  (mapcar #'pick-library-version
+	  (group-by versions-list
+		    :key (compose #'library-name #'library)
+		    :test #'equalp)))		    
 
 (defun cache-library-version (library-version)
   (ensure-directories-exist *repositories-directory*)
