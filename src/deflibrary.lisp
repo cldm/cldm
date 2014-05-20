@@ -15,7 +15,7 @@
 
 (defparameter *cld-repositories* (list *github-cld-repository*))
 
-(defparameter *on-not-found-cld* :warn)
+(defparameter *solving-mode* :lenient "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
 
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
@@ -361,11 +361,16 @@
                (push pathname asdf:*central-registry*))))))
   (verbose-msg "Done.~%"))
 
-(defun load-library (library-name &key version cld
-				    (verbose *verbose-mode*))
+(defun load-library (library-name
+		     &key
+		       version
+		       cld
+		       (verbose *verbose-mode*)
+		       (solving-mode *solving-mode*))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
-  (let ((*verbose-mode* verbose))
+  (let ((*verbose-mode* verbose)
+	(*solving-mode* solving-mode))
     (if cld
 	(progn
 	  (load-cld cld)
@@ -407,9 +412,12 @@
                       (if (not (library-version dependency))
                           ;; No library version specified in the dependency
                           ;; Use the latest version
-			  (progn
-			    (warn "Library version not specified for ~A. Calculating dependencies with the latest version!!" dependency)
-			    (first (library-versions library)))
+			  (ecase *solving-mode*
+			    (:lenient
+			     (warn "Library version not specified for ~A. Calculating dependencies with the latest version!!" dependency)
+			     (first (library-versions library)))
+			    (:strict
+			     (error "Library version not specified for ~A." dependency)))
                           ;; else, use the library version specified
                           (find-cld-library-version
                            library
@@ -437,9 +445,9 @@
 			 ;; we can signal an error, or ignore this (signal a warning), as
 			 ;; the library version may be loadable from the user system repository
 			 ;; anyway (.i.e. Quicklisp)
-			 (ecase *on-not-found-cld*
-			   (:warn (warn "Couldn't find a cld for ~A" dependency))
-			   (:error (error "Couldn't find a cld for ~A" dependency)))))
+			 (ecase *solving-mode*
+			   (:lenient (warn "Couldn't find a cld for ~A" dependency))
+			   (:strict (error "Couldn't find a cld for ~A" dependency)))))
                                         ;else
                    (load-dependency-cld dependency cld)))))
     (loop for dependency in (dependencies library-version)
@@ -482,8 +490,10 @@
 			 (calculate-library-versions dependency-library-version
 						     (cons dependency visited))))
                                         ;else
-                 (warn "No ASDF system is being loaded by CLDM for ~A~%"
-		       dependency))))))
+                 (ecase *solving-mode*
+		   (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
+				   dependency))
+		   (:strict (error "Coudn't load ~A" dependency))))))))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))
