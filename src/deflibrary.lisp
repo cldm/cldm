@@ -154,7 +154,9 @@
 (defun print-library-version (library-version stream)
   (format stream "~A-~A~@[ (~A)~]"
           (library-name (library library-version))
-          (version library-version)
+          (if (version library-version)
+	      (version library-version)
+	      "<without version>")
           (stability library-version)))
 
 (defmethod print-object ((library-version cld-library-version) stream)
@@ -209,7 +211,9 @@
   (print-unreadable-object (version-dependency stream :type t :identity t)
     (format stream "~A-~A (~A)"
             (library-name version-dependency)
-            (library-version version-dependency)
+            (if (library-version version-dependency)
+		(library-version version-dependency)
+		"<without version>")
             (cld version-dependency))))
 
 (defmacro deflibrary (name &body options)
@@ -376,7 +380,8 @@
 	(progn
 	  (load-cld cld)
 	  (setup library-name version)
-	  (asdf:operate 'asdf:load-op library-name))
+	  (asdf:operate 'asdf:load-op library-name)
+	  t)
 	;; else
 	(if (find-cld-library library-name nil)
 	    (setup library-name version)
@@ -396,7 +401,8 @@
 		  (progn
 		    (load-cld cld)
 		    (setup library-name version)
-		    (asdf:operate 'asdf:load-op library-name))
+		    (asdf:operate 'asdf:load-op library-name)
+		    t)
 		  (error "Couldn't find a cld for ~S library~%" library-name)))))))
 
 (defun load-library-version (library-version &key reload)
