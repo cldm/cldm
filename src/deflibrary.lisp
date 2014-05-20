@@ -15,6 +15,8 @@
 
 (defparameter *cld-repositories* (list *github-cld-repository*))
 
+(defparameter *on-not-found-cld* :warn)
+
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
@@ -345,9 +347,9 @@
         ;; Validate the library versions list
         (validate-library-versions-list library-versions)
 
-        ;; Remove duplicates in depdency list
+        ;; Pick library versions
         (setf library-versions
-              (clean-library-versions-list library-versions))
+              (pick-library-versions library-versions))
 
 	(verbose-msg "Libraries to load: ~A~%" library-versions)
 
@@ -392,16 +394,22 @@
 		  (error "Couldn't find a cld for ~S library~%" library-name)))))))
 
 (defun load-library-version (library-version &key reload)
+  "Load a library version dependencies clds"
   (verbose-msg "Loading ~A.~%" library-version)
   (labels ((load-dependency-cld (dependency cld)
+	     "Load a dependency cld, and the cld of dependencies of the dependency"
              (verbose-msg "Loading cld: ~A~%" cld)
+	     ;; First load the dependency cld
+	     
              (load-cld cld)
              (let ((library (find-cld-library (library-name dependency))))
                (let ((library-version
                       (if (not (library-version dependency))
                           ;; No library version specified in the dependency
                           ;; Use the latest version
-                          (first (library-versions library))
+			  (progn
+			    (warn "Library version not specified for ~A. Calculating dependencies with the latest version!!" dependency)
+			    (first (library-versions library)))
                           ;; else, use the library version specified
                           (find-cld-library-version
                            library
@@ -422,13 +430,22 @@
                                (verbose-msg "~A cld found in ~A~%"
                                             (library-name dependency)
                                             cld-repository))))
-                     (when cld
-                       (load-dependency-cld dependency cld)))
+                     (if cld
+			 ;; A cld for the dependency was found, load it
+			 (load-dependency-cld dependency cld)
+			 ;; else, no dependency was found. What to do in this case??
+			 ;; we can signal an error, or ignore this (signal a warning), as
+			 ;; the library version may be loadable from the user system repository
+			 ;; anyway (.i.e. Quicklisp)
+			 (ecase *on-not-found-cld*
+			   (:warn (warn "Couldn't find a cld for ~A" dependency))
+			   (:error (error "Couldn't find a cld for ~A" dependency)))))
                                         ;else
                    (load-dependency-cld dependency cld)))))
     (loop for dependency in (dependencies library-version)
        do (progn
             (verbose-msg "Handling ~A.~%" dependency)
+	    ;; For each dependency, try to load its cld, if it is not already loaded
             (if (find-cld-library (library-name dependency) nil)
                 (progn
                   (verbose-msg "Metadata for ~A is already loaded~%" (library-name dependency))
@@ -448,18 +465,25 @@
                                         ;else
            (let ((library (find-cld-library (library-name dependency) nil)))
              (if library
-                 (let ((library-version
-                        (if (library-version dependency)
-                            (find-cld-library-version
+		 (let ((dependency-library-version
+			(if (library-version dependency)
+			    (find-cld-library-version
                              library
                              (library-version dependency))
-                                        ; else, use the latest version
-                            (first (library-versions library)))))
-                   (cons library-version
-                         (calculate-library-versions library-version (cons dependency visited))))
+                            ;; else, use a generic library version
+			    ;; assuming the dependencies of the latest library version
+			    (let ((latest-library-version (first (library-versions library))))
+			      (make-instance 'cld-library-version
+					     :library library
+					     :version nil ;; This is important
+					     :dependencies (dependencies latest-library-version)
+					     :repositories (repositories latest-library-version))))))			    
+		   (cons dependency-library-version
+			 (calculate-library-versions dependency-library-version
+						     (cons dependency visited))))
                                         ;else
-                 (verbose-msg "WARNING: no ASDF system is being loaded by CLDM for ~A~%"
-                              dependency))))))
+                 (warn "No ASDF system is being loaded by CLDM for ~A~%"
+		       dependency))))))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))
@@ -512,11 +536,21 @@
      (assert (equalp (version v1) (version v2)) nil "This should not have happened")
      v1)))  
 
-(defun clean-library-versions-list (versions-list)
-  (mapcar #'pick-library-version
-	  (group-by versions-list
-		    :key (compose #'library-name #'library)
-		    :test #'equalp)))		    
+(defun pick-library-versions (versions-list)
+  (flet ((pick-latest-version (library-version)
+	   ;; If the library version is not specified, pick the latest version available
+	   (if (not (version library-version))
+	       (let ((latest-library-version
+		      (first (library-versions (library library-version)))))
+		 (verbose-msg "No specific library version specified for ~A. Picking latest library version: ~A~%"
+			      library-version
+			      latest-library-version)
+		 latest-library-version)	       
+	       library-version)))
+    (mapcar (compose #'pick-latest-version #'pick-library-version)
+	    (group-by versions-list
+		      :key (compose #'library-name #'library)
+		      :test #'equalp))))
 
 (defun cache-library-version (library-version)
   (ensure-directories-exist *repositories-directory*)
