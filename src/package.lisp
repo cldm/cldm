@@ -73,6 +73,6 @@
 	   #:find-cld-library
 	   #:setup
 	   #:load-library
-	   #:with-repositories-directory
+	   #:with-libraries-directory
 	   #:with-cld-repositories
 	   ))
