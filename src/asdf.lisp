@@ -40,7 +40,9 @@
 		  :depends-on
 		  ,(loop for dependency in (asdf:component-sideway-dependencies asdf-system)
 		      collect (cond
-				((symbolp dependency) dependency)
+				((or (symbolp dependency)
+				     (stringp dependency))
+				 dependency)
 				((and (listp dependency)
 				      (equalp (first dependency) :version))
 				 (list (second dependency) ;; The system name
