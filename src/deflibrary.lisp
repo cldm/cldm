@@ -4,16 +4,17 @@
 (defparameter *cld-libraries* (make-hash-table :test #'equalp))
 
 (defparameter *repositories-directory*
-  (asdf:system-relative-pathname :cldm "cache/repositories/"))
+  (pathname "~/.cldm/cache/repositories/"))
 
 (defparameter *address-cache-operation* :symlink "What to do when caching a local file system directory. Can be either :symlink or :copy (copy the directory recursively). Default is :symlink")
 
-(defparameter *github-cld-repository*
-  `(make-instance 'http-cld-repository
-                  :name "Github repository"
-                  :url "http://mmontone.github.io/cldm-repo/cld"))
+(defparameter *cldm-repo*
+  `(make-instance 'cached-http-cld-repository
+                  :name "cldm-repo"
+                  :url "http://mmontone.github.io/cldm-repo/cld"
+		  :cache-directory (pathname "~/.cldm/cache/cld-repositories/cldm-repo/")))
 
-(defparameter *cld-repositories* (list *github-cld-repository*))
+(defparameter *cld-repositories* (list *cldm-repo*))
 
 (defparameter *solving-mode* :lenient "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
 
@@ -742,6 +743,31 @@
               temporal-file)
                                         ; else
             (verbose-msg "Failed.~%"))))))
+
+(defmethod find-cld :around ((cld-repository cached-http-cld-repository) library-name)
+  (ensure-directories-exist (cache-directory cld-repository))
+  (let ((cached-file (merge-pathnames
+		      (pathname (format nil "~A.cld" library-name))
+		      (cache-directory cld-repository))))
+    (if (probe-file cached-file)
+	cached-file
+	;; else
+	(let ((downloaded-file (call-next-method)))
+	  (when downloaded-file
+	    (let ((command (format nil "cp ~A ~A"
+				   downloaded-file
+				   cached-file)))
+	      (verbose-msg "~A~%" command)
+	      (multiple-value-bind (output error status)
+		  (trivial-shell:shell-command command)
+		(declare (ignore output error))
+		(if (zerop status)
+		    ;; success
+		    cached-file
+		    ;; else
+		    (progn
+		      (verbose-msg "Could not cache cdl file ~A~%" downloaded-file)
+		      downloaded-file))))))))) 
 
 (defclass cld-address ()
   ()
