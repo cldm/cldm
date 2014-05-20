@@ -3,8 +3,8 @@
 (defparameter *verbose-mode* t)
 (defparameter *cld-libraries* (make-hash-table :test #'equalp))
 
-(defparameter *repositories-directory*
-  (pathname "~/.cldm/cache/repositories/"))
+(defparameter *libraries-directory*
+  (pathname "~/.cldm/cache/libraries/"))
 
 (defparameter *address-cache-operation* :symlink "What to do when caching a local file system directory. Can be either :symlink or :copy (copy the directory recursively). Default is :symlink")
 
@@ -22,12 +22,12 @@
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
 
-(defun call-with-repositories-directory (pathname function)
-  (let ((*repositories-directory* pathname))
+(defun call-with-libraries-directory (pathname function)
+  (let ((*libraries-directory* pathname))
     (funcall function)))
 
-(defmacro with-repositories-directory (pathname &body body)
-  `(call-with-repositories-directory
+(defmacro with-libraries-directory (pathname &body body)
+  `(call-with-libraries-directory
     ,pathname
     (lambda ()
       ,@body)))
@@ -564,13 +564,13 @@
 		      :test #'equalp))))
 
 (defun cache-library-version (library-version)
-  (ensure-directories-exist *repositories-directory*)
+  (ensure-directories-exist *libraries-directory*)
   (let ((repository-name (format nil "~A-~A"
                                  (library-name (library library-version))
                                  (version library-version))))
     (let ((repository-directory (merge-pathnames
                                  (pathname (format nil "~A/" repository-name))
-                                 *repositories-directory*)))
+                                 *libraries-directory*)))
       (verbose-msg "Repository directory: ~A~%" repository-directory)
       (if (probe-file repository-directory)
           (verbose-msg "Repository for ~A already exists in ~A~%"

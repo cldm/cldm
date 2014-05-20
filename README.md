@@ -55,9 +55,8 @@ For instance, here is the library description `.cld` file for some versions of t
 This is in alpha, doesn't have tests or documentation yet, but if you still want to try it out, it can almost load Hunchentoot at the moment. Load **CLDM** and then evaluate:
 
 ```lisp
-(cldm:with-repositories-directory #p"/tmp/cldm-test-repo/"
-    (cldm:load-library "hunchentoot")
-    (require :hunchentoot))    
+(cldm:with-libraries-directory #p"/tmp/cldm-test-repo/"
+    (cldm:load-library "hunchentoot"))    
 ```
 and **CLDM** will calculate the required library versions and download them to `/tmp/cldm-test-repo`.
 
