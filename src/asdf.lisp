@@ -11,6 +11,7 @@
   (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream))
 
 (defmethod deflibrary-from-asdf-system ((asdf-system asdf:system) cld stream)
+  (format stream ";;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-~%~%")
   (format stream "~S" (make-cld-library-form asdf-system :cld cld)))
 
 (defun make-cld-library-form (asdf-system &key cld repositories)
