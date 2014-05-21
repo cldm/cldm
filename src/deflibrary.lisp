@@ -374,7 +374,8 @@
 		       cld
 		       (verbose *verbose-mode*)
 		       (solving-mode *solving-mode*)
-		       (clean-asdf-environment *clean-asdf-environment*))
+		       (clean-asdf-environment *clean-asdf-environment*)
+		       (load-asdf-system t))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
@@ -388,7 +389,8 @@
       (if cld
 	  (progn
 	    (setup library-name version)
-	    (asdf:operate 'asdf:load-op library-name)
+	    (when load-asdf-system
+	      (asdf:operate 'asdf:load-op library-name))
 	    t)
 	  ;; else
 	  (if (find-cld-library library-name nil)
@@ -410,7 +412,8 @@
 		(if cld
 		    (progn
 		      (setup library-name version)
-		      (asdf:operate 'asdf:load-op library-name)
+		      (when load-asdf-system
+			(asdf:operate 'asdf:load-op library-name))
 		      t)
 		    (error "Couldn't find a cld for ~S library~%" library-name))))))))
 
