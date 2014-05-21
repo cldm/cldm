@@ -18,6 +18,8 @@
 
 (defparameter *solving-mode* :lenient "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
 
+(defparameter *clean-asdf-environment* nil "If T, load libraries in a clean ASDF environment")
+
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
@@ -371,11 +373,17 @@
 		       version
 		       cld
 		       (verbose *verbose-mode*)
-		       (solving-mode *solving-mode*))
+		       (solving-mode *solving-mode*)
+		       (clean-asdf-environment *clean-asdf-environment*))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
 	(*solving-mode* solving-mode))
+    (when clean-asdf-environment
+      (setf asdf:*central-registry* nil)
+      (asdf:clear-source-registry)
+      (asdf:clear-configuration)
+      (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
     (let ((cld (and cld (load-cld cld))))
       (if cld
 	  (progn
