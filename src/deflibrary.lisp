@@ -868,7 +868,7 @@
           (file-directory (let ((dir (directory-namestring (cld-pathname cld-address))))
                             (when (plusp (length dir))
                               dir))))
-      (let ((command (format nil "cd /tmp; git archive --remote=~A ~A:~A ~A | tar -x"
+      (let ((command (format nil "cd /tmp; git archive --remote=~A ~A~@[:~A~] ~A | tar -x"
                              (cl-ppcre:regex-replace-all "~" (git-url cld-address) "~~")
 			     (or (git-branch cld-address) "HEAD")
                              file-directory
