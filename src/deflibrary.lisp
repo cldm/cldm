@@ -80,10 +80,10 @@
                 :initform nil
                 :accessor library-description
                 :documentation "The library description")
-   (license :initarg :license
+   (licence :initarg :licence
             :initform nil
-            :accessor library-license
-            :documentation "The library license")
+            :accessor library-licence
+            :documentation "The library licence")
    (cld :initarg :cld
         :initform (error "Provide the cld")
         :accessor library-cld
@@ -220,7 +220,7 @@
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
-                            license cld versions tags)
+                            licence cld versions tags)
       options
     `(make-instance 'cld-library
                     :name ',(if (symbolp name)
@@ -229,7 +229,7 @@
                     :author ,author
                     :maintainer ,maintainer
                     :description ,description
-                    :license ,license
+                    :licence ,licence
                     :cld (parse-cld-address ',cld)
                     :versions ,(parse-cld-library-versions versions)
                     :tags ',tags)))
