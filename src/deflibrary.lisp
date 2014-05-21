@@ -852,7 +852,7 @@
          (make-instance 'git-cld-address
                         :git-url git-url
                         :pathname (pathname pathname))))
-      ((cl-ppcre:scan "http://.*$" cld-address)
+      ((cl-ppcre:scan "http(s)://.*$" cld-address)
        (make-instance 'http-cld-address :url cld-address))
       (t
        (make-instance 'pathname-cld-address :pathname (pathname cld-address)))))
@@ -892,7 +892,7 @@
 	    (pathname (format nil "/tmp/~A" file-namestring)))))))
   (:method ((cld-address http-cld-address))
     (cl-ppcre:register-groups-bind (url-path filename)
-        ("^(http://.*)/(.*)$" (cld-url cld-address))
+        ("^(http(s)://.*)/(.*)$" (cld-url cld-address))
       (declare (ignore url-path))
       (let* ((temporal-file (pathname (format nil "/tmp/~A" filename)))
              (command (format nil "wget -O ~A ~A" temporal-file (cld-url cld-address))))
