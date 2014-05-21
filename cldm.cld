@@ -29,8 +29,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."
   :VERSIONS
   ((:VERSION "0.0.1"
-	     :REPOSITORIES
-    ((:github (:git "git@github.com:mmontone/cldm.git")))
-    :DEPENDS-ON
-    (#:ALEXANDRIA #:IRONCLAD #:MD5 #:CL-PPCRE #:CL-SYNTAX #:ESRAP
-     #:TRIVIAL-SHELL #:PURI))))
+             :REPOSITORIES
+             ((:github (:git "git@github.com:mmontone/cldm.git")))
+             :DEPENDS-ON
+             (#:ALEXANDRIA #:IRONCLAD #:MD5 #:CL-PPCRE #:CL-SYNTAX #:ESRAP
+                           #:TRIVIAL-SHELL #:PURI))))
