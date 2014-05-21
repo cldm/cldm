@@ -385,7 +385,7 @@
       (asdf:clear-source-registry)
       (asdf:clear-configuration)
       (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
-    (let ((cld (and cld (load-cld cld))))
+    (let ((cld (and cld (load-cld (parse-cld-address cld)))))
       (if cld
 	  (progn
 	    (setup library-name version)
