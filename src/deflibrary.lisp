@@ -228,7 +228,7 @@
                     :maintainer ,maintainer
                     :description ,description
                     :license ,license
-                    :cld ,cld
+                    :cld (parse-cld-address ',cld)
                     :versions ,(parse-cld-library-versions versions)
                     :tags ',tags)))
 
@@ -272,7 +272,7 @@
                                  ,@(when version
                                          (list :version version))
                                  ,@(when cld
-                                         (list :cld cld))))
+                                         (list :cld `(parse-cld-address ',cld)))))
                                         ;else
                `(make-instance 'cld-library-version-dependency
                                :library-name ,(if (symbolp dependency)
@@ -376,45 +376,42 @@
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
 	(*solving-mode* solving-mode))
-    (if cld
-	(progn
-	  (load-cld cld)
-	  (setup library-name version)
-	  (asdf:operate 'asdf:load-op library-name)
-	  t)
-	;; else
-	(if (find-cld-library library-name nil)
+    (let ((cld (and cld (load-cld cld))))
+      (if cld
+	  (progn
 	    (setup library-name version)
-	    ;; else
-	    (progn
-	      (loop
-		 for cld-repository in *cld-repositories*
-		 while (not cld)
-		 do (let ((cld-repository (eval cld-repository)))
-		      (setf cld (find-cld cld-repository
-					  library-name))
-		      (when cld
-			(verbose-msg "~A cld found in ~A~%"
-				     library-name
-				     cld-repository))))
-	      (if cld
-		  (progn
-		    (load-cld cld)
-		    (setup library-name version)
-		    (asdf:operate 'asdf:load-op library-name)
-		    t)
-		  (error "Couldn't find a cld for ~S library~%" library-name)))))))
+	    (asdf:operate 'asdf:load-op library-name)
+	    t)
+	  ;; else
+	  (if (find-cld-library library-name nil)
+	      (setup library-name version)
+	      ;; else
+	      (progn
+		(loop
+		   for cld-repository in *cld-repositories*
+		   while (not cld)
+		   do (let ((cld-repository (eval cld-repository)))
+			(let ((repository-cld (find-cld cld-repository
+							library-name)))
+			  (setf cld (and repository-cld 
+					 (load-cld repository-cld)))
+			  (when cld
+			    (verbose-msg "~A cld found in ~A~%"
+					 library-name
+					 cld-repository)))))
+		(if cld
+		    (progn
+		      (setup library-name version)
+		      (asdf:operate 'asdf:load-op library-name)
+		      t)
+		    (error "Couldn't find a cld for ~S library~%" library-name))))))))
 
 (defun load-library-version (library-version &key reload)
   "Load a library version dependencies clds"
   (verbose-msg "Loading ~A.~%" library-version)
-  (labels ((load-dependency-cld (dependency cld)
+  (labels ((load-dependency (dependency)
 	     "Load a dependency cld, and the cld of dependencies of the dependency"
-             (verbose-msg "Loading cld: ~A~%" cld)
-	     ;; First load the dependency cld
-	     
-             (load-cld cld)
-             (let ((library (find-cld-library (library-name dependency))))
+	     (let ((library (find-cld-library (library-name dependency))))
                (let ((library-version
                       (if (not (library-version dependency))
                           ;; No library version specified in the dependency
@@ -430,24 +427,26 @@
                            library
                            (library-version dependency)))))
                  (load-library-version library-version :reload reload))))
-           (load-dependency (dependency)
-             (let ((cld (cld dependency)))
+           (load-dependency-cld (dependency)
+	     (let ((cld (and (cld dependency)
+			     (load-cld (cld dependency)))))
                (if (not cld)
                    (progn
-                     (verbose-msg "No cld specified.~%")
+                     (verbose-msg "No cld could be loaded.~%")
                      (loop
                         for cld-repository in *cld-repositories*
                         while (not cld)
                         do (let ((cld-repository (eval cld-repository)))
-                             (setf cld (find-cld cld-repository
-                                                 (library-name dependency)))
-                             (when cld
-                               (verbose-msg "~A cld found in ~A~%"
-                                            (library-name dependency)
-                                            cld-repository))))
+			     (let ((repository-cld (find-cld cld-repository
+							     (library-name dependency))))
+			       (setf cld (and repository-cld (load-cld repository-cld)))
+			       (when cld
+				 (verbose-msg "~A cld found in ~A~%"
+					      (library-name dependency)
+					      cld-repository)))))
                      (if cld
-			 ;; A cld for the dependency was found, load it
-			 (load-dependency-cld dependency cld)
+			 ;; A cld for the dependency was found, load the dependency
+			 (load-dependency dependency)
 			 ;; else, no dependency was found. What to do in this case??
 			 ;; we can signal an error, or ignore this (signal a warning), as
 			 ;; the library version may be loadable from the user system repository
@@ -456,7 +455,7 @@
 			   (:lenient (warn "Couldn't find a cld for ~A" dependency))
 			   (:strict (error "Couldn't find a cld for ~A" dependency)))))
                                         ;else
-                   (load-dependency-cld dependency cld)))))
+                   (load-dependency dependency)))))
     (loop for dependency in (dependencies library-version)
        do (progn
             (verbose-msg "Handling ~A.~%" dependency)
@@ -466,9 +465,9 @@
                   (verbose-msg "Metadata for ~A is already loaded~%" (library-name dependency))
                   (when reload
                     (verbose-msg "Reloading...")
-                    (load-dependency dependency)))
+                    (load-dependency-cld dependency)))
                 ;; else
-                (load-dependency dependency))))))
+                (load-dependency-cld dependency))))))
 
 (defun calculate-library-versions (library-version &optional visited)
   (loop for dependency in (dependencies library-version)
@@ -792,14 +791,19 @@
    (pathname :initarg :pathname
              :initform (error "Provide the pathname to the cld file")
              :accessor cld-pathname
-             :documentation "The pathname to the cld file"))
+             :documentation "The pathname to the cld file")
+   (branch :initarg :branch
+	   :initform "HEAD"
+	   :accessor git-branch
+	   :documentation "The git branch"))
   (:documentation "A cld in a git repository"))
 
 (defmethod print-object ((cld-address git-cld-address) stream)
   (print-unreadable-object (cld-address stream :type t :identity t)
-    (format stream "~A:~A"
+    (format stream "~A:~A [~A]"
             (git-url cld-address)
-            (cld-pathname cld-address))))
+            (cld-pathname cld-address)
+	    (git-branch cld-address))))
 
 (defclass pathname-cld-address (cld-address)
   ((pathname :initarg :pathname
@@ -845,9 +849,11 @@
     (ecase (first cld-address)
       (:file (make-instance 'pathname-cld-address :pathname (second cld-address)))
       (:url (make-instance 'http-cld-address :url (second cld-address)))
-      (:git (make-instance 'git-cld-address
-                           :git-url (second cld-address)
-                           :pathname (pathname (third cld-address)))))))
+      (:git (destructuring-bind (url pathname &key branch) (rest cld-address)
+	      (make-instance 'git-cld-address
+			     :git-url url
+			     :pathname (pathname pathname)
+			     :branch (or branch "HEAD")))))))
 
 (defgeneric load-cld (cld-address)
   (:method :around (cld-address)
@@ -862,13 +868,17 @@
           (file-directory (let ((dir (directory-namestring (cld-pathname cld-address))))
                             (when (plusp (length dir))
                               dir))))
-      (let ((command (format nil "cd /tmp; git archive --remote=~A ~@[HEAD:~A ~] ~A | tar -x"
-                             (cld-url cld-address)
+      (let ((command (format nil "cd /tmp; git archive --remote=~A ~A:~A ~A | tar -x"
+                             (cl-ppcre:regex-replace-all "~" (git-url cld-address) "~~")
+			     (or (git-branch cld-address) "HEAD")
                              file-directory
                              file-namestring)))
         (verbose-msg command)
-        (trivial-shell:shell-command command)
-        (pathname (format nil "/tmp/~A" file-namestring)))))
+	(multiple-value-bind (result error status)
+	    (trivial-shell:shell-command command)
+	  (declare (ignore result error))
+	  (when (zerop status)
+	    (pathname (format nil "/tmp/~A" file-namestring)))))))
   (:method ((cld-address http-cld-address))
     (cl-ppcre:register-groups-bind (url-path filename)
         ("^(http://.*)/(.*)$" (cld-url cld-address))
