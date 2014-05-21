@@ -296,7 +296,7 @@
         :accessor url
         :documentation "The git url")
    (branch :initarg :branch
-           :initform "master"
+           :initform nil
            :accessor branch
            :documentation "Git repository branch")
    (commit :initarg :commit
