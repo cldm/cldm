@@ -673,6 +673,11 @@
     (run-or-fail (format nil "git clone ~A ~A"
                          (url repository-address)
                          (princ-to-string target-directory)))
+    (when (branch repository-address)
+      (verbose-msg "Checking out ~A branch.~%" (branch repository-address))
+      (run-or-fail (format nil "cd ~A; git checkout ~A"
+			   target-directory
+			   (branch repository-address))))
     (when (commit repository-address)
       (verbose-msg "Checking out commit ~A~%" (commit repository-address))
       (let ((command  (format nil "cd ~A; git checkout ~A"
