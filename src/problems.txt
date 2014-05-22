@@ -14,3 +14,12 @@ D depends on B < B3
 B2 could be chosen
 
 but B0 is given (older than B2): ((:B0 . T) (:D . T) (:A . T))
+
+To take into account:
+
+However, it should be noted that SAT is a decision prob-
+lem and any solution to the problem is equally valid. In case
+some solutions are better than the others, we move to an op-
+timization problem and a extension of the SAT formulation
+called pseudo-Boolean optimization (PBO) [22] should be
+used instead.
