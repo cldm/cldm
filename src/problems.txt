@@ -13,4 +13,4 @@ D depends on B < B3
 
 B2 could be chosen
 
-but B0 is given: ((:B0 . T) (:D . T) (:A . T))
+but B0 is given (older than B2): ((:B0 . T) (:D . T) (:A . T))
