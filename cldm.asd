@@ -24,16 +24,16 @@ THE SOFTWARE."
   :components ((:module :src
 			:components
 			((:file "package")
-			 (:file "cldm")
 			 (:file "util")
 			 (:file "version")
 			 (:file "interval")
 			 (:file "requirement")
 			 (:file "library")
+			 (:file "cld")
 			 (:file "repository")
-			 (:file "pool")
 			 (:file "deflibrary")
-			 (:file "asdf"))		
+			 (:file "asdf")
+			 (:file "cldm"))		
 			:serial t))
     :depends-on (#:alexandria
 		 #:ironclad

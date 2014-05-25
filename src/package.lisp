@@ -24,12 +24,11 @@
 	   #:disable-version-syntax
 
 	   #:read-requirement-from-string
-	   #:read-requirement-from-library-string
+	   #:read-requirement-from-library-version-string
 	   #:requirement-matches
 	   #:print-requirement
 	   #:requirement
 	   #:print-requirement-to-string
-	   #:requirement-name
 	   #:requirement=
 	   #:requirement-version-constraints
 	   #:requirement-cannot-match-p
@@ -61,16 +60,9 @@
 	   #:repository-libraries
 	   #:repository-length
 
-	   #:pool
-	   #:pool-repositories
-	   #:add-repository
-	   #:find-library-by-id
-	   #:has-library
-	   #:what-provides
-
 	   #:deflibrary
-	   #:list-cld-libraries
-	   #:find-cld-library
+	   #:list-libraries
+	   #:find-library
 	   #:setup
 	   #:load-library
 	   #:with-libraries-directory

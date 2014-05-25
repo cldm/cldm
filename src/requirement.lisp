@@ -1,22 +1,35 @@
 (in-package :cldm)
 
 (defclass requirement ()
-  ((name :initarg :name
+  ((name :initarg :library-name
 	 :initform (error "Provide the library name")
-	 :accessor requirement-name
+	 :accessor library-name
 	 :type string
 	 :documentation "The library name")
    (version-constraints :initarg :version-constraints
 	  :initform (list :any)
 	  :accessor requirement-version-constraints
-	  :documentation "A list of constraints"))
+	  :documentation "A list of constraints")
+   (cld :initarg :cld
+        :initform nil
+        :accessor cld
+        :documentation "The version meta information address. Can be a pathname or url"))
    (:documentation "Requirements instances represent a 'library requirement', that is a library + version constraints."))
+
+(defmethod initialize-instance :after ((requirement requirement) &rest initargs)
+  (declare (ignore initargs))
+  #+nil(if (and (requirement-version-constraints requirement)
+	   (not (equalp (first (requirement-version-constraints requirement)) :any))
+           (not (cld requirement)))
+      (error "Provide a cld for ~A" requirement))
+  )
 
 (defun make-requirement (name &rest version-constraints)
   (make-instance 'requirement
-		 :name name
+		 :library-name name
 		 :version-constraints (or version-constraints
-					  (list :any))))
+					  (list :any))
+		 :cld nil))
 
 (defun read-requirement-from-string (string)
   (let ((constraints (parse-requirement-string string)))
@@ -31,10 +44,11 @@
 
       (let ((version-constraints (mapcar #'second constraints)))
 	(make-instance 'requirement
-		       :name distribution-name
+		       :library-name distribution-name
 		       :version-constraints
 		       (normalize-version-constraints
-			version-constraints))))))
+			version-constraints)
+		       :cld nil)))))
 
 (defun normalize-version-constraints (version-constraints)
   version-constraints)
@@ -46,15 +60,17 @@
 	       (format stream " ~A ~A"
 		       operation
 		       (print-version-to-string version)))))) 
-    (format stream "~A" (requirement-name requirement))
+    (format stream "~A" (library-name requirement))
     (let ((version-constraint (first (requirement-version-constraints requirement))))
       (when version-constraint
 	(print-version-constraint version-constraint stream)))
 
     (loop for version-constraint in (rest (requirement-version-constraints requirement))
        do (progn
-	    (format stream ", ~A" (requirement-name requirement))
-	    (print-version-constraint version-constraint stream)))))
+	    (format stream ", ~A" (library-name requirement))
+	    (print-version-constraint version-constraint stream)))
+    (when (cld requirement)
+      (format stream "(~A)" (cld requirement)))))
 
 (defun print-requirement-to-string (requirement)
   (with-output-to-string (s)
@@ -71,11 +87,11 @@
 	       (parse-integer (format nil "~{~A~}" list)))))
 
 (defrule distribution-name (+ (or (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
-				  (character-ranges (#\a #\z) (#\A #\Z) #\_ #\-)))
+				  (character-ranges (#\a #\z) (#\A #\Z) #\_ #\- #\+)))
   (:text t))
 
 (defrule distribution-name-part (+ (or (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
-				       (character-ranges (#\a #\z) (#\A #\Z) #\_)))
+				       (character-ranges (#\a #\z) (#\A #\Z) #\_ #\+)))
   (:text t))
 
 (defrule version== "==" (:function (lambda (match)
@@ -195,8 +211,8 @@
 
 (defmethod requirement-matches ((requirement requirement) (provider requirement))
   ;; Return false if names dont match
-  (when (not (equalp (requirement-name requirement)
-		     (requirement-name provider)))
+  (when (not (equalp (library-name requirement)
+		     (library-name provider)))
     (return-from requirement-matches nil))
 
   (let ((requirement-intervals (make-requirement-version-intervals requirement))
@@ -214,8 +230,8 @@
     (not (some #'interval-proper-p intervals))))
 
 (defun requirement= (req1 req2)
-  (and (equalp (requirement-name req1)
-	       (requirement-name req2))
+  (and (equalp (library-name req1)
+	       (library-name req2))
        (set-equal (requirement-version-constraints req1)
 		  (requirement-version-constraints req2)
 		  :test
@@ -241,7 +257,7 @@
 (defun parse-library-string (string)
   (values-list (parse 'library-unique-name string)))
 
-(defun read-requirement-from-library-string (string)
+(defun read-requirement-from-library-version-string (string)
     (multiple-value-bind (name version)
 	(parse-library-string string)
       (if (equalp version :any)

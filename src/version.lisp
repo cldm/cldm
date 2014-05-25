@@ -35,11 +35,14 @@
 (defparameter +version-re+ "^(\\d+).(\\d+).(\\d+)(?:-([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$")
 
 (defun version-valid-p (string)
-  (not (null (ppcre:scan +version-re+ string))))
+  (or (equalp string "latest")
+      (not (null (ppcre:scan +version-re+ string)))))
 
 (defun read-version-from-string (string &optional (class 'semantic-version))
   (when (not (version-valid-p string))
     (error "Could not parse version string ~S" string))
+  (when (equalp string "latest")
+    (return-from read-version-from-string :max-version))
   (ppcre:register-groups-bind (major minor patch pre-release build)
       (+version-re+ string)
     (make-instance class
@@ -56,14 +59,20 @@
       (error "Version ~S is not valid" version-string))))
 
 (defun print-version (version stream)
-  (format stream "~A.~A.~A"
-	  (version-major version)
-	  (version-minor version)
-	  (version-patch version))
-  (when (version-pre-release version)
-    (format stream "-~A" (version-pre-release version)))
-  (when (version-build version)
-    (format stream "+~A" (version-build version))))
+  (cond
+    ((equalp version :max-version)
+     (format stream "latest"))
+    ((equalp version :min-version)
+     (format stream "oldest"))
+    (t
+     (format stream "~A.~A.~A"
+	     (version-major version)
+	     (version-minor version)
+	     (version-patch version))
+     (when (version-pre-release version)
+       (format stream "-~A" (version-pre-release version)))
+     (when (version-build version)
+       (format stream "+~A" (version-build version))))))
 
 (defun print-version-to-string (version)
   (with-output-to-string (s)

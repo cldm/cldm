@@ -1,0 +1,16 @@
+car2 >= 1
+engine2 + engine1 - car2 >= 0
+engine2 + engine1 <= 1
+wheel2 + wheel3 - car2 >= 0
+wheel2 + wheel3 <= 1
+door1 + door2 - car2 >= 0
+door1 + door2 <= 1
+turbo1 - engine1 >= 0
+tyre1 + tyre2 - wheel3 >= 0
+tyre1 + tyre2 <= 1
+window0 + window1 + window2 - door2 >= 0
+window0 + window1 + window2 <= 1
+glass1 - window1 >= 0
+glass2 - window2 >= 0
+glass2 + tyre2 <= 1
+glass1 + glass2 <= 1
