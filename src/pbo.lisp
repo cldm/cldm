@@ -24,8 +24,8 @@
 		       :comment comment))
 
 (defun gen-pbo-variable (thing)
-  (if (assoc thing *pbo-environment* :test #'equalp)
-      (cdr (assoc thing *pbo-environment* :test #'equalp))
+  (if (assoc thing *pbo-environment* :test #'library-version=)
+      (cdr (assoc thing *pbo-environment* :test #'library-version=))
       ;; else
       (let ((var (make-keyword (format nil "X~A"
 				       *constraint-variable-counter* ))))
@@ -39,8 +39,8 @@
     (let ((terms (append
 		  (loop for library-version in library-versions
 		     collect `(+ 1 ,(gen-pbo-variable
-				     (library-version-unique-name library-version))))
-		  `((- 1 ,(gen-pbo-variable (library-version-unique-name library-version)))))))    
+				     library-version)))
+		  `((- 1 ,(gen-pbo-variable library-version))))))    
     (make-pbo-constraint* terms
 			  '>= 0
 			  (format nil "~A dependency: ~A"
@@ -49,10 +49,8 @@
 
 (defun encode-conflict (library-version-1 library-version-2)
   (make-pbo-constraint*
-   `((+ 1 ,(gen-pbo-variable
-	    (library-version-unique-name library-version-1)))
-     (+ 1 ,(gen-pbo-variable
-	    (library-version-unique-name library-version-2))))
+   `((+ 1 ,(gen-pbo-variable library-version-1))
+     (+ 1 ,(gen-pbo-variable library-version-2)))
    '<=
    1
    (format nil "Conflict between ~A and ~A"
@@ -61,7 +59,7 @@
 
 (defun encode-install (library-version)
   (make-pbo-constraint*
-   `((+ 1 ,(gen-pbo-variable (library-version-unique-name library-version))))
+   `((+ 1 ,(gen-pbo-variable library-version)))
    '>=
    1
    (format nil "Install ~A" (library-version-unique-name library-version))))
@@ -142,7 +140,7 @@
 	   (loop for library-version in versions-group
 	      for wi = 0 then (1+ wi)
 	      collect `(+ ,wi ,(gen-pbo-variable
-				(library-version-unique-name library-version))))))))
+				library-version)))))))
 
 (defun serialize-optimization-function (optimization-function stream)
   (loop for term in optimization-function
@@ -176,11 +174,12 @@
 	    (when (not (zerop status))
 	      (error "Error executing /usr/bin/minisat+ ~A -v0" pbo-file))
 	    (flet ((find-environment-library-version (var)
-		     (rassoc var pbo-environment)))
+		     (car (rassoc var pbo-environment))))
 	      (cl-ppcre:register-groups-bind (vars-string)
 		  ("\v (.*)" result)
-		(let ((vars (mapcar (compose #'find-environment-library-version
+		(let ((vars (remove-if #'null
+				       (mapcar (compose #'find-environment-library-version
 					     #'make-keyword
 					     #'string-upcase)
-				    (split-sequence:split-sequence #\  vars-string))))
+				    (split-sequence:split-sequence #\  vars-string)))))
 		  vars)))))))))

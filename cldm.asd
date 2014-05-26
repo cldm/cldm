@@ -43,4 +43,5 @@ THE SOFTWARE."
 		 #:cl-syntax
 		 #:esrap
 		 #:trivial-shell
-		 #:puri))
+		 #:puri
+		 #:split-sequence))
