@@ -30,15 +30,14 @@
         ;; Validate the library versions list
         ;(validate-library-versions-list library-versions)
 	
-        ;; Pick library versions
-        ;(setf library-versions
-        ;      (pick-library-versions library-versions))
+        (setf library-versions (pbo-solve-library-versions library-version
+							   library-versions))
 
 	(verbose-msg "Libraries to load: ~A~%" library-versions)
 
         ;; Check the version existance and download if not
         ;; After that, push to asdf:*central-registry*
-        (loop for version in (cons library-version library-versions)
+        (loop for version in library-versions
            do
              (let ((pathname (cache-library-version version)))
                (push pathname asdf:*central-registry*))))))
@@ -145,29 +144,30 @@
                 (load-dependency-cld dependency))))))
 
 (defun calculate-library-versions (library-version &optional visited)
-  (remove-duplicates 
-   (loop for dependency in (dependencies library-version)
-      appending
-	(if (find (library-name dependency) visited
-		  :key #'library-name
-		  :test #'equalp)
-	    (error "Cyclic dependency on ~A" dependency)
+  (remove-duplicates
+   (cons library-version
+	 (loop for dependency in (dependencies library-version)
+	    appending
+	      (if (find (library-name dependency) visited
+			:key #'library-name
+			:test #'equalp)
+		  (error "Cyclic dependency on ~A" dependency)
                                         ;else
-	    (let ((library (find-library (library-name dependency) nil)))
-	      (if library
-		  (let ((library-versions (find-library-versions library dependency)))
-		    (append library-versions
-			    (loop for dependency-library-version in library-versions
-			       appending
-				 (calculate-library-versions
-				  dependency-library-version
-				  (cons dependency visited)))))
+		  (let ((library (find-library (library-name dependency) nil)))
+		    (if library
+			(let ((library-versions (find-library-versions library dependency)))
+			  (append library-versions
+				  (loop for dependency-library-version in library-versions
+				     appending
+				       (calculate-library-versions
+					dependency-library-version
+					(cons dependency visited)))))
                                         ;else
-		  (ecase *solving-mode*
-		    (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
-				    dependency))
-		    (:strict (error "Coudn't load ~A" dependency)))))))
-   :test #'library-version=))
+			(ecase *solving-mode*
+			  (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
+					  dependency))
+			  (:strict (error "Coudn't load ~A" dependency))))))))
+	 :test #'library-version=))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))
