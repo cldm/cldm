@@ -147,28 +147,27 @@
 (defun calculate-library-versions (library-version &optional visited)
   (remove-duplicates 
    (loop for dependency in (dependencies library-version)
-     appending
-       (if (find (library-name dependency) visited
-                 :key #'library-name
-                 :test #'equalp)
-           (error "Cyclic dependency on ~A" dependency)
+      appending
+	(if (find (library-name dependency) visited
+		  :key #'library-name
+		  :test #'equalp)
+	    (error "Cyclic dependency on ~A" dependency)
                                         ;else
-           (let ((library (find-library (library-name dependency) nil)))
-             (if library
-		 (let ((library-versions (find-library-versions library dependency)))
-		   (append library-versions
-			   (loop for dependency-library-version in library-versions
-			      appending
-				(calculate-library-versions
-				 dependency-library-version
-				 (cons dependency visited)))))
+	    (let ((library (find-library (library-name dependency) nil)))
+	      (if library
+		  (let ((library-versions (find-library-versions library dependency)))
+		    (append library-versions
+			    (loop for dependency-library-version in library-versions
+			       appending
+				 (calculate-library-versions
+				  dependency-library-version
+				  (cons dependency visited)))))
                                         ;else
-                 (ecase *solving-mode*
-		   (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
-				   dependency))
-		   (:strict (error "Coudn't load ~A" dependency)))))))
-   :test #'library-version=
-   ))
+		  (ecase *solving-mode*
+		    (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
+				    dependency))
+		    (:strict (error "Coudn't load ~A" dependency)))))))
+   :test #'library-version=))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))

@@ -125,3 +125,20 @@
 	   *pbo-environment*
 	   *constraint-variable-counter*
 	   (length all-constraints)))))))
+
+(defun serialize-pbo-constraints (pbo-constraints stream)
+  (loop for pbo-constraint in pbo-constraints
+       do
+       (progn
+	 (serialize-pbo-constraint pbo-constraint stream)
+	 (format stream "~%"))))
+
+(defun serialize-pbo-constraint (pbo-constraint stream)
+  (loop for term in (pbo-constraint-terms pbo-constraint)
+       do (destructuring-bind (sign constant var) term
+	      (format stream "~A~A ~A " sign constant
+		      (string-downcase (symbol-name var)))))
+  (format stream "~A ~A ; *~A*"
+	  (pbo-constraint-comparison pbo-constraint)
+	  (pbo-constraint-result pbo-constraint)
+	  (pbo-constraint-comment pbo-constraint)))
