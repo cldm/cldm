@@ -1,9 +1,9 @@
 CLDM - A Common Lisp Dependency Manager
 =========
 
-**CLDM** is a distributed dependency manager for Common Lisp.
+**CLDM** is a distributed dependency manager for Common Lisp. 
 
-I've started this as a potentially SAT solver powered dependency manager, but for the moment I've decided to simplify and the design turned out to be more similar to [Smalltalk Metacello](https://code.google.com/p/metacello) design. But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: http://www.mancoosi.org/papers/ase10.pdf. To do that, CLDM encodes libraries dependencies to PBO and then runs a PBO solver to get the most fresh versions of libraries (https://github.com/niklasso/minisatp is being used at the moment, but support for http://www.sat4j.org/ is also planned).
+Its design is similar to that of [Smalltalk Metacello](https://code.google.com/p/metacello). But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: http://www.mancoosi.org/papers/ase10.pdf. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. https://github.com/niklasso/minisatp is the PBO solver being used at the moment, but support for other like http://www.sat4j.org/ is also planned.
 
 Common Lisp libraries and its versions are described in `.cld` files, that should be made accessible to **CLDM** somehow (url, filesystem, git)
 
