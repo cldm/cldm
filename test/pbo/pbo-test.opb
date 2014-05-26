@@ -1,0 +1,26 @@
+* #variable= 6 #constraint= 4
+****************************************
+* begin normalizer comments
+* category= Dependency resolving
+* end normalizer comments
+****************************************
+min: +0 x6 +1 x5 +2 x4 +3 x3 ;
+
+* dependency constraints *
++1 x1 >= 1 ;
++1 x2 -1 x1 >= 0 ;
++1 x3 +1 x4 +1 x5 -1 x2 >= 0 ;
++1 x4 +1 x5 +1 x6 -1 x1 >= 0 ;
+
+* same package versions constraints *
+
++1 x3 +1 x4 <= 1 ;
++1 x3 +1 x5 <= 1 ;
++1 x3 +1 x6 <= 1 ;
++1 x4 +1 x5 <= 1 ;
++1 x4 +1 x6 <= 1 ;
++1 x5 +1 x6 <= 1 ;
+
+* unsatisfiable *
+* +1 x5 < 1;
+* +1 x4 < 1;

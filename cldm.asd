@@ -31,6 +31,7 @@ THE SOFTWARE."
 			 (:file "library")
 			 (:file "cld")
 			 (:file "repository")
+			 (:file "pbo")
 			 (:file "deflibrary")
 			 (:file "asdf")
 			 (:file "cldm"))		

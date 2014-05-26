@@ -145,7 +145,8 @@
                 (load-dependency-cld dependency))))))
 
 (defun calculate-library-versions (library-version &optional visited)
-  (loop for dependency in (dependencies library-version)
+  (remove-duplicates 
+   (loop for dependency in (dependencies library-version)
      appending
        (if (find (library-name dependency) visited
                  :key #'library-name
@@ -158,13 +159,16 @@
 		   (append library-versions
 			   (loop for dependency-library-version in library-versions
 			      appending
-				(calculate-library-versions dependency-library-version
-							    (cons dependency visited)))))
+				(calculate-library-versions
+				 dependency-library-version
+				 (cons dependency visited)))))
                                         ;else
                  (ecase *solving-mode*
 		   (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
 				   dependency))
-		   (:strict (error "Coudn't load ~A" dependency))))))))
+		   (:strict (error "Coudn't load ~A" dependency)))))))
+   :test #'library-version=
+   ))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))
@@ -180,25 +184,6 @@
                               (not (equalp (version vi)
                                            (version vj))))))
           do (error "Cannot load ~A and ~A" vi vj))))
-
-(defun group-by (list &key
-			(key #'identity)
-			(test #'equal))
-  (let ((groups nil))
-    (loop for item in list
-	 do
-	 (let ((item-key (funcall key item)))
-	   (block find-group
-	     ;; Look for a group for the item
-	     (loop for group in groups
-		   for i from 0
-		when (funcall test item-key (funcall key (first group)))
-		do (progn
-		     (setf (nth i groups) (push item group))
-		     (return-from find-group)))
-	     ;; Group not found for item, create one
-	     (push (list item) groups))))
-    (nreverse groups)))
 
 (defun pick-library-version (library-versions)
   "Picks a version from a library list of versions"

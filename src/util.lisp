@@ -58,3 +58,21 @@
 				    str))))
 	 (join str (rest lst) news)))))
 
+(defun group-by (list &key
+			(key #'identity)
+			(test #'equal))
+  (let ((groups nil))
+    (loop for item in list
+	 do
+	 (let ((item-key (funcall key item)))
+	   (block find-group
+	     ;; Look for a group for the item
+	     (loop for group in groups
+		   for i from 0
+		when (funcall test item-key (funcall key (first group)))
+		do (progn
+		     (setf (nth i groups) (push item group))
+		     (return-from find-group)))
+	     ;; Group not found for item, create one
+	     (push (list item) groups))))
+    (nreverse groups)))
