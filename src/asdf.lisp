@@ -1,18 +1,21 @@
 (in-package :cldm)
 
-(defun deflibrary-file-from-asdf-system (asdf-system cld pathname &key (if-exists :supersede))
+(defun deflibrary-file-from-asdf-system (asdf-system cld pathname &key (if-exists :supersede)
+								    repositories)
   (with-open-file (f pathname
 		     :direction :output
 		     :if-exists if-exists
 		     :if-does-not-exist :create)
-    (deflibrary-from-asdf-system asdf-system cld f)))
+    (deflibrary-from-asdf-system asdf-system cld f :repositories repositories)))
 
-(defmethod deflibrary-from-asdf-system ((asdf-system string) cld stream)
-  (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream))
+(defmethod deflibrary-from-asdf-system ((asdf-system string) cld stream &key repositories)
+  (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream :repositories repositories))
 
-(defmethod deflibrary-from-asdf-system ((asdf-system asdf:system) cld stream)
+(defmethod deflibrary-from-asdf-system ((asdf-system asdf:system) cld stream &key repositories)
   (format stream ";;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-~%~%")
-  (format stream "~S" (make-cld-library-form asdf-system :cld cld)))
+  (format stream "~S" (make-cld-library-form asdf-system
+					     :cld cld
+					     :repositories repositories)))
 
 (defun make-cld-library-form (asdf-system &key cld repositories)
   (let ((system-name (slot-value asdf-system 'asdf::name)))

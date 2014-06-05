@@ -66,12 +66,25 @@
             (name cld-repository)
             (repository-url cld-repository))))
 
-(defclass cached-http-cld-repository (http-cld-repository)
+(defclass ssh-cld-repository (cld-repository)
+  ((address :initarg :address
+	    :initform (error "Provide the ssh address")
+	    :accessor repository-address
+	    :documentation "The cld repository ssh address"))
+  (:documentation "A cld repository accessible via ssh"))
+
+(defclass cached-cld-repository (cld-repository)
   ((cache-directory :initarg :cache-directory
                     :initform (error "Provide the cache directory")
                     :accessor cache-directory
                     :documentation "The cache directory"))
   (:documentation "A cld repository in which a cache is maintained in a local directory"))
+
+(defclass cached-http-cld-repository (http-cld-repository cached-cld-repository)
+  ())
+
+(defclass cached-ssh-cld-repository (ssh-cld-repository cached-cld-repository)
+  ())
 
 (defmethod find-cld ((cld-repository directory-cld-repository) library-name)
   (let ((cld-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
@@ -101,7 +114,29 @@
                                         ; else
             (verbose-msg "Failed.~%"))))))
 
-(defmethod find-cld :around ((cld-repository cached-http-cld-repository) library-name)
+(defmethod find-cld ((cld-repository ssh-cld-repository) library-name)
+  (let* ((cld-address (format nil "~A/~A.cld"
+			      (repository-address cld-repository)
+			      library-name))
+         (temporal-directory #p"/tmp/")
+         (temporal-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
+                                         temporal-directory)))
+    (verbose-msg "Trying to fetch ~A~%" cld-address)
+    (let ((command (format nil "scp ~A ~A"
+			   cld-address
+			   temporal-file)))
+      (verbose-msg "~A~%" command)
+      (multiple-value-bind (result error status)
+          (trivial-shell:shell-command command)
+        (declare (ignore result error))
+        (if (equalp status 0)
+            (progn
+              (verbose-msg "~A downloaded.~%" cld-address)
+              temporal-file)
+                                        ; else
+            (verbose-msg "Failed.~%"))))))
+
+(defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
   (ensure-directories-exist (cache-directory cld-repository))
   (let ((cached-file (merge-pathnames
 		      (pathname (format nil "~A.cld" library-name))
@@ -205,6 +240,13 @@
         :documentation "The repository url"))
   (:documentation "A remote repository package"))
 
+(defclass ssh-repository-address (repository-address)
+  ((address :initarg :address
+	    :initform (error "Provide the repository address")
+	    :accessor address
+	    :documentation "The repository ssh address"))
+  (:documentation "A remote ssh repository address"))
+
 (defgeneric cache-repository-from-address (repository-address repository target-directory)
   (:documentation "Cache the given repository from repository-address to target-directory.
                    Methods of this generic function should return T on success, or NIL on failure."))
@@ -244,6 +286,26 @@
             #p"/tmp/")))
       (verbose-msg "Downloading ~A...~%" (url repository-address))
       (run-or-fail (format nil "wget -O ~A ~A" temporal-file (url repository-address)))
+      (verbose-msg "Extracting...~%")
+      (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
+      (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
+                           temporal-file
+                           (princ-to-string target-directory))))
+    t))
+
+(defmethod cache-repository-from-address ((repository-address ssh-repository-address)
+                                          repository target-directory)
+  (flet ((run-or-fail (&rest args)
+           (multiple-value-bind (result code status)
+               (apply #'trivial-shell:shell-command args)
+             (when (not (zerop status))
+               (return-from cache-repository-from-address nil)))))
+    (let ((temporal-file
+           (merge-pathnames
+            (file-namestring (address repository-address))
+            #p"/tmp/")))
+      (verbose-msg "Downloading ~A...~%" (address repository-address))
+      (run-or-fail (format nil "scp ~A ~A" (address repository-address) temporal-file))
       (verbose-msg "Extracting...~%")
       (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"

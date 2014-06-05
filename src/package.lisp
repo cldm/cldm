@@ -60,6 +60,12 @@
 	   #:repository-libraries
 	   #:repository-length
 
+	   #:http-cld-repository
+	   #:ssh-cld-repository
+	   #:directory-cld-repository
+	   #:cached-http-cld-repository
+	   #:cached-ssh-cld-repository
+
 	   #:deflibrary
 	   #:list-libraries
 	   #:find-library
@@ -67,6 +73,8 @@
 	   #:load-library
 	   #:with-libraries-directory
 	   #:with-cld-repositories
+
+	   #:*cld-repositories*
 
 	   ;; asdf
 	   #:deflibrary-file-from-asdf-system

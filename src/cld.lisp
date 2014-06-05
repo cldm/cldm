@@ -48,6 +48,17 @@
   (print-unreadable-object (cld-address stream :type t :identity t)
     (format stream "~A" (cld-url cld-address))))
 
+(defclass ssh-cld-address (cld-address)
+  ((address :initarg :address
+	    :initform (error "Provide the cld ssh address")
+	    :accessor cld-address
+	    :documentation "The cld ssh address"))
+  (:documentation "A cld in an ssh location"))
+
+(defmethod print-object ((cld-address ssh-cld-address) stream)
+  (print-unreadable-object (cld-address stream :type t :identity t)
+    (format stream "~A" (cld-address cld-address))))
+
 (defgeneric parse-cld-address (cld-address)
   (:method ((cld-address pathname))
     cld-address)
@@ -70,6 +81,7 @@
     (ecase (first cld-address)
       (:file (make-instance 'pathname-cld-address :pathname (second cld-address)))
       (:url (make-instance 'http-cld-address :url (second cld-address)))
+      (:ssh (make-instance 'ssh-cld-address :address (second cld-address)))
       (:git (destructuring-bind (url pathname &key branch) (rest cld-address)
 	      (make-instance 'git-cld-address
 			     :git-url url
