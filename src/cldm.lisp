@@ -88,7 +88,8 @@
 		    (progn
 		      (setup library-name version)
 		      (when load-asdf-system
-			(asdf:operate 'asdf:load-op library-name))
+			;; Avoid reloading already loaded systems
+			(asdf:load-system library-name :force-not (asdf:registered-systems)))
 		      t)
 		    (error "Couldn't find a cld for ~S library~%" library-name))))))))
 
