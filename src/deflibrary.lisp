@@ -31,8 +31,8 @@
                     :name ',(if (symbolp name)
                                 (string-downcase (symbol-name name))
                                 name)
-                    :author ,author
-                    :maintainer ,maintainer
+                    :author ',author
+                    :maintainer ',maintainer
                     :description ,description
                     :licence ,licence
                     :cld (parse-cld-address ',cld)
