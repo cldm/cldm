@@ -34,19 +34,24 @@
 	var)))
 
 (defun encode-dependency (library-version dependency)
-  (let* ((dependency-library (find-library (library-name dependency)))
-	 (library-versions (find-library-versions dependency-library dependency)))
-    (let ((terms (append
-		  (loop for library-version in library-versions
-		     collect `(+ 1 ,(gen-pbo-variable
-				     library-version)))
-		  `((- 1 ,(gen-pbo-variable library-version))))))    
-    (make-pbo-constraint* terms
-			  '>= 0
-			  (format nil "~A dependency: ~A"
-				  (library-version-unique-name library-version)
-				  (library-name dependency))))))
-
+  (let* ((dependency-library (find-library (library-name dependency) nil)))
+    ;; Note: we allow the dependency library not to exist here
+    ;; This is because the library is not available for some reason, but we rely
+    ;; on that the library is availabe in the user local system (i.e. via Quicklisp)
+    ;; When the library does not exist, we don't encode any depedencies
+    (when dependency-library
+      (let ((library-versions (find-library-versions dependency-library dependency)))
+	(let ((terms (append
+		      (loop for library-version in library-versions
+			 collect `(+ 1 ,(gen-pbo-variable
+					 library-version)))
+		      `((- 1 ,(gen-pbo-variable library-version))))))    
+	  (make-pbo-constraint* terms
+				'>= 0
+				(format nil "~A dependency: ~A"
+					(library-version-unique-name library-version)
+					(library-name dependency))))))))
+	
 (defun encode-conflict (library-version-1 library-version-2)
   (make-pbo-constraint*
    `((+ 1 ,(gen-pbo-variable library-version-1))
@@ -89,9 +94,10 @@
 
 (defun encode-library-version-dependencies (library-version)
   (let ((dependency-constraints
-	 (loop for dependency in (dependencies library-version)
-	    collect 
-	      (encode-dependency library-version dependency))))
+	 (remove-if #'null
+		    (loop for dependency in (dependencies library-version)
+		       collect 
+			 (encode-dependency library-version dependency)))))
     dependency-constraints))
 
 (defun encode-install-library-version (library-version library-versions-involved)
