@@ -67,4 +67,8 @@
 	   #:load-library
 	   #:with-libraries-directory
 	   #:with-cld-repositories
+
+	   ;; asdf
+	   #:deflibrary-file-from-asdf-system
+	   #:deflibrary-from-asdf-system
 	   ))
