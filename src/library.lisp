@@ -77,6 +77,29 @@
   ;; Register the library
   (register-library library))
 
+(defclass library-version-repository ()
+  ((library-version :initarg :library-version
+                    :initform nil
+                    :accessor library-version
+                    :documentation "The library version of the repository")
+   (name :initarg :name
+         :initform (error "Provide the repository name")
+         :accessor name
+         :documentation "The repository name")
+   (address :initarg :address
+            :initform (error "Provide the repository address")
+            :accessor repository-address
+            :documentation "The repository address. Can be a pathname, an url or a git reference"))
+  (:documentation "A library version repository"))
+
+(defmethod print-object ((version-repository library-version-repository) stream)
+  (print-unreadable-object (version-repository stream :type t :identity t)
+    (print-library-version (library-version version-repository)
+                           stream)
+    (format stream " ~A ~A"
+            (name version-repository)
+            (repository-address version-repository))))
+
 (defclass library-version ()
   ((library :initarg :library
             :initform nil
@@ -315,3 +338,88 @@
        (set-equal (conflicts lib1)
 		  (conflicts lib2)
 		  :test #'requirement=)))
+
+(defun copy-library-version (library-version)
+  (make-instance 'library-version
+		 :library (library library-version)
+		 :version (version library-version)
+		 :description (description library-version)
+		 :stability (stability library-version)
+		 :repositories (copy-list (repositories library-version))
+		 :dependencies (copy-list (dependencies library-version))
+		 :provides (copy-list (provides library-version))
+		 :conflicts (copy-list (conflicts library-version))
+		 :replaces (copy-list (replaces library-version))
+		 :suggests (copy-list (suggests library-version))))
+
+(defun find-library-version-repository (library-version repository-name)
+  (find repository-name (repositories library-version)
+	:key #'name))	
+
+(defmethod add-repository ((library-version library-version)
+			   (repository library-version-repository))
+  "Adds REPOSITORY to LIBRARY-VERSION.
+
+   Args: - LIBRARY-VERSION (library-version): The library version.
+         - REPOSITORY (repository): The repository.
+
+   If the library version contains a repository with the given repository name, replaces the repository"
+  
+  (if (find (name repository)
+	    (repositories library-version)
+	    :key #'name :test #'equalp)
+      ;; There's a repository with the same name, replace it
+      (setf (repositories library-version)
+	    (cons repository
+		  (remove (name repository)
+			  (repositories library-version)
+			  :key #'name :test #'equalp)))
+      ;; else, just add the repository
+      (push repository (repositories library-version))))
+
+(defmethod remove-repository ((library-version library-version)
+			      repository-name)
+  "Removes the repository with name REPOSITORY-NAME from LIBRARY-VERSION.
+   A repository with that name has to exists in the library version repositories."
+  
+  (assert (find repository-name (repositories library-version)
+		:key #'name :test #'equalp) nil "Repository ~A not found in ~A"
+		repository-name library-version)
+  (setf (repositories library-version)
+	(remove repository-name
+		(repositories library-version)
+		:key #'name :test #'equalp)))
+
+(defmethod add-dependency ((library-version library-version)
+			   (dependency requirement))
+  "Add a dependency to a library version.
+   If a dependency on the same library exists, it is replaced."
+
+  (if (find (library-name dependency)
+	    (dependencies library-version)
+	    :key #'library-name
+	    :test #'equalp)
+      ;; There's a dependency on the same library, replace it
+      (setf (dependencies library-version)
+	    (cons dependency
+		  (remove (library-name dependency)
+			  (dependencies library-version)
+			  :key #'library-name :test #'equalp)))
+      ;; else, just add the dependency
+      (setf (dependencies library-version)
+	    (cons dependency (dependencies library-version)))))
+
+(defmethod remove-dependency ((library-version library-version)
+			      library-name)
+  "Removes a dependency to LIBRARY-NAME from LIBRARY-VERSION.
+   If the dependency does not exists, an error is signaled"
+
+  (assert (find library-name (dependencies library-version)
+		:key #'name :test #'equalp) nil "Dependency to ~A not found in ~A"
+		library-name
+		library-version)
+  
+  (setf (dependencies library-version)
+	(remove library-name
+		(dependencies library-version)
+		:key #'library-name :test #'equalp)))
