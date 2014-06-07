@@ -5,7 +5,7 @@
 
 (defparameter *verbose-mode* t)
 
-(defparameter *solving-mode* :lenient "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
+(defparameter *solving-mode* :strict "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
 
 (defparameter *clean-asdf-environment* nil "If T, load libraries in a clean ASDF environment")
 
