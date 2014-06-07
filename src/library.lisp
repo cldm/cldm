@@ -375,7 +375,8 @@
 			  (repositories library-version)
 			  :key #'name :test #'equalp)))
       ;; else, just add the repository
-      (push repository (repositories library-version))))
+      (push repository (repositories library-version)))
+  (setf (library-version repository) library-version))
 
 (defmethod remove-repository ((library-version library-version)
 			      repository-name)
@@ -415,7 +416,7 @@
    If the dependency does not exists, an error is signaled"
 
   (assert (find library-name (dependencies library-version)
-		:key #'name :test #'equalp) nil "Dependency to ~A not found in ~A"
+		:key #'library-name :test #'equalp) nil "Dependency to ~A not found in ~A"
 		library-name
 		library-version)
   
