@@ -9,6 +9,9 @@
 
 (defparameter *clean-asdf-environment* nil "If T, load libraries in a clean ASDF environment")
 
+(defparameter *minisat+-binary* "/usr/bin/minisat+"
+  "minisat+ binary for PBO solving")
+
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
     (apply #'format t (cons msg args))))

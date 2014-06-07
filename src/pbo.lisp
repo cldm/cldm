@@ -176,9 +176,9 @@
 	    (serialize-pbo-constraints constraints stream))
 	  (multiple-value-bind (result error status)
 	      (trivial-shell:shell-command
-	       (format nil "/usr/bin/minisat+ ~A -v0" pbo-file))
+	       (format nil "~A ~A -v0" *minisat+-binary* pbo-file))
 	    (when (not (zerop status))
-	      (error "Error executing /usr/bin/minisat+ ~A -v0" pbo-file))
+	      (error "Error executing ~A ~A -v0" *minisat+-binary* pbo-file))
 	    (flet ((find-environment-library-version (var)
 		     (car (rassoc var pbo-environment))))
 	      (cl-ppcre:register-groups-bind (vars-string)
