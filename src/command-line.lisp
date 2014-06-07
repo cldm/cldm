@@ -10,7 +10,13 @@
   (com.dvlsoft.clon:nickname-package))
 
 (clon:defsynopsis (:postfix "command [OPTIONS]")
-  (text :contents "CLDM is a Common Lisp Dependency Manager.
+  (text :contents "  ___ _    ___  __  __ 
+ / __| |  |   \\|  \\/  |
+| (__| |__| |) | |\\/| |
+ \\___|____|___/|_|  |_|
+                        
+
+CLDM is a Common Lisp Dependency Manager.
 
 Available commands: push pull.
 
