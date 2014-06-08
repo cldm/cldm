@@ -44,4 +44,5 @@ THE SOFTWARE."
 		 #:esrap
 		 #:trivial-shell
 		 #:puri
-		 #:split-sequence))
+		 #:split-sequence
+		 #:cl-fad))

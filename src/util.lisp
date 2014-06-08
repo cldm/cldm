@@ -76,3 +76,11 @@
 	     ;; Group not found for item, create one
 	     (push (list item) groups))))
     (nreverse groups)))
+
+(defun directory-checksum (directory)
+  (assert (cl-fad:directory-pathname-p directory)
+	  nil "~A is not a directory pathname"
+	  directory)
+  (multiple-value-bind (output error status)
+      (trivial-shell:shell-command (format nil "tar c ~A | md5sum" directory))
+    output))
