@@ -291,14 +291,15 @@
 		       :direction :output
 		       :if-exists :supersede
 		       :if-does-not-exist :create)
-      (loop for installed-library in installed-libraries
-	   do
-	   (destructuring-bind (library-version library-directory repository) installed-library
-	     (format f "(~S ~S ~S)~%"
-		     (library-version-unique-name library-version)
-		     (list (name repository)
-			   (repository-address-sexp (repository-address repository)))
-		     (directory-checksum library-directory)))))))
+      (format f "~S"
+	      (loop for installed-library in installed-libraries
+		 collect
+		   (destructuring-bind (library-version library-directory repository) installed-library
+		     (list
+		      (library-version-unique-name library-version)
+		      (list (name repository)
+			    (repository-address-sexp (repository-address repository)))
+		      (directory-checksum library-directory))))))))
 
 ;; ASDF plugging
 

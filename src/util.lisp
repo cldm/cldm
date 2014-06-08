@@ -84,3 +84,9 @@
   (multiple-value-bind (output error status)
       (trivial-shell:shell-command (format nil "tar c ~A | md5sum" directory))
     output))
+
+(defun file-to-string (pathname)
+  (with-open-file (stream pathname)
+    (let ((seq (make-array (file-length stream) :element-type 'character :fill-pointer t)))
+      (setf (fill-pointer seq) (read-sequence seq stream))
+      seq)))
