@@ -45,4 +45,5 @@ THE SOFTWARE."
 		 #:trivial-shell
 		 #:puri
 		 #:split-sequence
-		 #:cl-fad))
+		 #:cl-fad
+		 #:osicat))

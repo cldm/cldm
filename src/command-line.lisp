@@ -3,7 +3,6 @@
 (require :cldm)
 
 (ql:quickload :com.dvlsoft.clon)
-(ql:quickload :osicat)
 
 (setq *load-verbose* nil)
 
