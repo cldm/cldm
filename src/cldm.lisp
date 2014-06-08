@@ -109,7 +109,7 @@
 			       (solving-mode *solving-mode*)
 			       (clean-asdf-environment *clean-asdf-environment*)
 			       (load-asdf-system t)
-			       (libraries-directory *libraries-directory*))
+			       (libraries-directory *local-libraries-directory*))
   "Loads a project from its cld"
   
   (let ((*verbose-mode* verbose)
