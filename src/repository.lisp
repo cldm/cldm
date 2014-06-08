@@ -164,33 +164,35 @@
 (defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
   (info-msg "Installing ~A...~%" (library-version-unique-name library-version))
   (ensure-directories-exist libraries-directory)
-  (let ((repository-name (format nil "~A-~A"
-                                 (library-name (library library-version))
-                                 (print-version-to-string (version library-version)))))
-    (let ((repository-directory (merge-pathnames
-                                 (pathname (format nil "~A/" repository-name))
-                                 libraries-directory)))
-      (verbose-msg "Repository directory: ~A~%" repository-directory)
-      (if (probe-file repository-directory)
-          (verbose-msg "Repository for ~A already exists in ~A~%"
-                       library-version
-                       repository-directory)
+  (let* ((repository-name (format nil "~A-~A"
+				  (library-name (library library-version))
+				  (print-version-to-string (version library-version))))
+	 (repository-directory (merge-pathnames
+				(pathname (format nil "~A/" repository-name))
+				libraries-directory))
+	 (return-repository nil))
+    (verbose-msg "Repository directory: ~A~%" repository-directory)
+    (if (probe-file repository-directory)
+	(verbose-msg "Repository for ~A already exists in ~A~%"
+		     library-version
+		     repository-directory)
                                         ;else
-          (progn
-            (verbose-msg "Repository does not exist for ~A. Caching...~%" library-version)
-            (let ((done nil))
-              (loop for repository in (repositories library-version)
-                 while (not done)
-                 do (progn
-                      (verbose-msg "Trying with ~A...~%" repository)
-                      (setf done (cache-repository repository repository-directory))
-                      (if (not done)
-                          (verbose-msg "Failed.~%")
-                          (verbose-msg "Success.~%"))))
-              (when (not done)
-                (error "Couldn't cache repository from ~{~A~}~%"
-                       (repositories library-version))))))
-      repository-directory)))
+	(progn
+	  (verbose-msg "Repository does not exist for ~A. Caching...~%" library-version)
+	  (let ((done nil))
+	    (loop for repository in (repositories library-version)
+	       while (not done)
+	       do (progn
+		    (verbose-msg "Trying with ~A...~%" repository)
+		    (setf return-repository repository)
+		    (setf done (cache-repository repository repository-directory))
+		    (if (not done)
+			(verbose-msg "Failed.~%")
+			(verbose-msg "Success.~%"))))
+	    (when (not done)
+	      (error "Couldn't cache repository from ~{~A~}~%"
+		     (repositories library-version))))))
+    (values repository-directory return-repository)))
 
 (defmethod cache-repository (repository directory)
   (cache-repository-from-address (repository-address repository)
@@ -339,3 +341,17 @@
         (verbose-msg "~A~%" command)
         (run-or-fail command)))
     t))
+
+(defgeneric repository-address-sexp (repository-address)
+  (:method ((repository-address directory-repository-address))
+    (list :directory (repository-directory repository-address)))
+  (:method ((repository-address url-repository-address))
+    (list :url (repository-url repository-address)))
+  (:method ((repository-address git-repository-address))
+    `(:git ,(url repository-address)
+	   ,@(when (commit repository-address)
+		   (list :commit (commit repository-address)))
+	   ,@(when (branch repository-address)
+		   (list :branch (branch repository-address)))))
+  (:method ((repository-address ssh-repository-address))
+    (list :ssh (address repository-address))))

@@ -78,10 +78,13 @@
 (defun parse-version-repositories (repositories)
   (loop for repository in repositories
      collect
-       (destructuring-bind (name address) repository
-	 (make-instance 'library-version-repository
-			:name name
-			:address (parse-version-repository-address address)))))
+       (parse-library-version-repository repository)))
+
+(defun parse-library-version-repository (repository)
+  (destructuring-bind (name address) repository
+    (make-instance 'library-version-repository
+		   :name name
+		   :address (parse-version-repository-address address))))
 
 (defun parse-version-dependencies (dependencies)
   (loop for dependency in dependencies

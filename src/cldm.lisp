@@ -22,7 +22,7 @@
 (defun info-msg (msg &rest args)
   (apply #'format t (cons msg args)))
 
-(defun setup (library-name &optional version)
+(defun setup (library-name &optional version (libraries-directory *libraries-directory*))
   "Setup an already loaded (cld) library and its dependencies"
   (let ((library (find-library library-name)))
     (verbose-msg "Loading ~A.~%" library)
@@ -49,9 +49,9 @@
 	  ;; After that, push to asdf:*central-registry*
 	  (loop for version in library-versions
 	     do
-	       (let ((pathname (cache-library-version version)))
-		 (push pathname asdf:*central-registry*))))))
-    (verbose-msg "Done.~%")))
+	       (let ((pathname (cache-library-version version libraries-directory)))
+		 (push pathname asdf:*central-registry*)))))))
+  (verbose-msg "Done.~%"))
 
 (defun load-library (library-name
 		     &key
@@ -60,7 +60,8 @@
 		       (verbose *verbose-mode*)
 		       (solving-mode *solving-mode*)
 		       (clean-asdf-environment *clean-asdf-environment*)
-		       (load-asdf-system t))
+		       (load-asdf-system t)
+		       (libraries-directory *libraries-directory*))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
@@ -73,13 +74,13 @@
     (let ((cld (and cld (load-cld (parse-cld-address cld)))))
       (if cld
 	  (progn
-	    (setup library-name version)
+	    (setup library-name version libraries-directory)
 	    (when load-asdf-system
 	      (asdf:load-system library-name :force-not (asdf:registered-systems)))
 	    t)
 	  ;; else
 	  (if (find-library library-name nil)
-	      (setup library-name version)
+	      (setup library-name version libraries-directory)
 	      ;; else
 	      (progn
 		(loop
@@ -144,10 +145,14 @@
 
 	  ;; Check the version existance and download if not
 	  ;; After that, push to asdf:*central-registry*
-	  (loop for version in library-versions
-	     do
-	       (let ((pathname (cache-library-version version libraries-directory)))
-		 (push pathname asdf:*central-registry*))))))
+	  (let ((installed-libraries ()))
+	    (loop for version in library-versions
+	       do
+		 (multiple-value-bind (pathname repository)
+		     (cache-library-version version libraries-directory)
+		   (push pathname asdf:*central-registry*)
+		   (push (list version pathname repository) installed-libraries)))
+	    (create-lock-file installed-libraries)))))
     (verbose-msg "Done.~%")
     (when load-asdf-system
       (asdf:load-system (library-name library)
@@ -278,6 +283,22 @@
 	    (group-by versions-list
 		      :key (compose #'library-name #'library)
 		      :test #'equalp))))
+
+(defun create-lock-file (installed-libraries)
+  (let ((lock-file-pathname (merge-pathnames "cldm.lock"
+					     (osicat:current-directory))))
+    (with-open-file (f lock-file-pathname
+		       :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+      (loop for installed-library in installed-libraries
+	   do
+	   (destructuring-bind (library-version library-directory repository) installed-library
+	     (format f "(~S ~S ~S)~%"
+		     (library-version-unique-name library-version)
+		     (list (name repository)
+			   (repository-address-sexp (repository-address repository)))
+		     (directory-checksum library-directory)))))))
 
 ;; ASDF plugging
 
