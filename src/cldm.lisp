@@ -12,6 +12,9 @@
 (defparameter *minisat+-binary* "/usr/bin/minisat+"
   "minisat+ binary for PBO solving")
 
+(defparameter *local-libraries-directory* (merge-pathnames (pathname ".cldm/")
+							   (osicat:current-directory)))
+
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
@@ -290,11 +293,8 @@
 (defun asdf-system-search (name)
   (let ((system-name (or (and (symbolp name)
 			      (string-downcase (symbol-name name)))
-			 name))
-	(local-cldm-directory (merge-pathnames (pathname ".cldm/")
-					       (osicat:current-directory))))
-					       
-    (let ((libraries-directories (list local-cldm-directory *libraries-directory*)))
+			 name)))					       
+    (let ((libraries-directories (list *local-libraries-directory* *libraries-directory*)))
       (loop for libraries-directory in libraries-directories
 	   for system-filename = (asdf-system-directory-search system-name libraries-directory)
 	   when system-filename

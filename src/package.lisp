@@ -76,6 +76,8 @@
 
 	   #:*cld-repositories*
 	   #:*minisat+-binary*
+	   #:*libraries-directory*
+	   #:*local-libraries-directory*
 
 	   ;; asdf
 	   #:deflibrary-file-from-asdf-system
