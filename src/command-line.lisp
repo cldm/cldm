@@ -108,7 +108,7 @@ Use 'cldm <command> --help' to get command-specific help.
 	     (not (clon:cmdline-p)))
 	 (clon:help))
 	((clon:getopt :long-name "version")
-	 (format "CLDM Common Lisp Dependency Manager version ~A" +CLDM-version+))
+	 (format t "CLDM Common Lisp Dependency Manager version ~A~%" +CLDM-version+))
 	(t
 	 (unless (clon:remainder)
 	   (format t "Missing command.~%")
