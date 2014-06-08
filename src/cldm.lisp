@@ -297,9 +297,10 @@
 		   (destructuring-bind (library-version library-directory repository) installed-library
 		     (list
 		      (library-version-unique-name library-version)
+		      (list library-directory
+			    (directory-checksum library-directory))
 		      (list (name repository)
-			    (repository-address-sexp (repository-address repository)))
-		      (directory-checksum library-directory))))))))
+			    (repository-address-sexp (repository-address repository))))))))))
 
 ;; ASDF plugging
 
