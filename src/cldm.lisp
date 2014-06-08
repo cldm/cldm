@@ -16,6 +16,9 @@
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
 
+(defun info-msg (msg &rest args)
+  (apply #'format t (cons msg args)))
+
 (defun setup (library-name &optional version)
   "Setup an already loaded (cld) library and its dependencies"
   (let ((library (find-library library-name)))
@@ -36,7 +39,8 @@
         (let ((library-versions (pbo-solve-library-versions library-version
 							    library-versions-involved)))
 
-	  (verbose-msg "Libraries to load: ~A~%" library-versions)
+	  (info-msg "Libraries to load: ~{~A~^, ~}~%"
+		    (mapcar #'library-version-unique-name library-versions))
 
 	  ;; Check the version existance and download if not
 	  ;; After that, push to asdf:*central-registry*
@@ -133,7 +137,7 @@
 					 :key #'library-name
 					 :test #'equalp))
 		    
-	  (verbose-msg "Libraries to load: ~A~%" library-versions)
+	  (info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
 	  ;; Check the version existance and download if not
 	  ;; After that, push to asdf:*central-registry*

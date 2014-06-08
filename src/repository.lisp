@@ -162,6 +162,7 @@
 		      downloaded-file))))))))) 
 
 (defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
+  (info-msg "Installing ~A...~%" (library-version-unique-name library-version))
   (ensure-directories-exist libraries-directory)
   (let ((repository-name (format nil "~A-~A"
                                  (library-name (library library-version))
@@ -284,9 +285,9 @@
            (merge-pathnames
             (file-namestring (url repository-address))
             #p"/tmp/")))
-      (verbose-msg "Downloading ~A...~%" (url repository-address))
+      (info-msg "Downloading ~A...~%" (url repository-address))
       (run-or-fail (format nil "wget -O ~A ~A" temporal-file (url repository-address)))
-      (verbose-msg "Extracting...~%")
+      (info-msg "Extracting...~%")
       (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
@@ -304,9 +305,9 @@
            (merge-pathnames
             (file-namestring (address repository-address))
             #p"/tmp/")))
-      (verbose-msg "Downloading ~A...~%" (address repository-address))
+      (info-msg "Downloading ~A...~%" (address repository-address))
       (run-or-fail (format nil "scp ~A ~A" (address repository-address) temporal-file))
-      (verbose-msg "Extracting...~%")
+      (info-msg "Extracting...~%")
       (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
@@ -321,17 +322,17 @@
              (declare (ignore result code))
              (when (not (zerop status))
                (return-from cache-repository-from-address nil)))))
-    (verbose-msg "Cloning repository: ~A...~%" (url repository-address))
+    (info-msg "Cloning repository: ~A...~%" (url repository-address))
     (run-or-fail (format nil "git clone ~A ~A"
                          (url repository-address)
                          (princ-to-string target-directory)))
     (when (branch repository-address)
-      (verbose-msg "Checking out ~A branch.~%" (branch repository-address))
+      (info-msg "Checking out ~A branch.~%" (branch repository-address))
       (run-or-fail (format nil "cd ~A; git checkout ~A"
 			   target-directory
 			   (branch repository-address))))
     (when (commit repository-address)
-      (verbose-msg "Checking out commit ~A~%" (commit repository-address))
+      (info-msg "Checking out commit ~A~%" (commit repository-address))
       (let ((command  (format nil "cd ~A; git checkout ~A"
                               (princ-to-string target-directory)
                               (commit repository-address))))

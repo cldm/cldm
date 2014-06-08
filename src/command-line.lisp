@@ -54,7 +54,9 @@
 		   :description "Run in verbose mode")
 	   (switch :long-name "lenient"
 		   :default-value nil
-		   :description "Allow some of the dependencies not to be installed.")))
+		   :description "Allow some of the dependencies not to be installed.")
+	   (path :long-name "libraries-directory"
+		 :type :directory)))
    ;; update command
    (cons "update"
 	 (clon:defsynopsis (:make-default nil)
@@ -246,14 +248,30 @@ Use 'cldm <command> --help' to get command-specific help.
     (when (not project-cld-file)
       (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
       (clon:exit 1))
-    (let ((libraries-directory (merge-pathnames (pathname ".cldm/")
-						(osicat:current-directory)))
+    (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
+				   (merge-pathnames (pathname ".cldm/")
+						    (osicat:current-directory))))
+	  (solving-mode (or (and (clon:getopt :long-name "lenient")
+				 :lenient)
+			    :strict))
+	  (verbose-mode (or (clon:getopt :long-name "verbose")
+			    nil))
 	  (library (progn
 		     (cldm::load-cld project-cld-file)
 		     (loop for library being the hash-values of cldm::*libraries*
 			do (return library)))))
-      (cldm::load-project library :libraries-directory libraries-directory
-			  :solving-mode :lenient))))
+      (format t "Installing ~A dependencies to ~A~%"
+	      (cldm::library-name library)
+	      libraries-directory)
+      (handler-case
+	  (cldm::load-project library
+			      :libraries-directory libraries-directory
+			      :solving-mode solving-mode
+			      :verbose verbose-mode)
+	(error (e)
+	  (format t "An error ocurred: ~A~%" e)
+	  (clon:exit 1)))
+      (format t "Done.~%"))))
 
 (defmethod process-command ((command (eql :update)))
   (let ((project-cld-file (find-project-cld-file)))
