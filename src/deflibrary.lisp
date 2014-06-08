@@ -86,25 +86,27 @@
 (defun parse-version-dependencies (dependencies)
   (loop for dependency in dependencies
      collect
-       (if (listp dependency)
-	   (destructuring-bind (library-name &key version-constraints cld) dependency
-	     (apply #'make-instance 'requirement
-		    `(:library-name ,(if (symbolp library-name)
-					 (string-downcase (symbol-name library-name))
-					 library-name)
-				    ,@(when version-constraints
-					    (list :version-constraints
-						  (loop for version-constraint in version-constraints
-						     collect (list (first version-constraint)
-								   (read-version-from-string
-								    (second version-constraint))))))
-				    ,@(when cld
-					    (list :cld (parse-cld-address cld))))))
-                                        ;else
-	   (make-instance 'requirement
-			  :library-name (if (symbolp dependency)
-					    (string-downcase (symbol-name dependency))
-					    dependency)))))
+       (cond
+	 ((listp dependency)
+	  (destructuring-bind (library-name &key version-constraints cld) dependency
+	    (apply #'make-instance 'requirement
+		   `(:library-name ,(if (symbolp library-name)
+					(string-downcase (symbol-name library-name))
+					library-name)
+				   ,@(when version-constraints
+					   (list :version-constraints
+						 (loop for version-constraint in version-constraints
+						    collect (list (first version-constraint)
+								  (read-version-from-string
+								   (second version-constraint))))))
+				   ,@(when cld
+					   (list :cld (parse-cld-address cld)))))))
+	 ((symbolp dependency)
+	  (make-instance 'requirement
+			 :library-name (string-downcase (symbol-name dependency))))
+	 ((stringp dependency)
+	  (read-requirement-from-string dependency))
+	 (t (error "~A is not a valid dependency spec" dependency)))))
 
 (defun parse-version-repository-address (address)
   (cond
