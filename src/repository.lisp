@@ -161,14 +161,14 @@
 		      (verbose-msg "Could not cache cdl file ~A~%" downloaded-file)
 		      downloaded-file))))))))) 
 
-(defun cache-library-version (library-version)
-  (ensure-directories-exist *libraries-directory*)
+(defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
+  (ensure-directories-exist libraries-directory)
   (let ((repository-name (format nil "~A-~A"
                                  (library-name (library library-version))
                                  (print-version-to-string (version library-version)))))
     (let ((repository-directory (merge-pathnames
                                  (pathname (format nil "~A/" repository-name))
-                                 *libraries-directory*)))
+                                 libraries-directory)))
       (verbose-msg "Repository directory: ~A~%" repository-directory)
       (if (probe-file repository-directory)
           (verbose-msg "Repository for ~A already exists in ~A~%"

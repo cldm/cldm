@@ -26,25 +26,25 @@
       ;; Load libraries metadata
       (load-library-version library-version)
 
-      ;; Calculate list of library-versions to load
-      (let ((library-versions
-             (calculate-library-versions library-version)))
+      ;; Calculate list of library-versions involved
+      (let ((library-versions-involved
+             (calculate-library-versions-involved library-version)))
         
         ;; Validate the library versions list
-        ;(validate-library-versions-list library-versions)
+					;(validate-library-versions-list library-versions)
 	
-        (setf library-versions (pbo-solve-library-versions library-version
-							   library-versions))
+        (let ((library-versions (pbo-solve-library-versions library-version
+							    library-versions-involved)))
 
-	(verbose-msg "Libraries to load: ~A~%" library-versions)
+	  (verbose-msg "Libraries to load: ~A~%" library-versions)
 
-        ;; Check the version existance and download if not
-        ;; After that, push to asdf:*central-registry*
-        (loop for version in library-versions
-           do
-             (let ((pathname (cache-library-version version)))
-               (push pathname asdf:*central-registry*))))))
-  (verbose-msg "Done.~%"))
+	  ;; Check the version existance and download if not
+	  ;; After that, push to asdf:*central-registry*
+	  (loop for version in library-versions
+	     do
+	       (let ((pathname (cache-library-version version)))
+		 (push pathname asdf:*central-registry*))))))
+    (verbose-msg "Done.~%")))
 
 (defun load-library (library-name
 		     &key
@@ -68,7 +68,7 @@
 	  (progn
 	    (setup library-name version)
 	    (when load-asdf-system
-	      (asdf:operate 'asdf:load-op library-name))
+	      (asdf:load-system library-name :force-not (asdf:registered-systems)))
 	    t)
 	  ;; else
 	  (if (find-library library-name nil)
@@ -95,6 +95,57 @@
 			(asdf:load-system library-name :force-not (asdf:registered-systems)))
 		      t)
 		    (error "Couldn't find a cld for ~S library~%" library-name))))))))
+
+(defun load-project (library &key
+			       version
+			       (verbose *verbose-mode*)
+			       (solving-mode *solving-mode*)
+			       (clean-asdf-environment *clean-asdf-environment*)
+			       (load-asdf-system t)
+			       (libraries-directory *libraries-directory*))
+  "Loads a project from its cld"
+  
+  (let ((*verbose-mode* verbose)
+	(*solving-mode* solving-mode))
+    (when clean-asdf-environment
+      (setf asdf:*central-registry* nil)
+      (asdf:clear-source-registry)
+      (asdf:clear-configuration)
+      (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
+    (verbose-msg "Loading ~A.~%" library)
+    (let ((library-version (if version
+			       (find-library-version library version)
+			       (first (library-versions library)))))
+      ;; Load libraries metadata
+      (load-library-version library-version)
+
+      ;; Calculate list of library-versions involved
+      (let ((library-versions-involved
+	     (calculate-library-versions-involved library-version)))
+        
+	;; Validate the library versions list
+					;(validate-library-versions-list library-versions)
+	
+	(let ((library-versions (pbo-solve-library-versions library-version
+							    library-versions-involved)))
+	  ;; Remove the project library from the library versions list
+	  (setf library-versions (remove (library-name library) library-versions
+					 :key #'library-name
+					 :test #'equalp))
+		    
+	  (verbose-msg "Libraries to load: ~A~%" library-versions)
+
+	  ;; Check the version existance and download if not
+	  ;; After that, push to asdf:*central-registry*
+	  (loop for version in library-versions
+	     do
+	       (let ((pathname (cache-library-version version libraries-directory)))
+		 (push pathname asdf:*central-registry*))))))
+    (verbose-msg "Done.~%")
+    (when load-asdf-system
+      (asdf:load-system (library-name library)
+			:force-not (asdf:registered-systems)))
+    t))
 
 (defun load-library-version (library-version &key reload)
   "Load a library version dependencies clds"
@@ -147,7 +198,7 @@
                 ;; else
                 (load-dependency-cld dependency))))))
 
-(defun calculate-library-versions (library-version &optional visited)
+(defun calculate-library-versions-involved (library-version &optional visited)
   (remove-duplicates
    (cons library-version
 	 (loop for dependency in (dependencies library-version)
@@ -163,7 +214,7 @@
 			  (append library-versions
 				  (loop for dependency-library-version in library-versions
 				     appending
-				       (calculate-library-versions
+				       (calculate-library-versions-involved
 					dependency-library-version
 					(cons dependency visited)))))
                                         ;else
@@ -171,7 +222,7 @@
 			  (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
 					  dependency))
 			  (:strict (error "Coudn't load ~A" dependency))))))))
-	 :test #'library-version=))
+   :test #'library-version=))
 
 (defun validate-library-versions-list (versions-list)
   (loop for i from 0 to (1- (length versions-list))

@@ -116,6 +116,23 @@
        *constraint-variable-counter*
        (length all-constraints)))))
 
+(defun encode-install-library-versions (library-versions library-versions-involved)
+  (let ((install-constraints (loop for library-version in library-versions
+				  collect (encode-install library-version)))
+	(dependencies-constraints
+	 (loop for library-version in library-versions-involved
+	    appending (encode-library-version-dependencies library-version)))
+	(conflicts-constraints (encode-library-versions-conflicts
+				library-versions-involved)))
+    (let ((all-constraints (append install-constraints
+				   dependencies-constraints
+				   conflicts-constraints)))
+      (values
+       all-constraints
+       *pbo-environment*
+       *constraint-variable-counter*
+       (length all-constraints)))))
+
 (defun serialize-pbo-constraints (pbo-constraints stream)
   (loop for pbo-constraint in pbo-constraints
        do
@@ -160,6 +177,42 @@
     (multiple-value-bind (constraints pbo-environment
 				      variables-number constraints-number)
 	(encode-install-library-version library-version library-versions-involved)
+      (let ((optimization-function
+	     (create-optimization-function library-versions-involved)))
+	(let ((pbo-file #p"/tmp/deps.pbo"))
+	  (with-open-file (stream pbo-file
+				  :direction :output
+				  :if-does-not-exist :create
+				  :if-exists :supersede)
+	    (format stream "* #variable= ~A #constraint= ~A~%"
+		    variables-number
+		    constraints-number)
+	    (format stream "min: ")
+	    (serialize-optimization-function optimization-function stream)
+	    (format stream " ;~%" )
+	    (serialize-pbo-constraints constraints stream))
+	  (multiple-value-bind (result error status)
+	      (trivial-shell:shell-command
+	       (format nil "~A ~A -v0" *minisat+-binary* pbo-file))
+	    (when (not (zerop status))
+	      (error "Error executing ~A ~A -v0" *minisat+-binary* pbo-file))
+	    (flet ((find-environment-library-version (var)
+		     (car (rassoc var pbo-environment))))
+	      (cl-ppcre:register-groups-bind (vars-string)
+		  ("\v (.*)" result)
+		(let ((vars (remove-if #'null
+				       (mapcar (compose #'find-environment-library-version
+					     #'make-keyword
+					     #'string-upcase)
+				    (split-sequence:split-sequence #\  vars-string)))))
+		  vars)))))))))
+
+(defun pbo-solve-install-library-versions (library-versions library-versions-involved)
+  (let ((*pbo-environment* nil)
+	(*constraint-variable-counter* 1))
+    (multiple-value-bind (constraints pbo-environment
+				      variables-number constraints-number)
+	(encode-install-library-versions library-versions library-versions-involved)
       (let ((optimization-function
 	     (create-optimization-function library-versions-involved)))
 	(let ((pbo-file #p"/tmp/deps.pbo"))
