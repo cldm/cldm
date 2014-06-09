@@ -71,8 +71,8 @@
 		   :description "The project author")))
    ;; install command
    (cons "install"
-	 (clon:defsynopsis (:make-default nil)
-	   (text :contents "Install the CLDM project dependencies.")
+	 (clon:defsynopsis (:make-default nil :postfix "[LIBRARY] [VERSION]")
+	   (text :contents "Install the CLDM project dependencies or a particular library.")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")
 	   (flag :short-name "d" :long-name "dry-run"
@@ -282,6 +282,11 @@ Use 'cldm <command> --help' to get command-specific help.
 		   :type "cld"))))
 
 (defmethod process-command ((command (eql :install)))
+  (if (clon:remainder)
+      (install-library-command)
+      (install-project-command)))
+
+(defun install-project-command ()      
   (let ((project-cld-file (find-project-cld-file)))
     (when (not project-cld-file)
       (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
@@ -309,6 +314,26 @@ Use 'cldm <command> --help' to get command-specific help.
 	  (format t "An error ocurred: ~A~%" e)
 	  (clon:exit 1)))
       (format t "Done.~%"))))
+
+(defun install-library-command ()      
+  (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
+				 cldm:*local-libraries-directory*))
+	(solving-mode (or (and (clon:getopt :long-name "lenient")
+			       :lenient)
+			  :strict))
+	(verbose-mode (or (clon:getopt :long-name "verbose")
+			  nil))
+	(library-name (car (clon:remainder)))
+	(library-version-string (cadr (clon:remainder))))
+    (handler-case
+	(cldm::load-library library-name :version library-version-string
+			    :libraries-directory libraries-directory
+			    :solving-mode solving-mode
+			    :verbose verbose-mode)
+      (error (e)
+	(format t "An error ocurred: ~A~%" e)
+	(clon:exit 1)))
+    (format t "Done.~%")))
 
 (defmethod process-command ((command (eql :update)))
   (let ((project-cld-file (find-project-cld-file)))

@@ -41,6 +41,14 @@
 		 (push pathname asdf:*central-registry*)))))))
   (verbose-msg "Done.~%"))
 
+(defun find-library-cld (library-name &optional (cld-repositories *cld-repositories*))
+  (loop
+     for cld-repository in (mapcar #'eval cld-repositories)
+     for cld = (find-cld cld-repository
+			 library-name)
+     when cld
+     return (values cld cld-repository)))
+
 (defun load-library (library-name
 		     &key
 		       version
