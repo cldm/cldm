@@ -78,17 +78,17 @@
 				 (osicat:current-directory))))
 	(awhen (getf configuration :address-cache-operation)
 	  (setf *address-cache-operation* it))
-	(awhen (getf configuration :set-repositories)
+	(awhen (getf configuration :repositories)
 	  (setf *cld-repositories*
 		(loop for repository-spec in it
 		   collect
-		     (apply #'make-instance it))))
-	(awhen (getf configuration :add-repositories)
+		     (apply #'make-instance repository-spec))))
+	(awhen (getf configuration :append-repositories)
 	  (setf *cld-repositories*
 		(append
 		 (loop for repository-spec in it
 		    collect
-		      (apply #'make-instance it))
+		      (apply #'make-instance repository-spec))
 		 *cld-repositories*)))))))
 
 (defun dump-config (config scope)
@@ -163,4 +163,4 @@
 (defun config-append-repository (repository scope &optional (reload t))
   (let ((repositories (get-config-var :add-repositories scope)))
     (push repository repositories)
-    (set-config-var :add-repositories 'cons repositories scope reload)))
+    (set-config-var :append-repositories 'cons repositories scope reload)))

@@ -161,6 +161,10 @@ Use 'cldm <command> --help' to get command-specific help.
 (defun main ()
   "Entry point for the standalone application."
   ;; Load cldm config
+  (setf cldm::*global-config-file* #p"/etc/cldm/config")
+  (setf cldm::*user-config-file* #p"~/.cldm/config")
+  (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm/config")
+						    (osicat:current-directory)))
   (cldm::load-cldm-config)
 
   ;; Prepare to process command line
