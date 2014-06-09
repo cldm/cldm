@@ -34,7 +34,9 @@
 					;,@(when (asdf:system-mailto asdf-system)
 					;(list :mailto (asdf:system-mailto asdf-system)))
        :versions
-       ((:version ,(or (asdf:component-version asdf-system)
+       ((:version ,(or (and (asdf:component-version asdf-system)
+			    (ignore-errors (read-version-from-string (asdf:component-version asdf-system)))
+			    (asdf:component-version asdf-system))			    
 		       "latest")
 		  :repositories ,(if repositories
 				     repositories
