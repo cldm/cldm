@@ -1,38 +1,5 @@
 (in-package :cldm)
 
-(defparameter *libraries-directory*
-  (pathname "~/.cldm/cache/libraries/"))
-
-(defparameter *cldm-repo*
-  `(make-instance 'cached-http-cld-repository
-                  :name "cldm-repo"
-                  :url "http://mmontone.github.io/cldm-repo/cld"
-		  :cache-directory (pathname "~/.cldm/cache/cld-repositories/cldm-repo/")))
-
-(defparameter *cld-repositories* (list *cldm-repo*))
-
-(defparameter *address-cache-operation* :symlink "What to do when caching a local file system directory. Can be either :symlink or :copy (copy the directory recursively). Default is :symlink")
-
-(defun call-with-libraries-directory (pathname function)
-  (let ((*libraries-directory* pathname))
-    (funcall function)))
-
-(defmacro with-libraries-directory (pathname &body body)
-  `(call-with-libraries-directory
-    ,pathname
-    (lambda ()
-      ,@body)))
-
-(defun call-with-cld-repositories (repositories function)
-  (let ((*cld-repositories* repositories))
-    (funcall function)))
-
-(defmacro with-cld-repositories (repositories &body body)
-  `(call-with-cld-repositories
-    (list ,@repositories)
-    (lambda ()
-      ,@body)))
-
 (defclass cld-repository ()
   ((name :initarg :name
          :accessor name

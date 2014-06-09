@@ -3,18 +3,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :cldm *features*))
 
-(defparameter *verbose-mode* t)
-
-(defparameter *solving-mode* :strict "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
-
-(defparameter *clean-asdf-environment* nil "If T, load libraries in a clean ASDF environment")
-
-(defparameter *minisat+-binary* "/usr/bin/minisat+"
-  "minisat+ binary for PBO solving")
-
-(defparameter *local-libraries-directory* (merge-pathnames (pathname ".cldm/")
-							   (osicat:current-directory)))
-
 (defun verbose-msg (msg &rest args)
   (when *verbose-mode*
     (apply #'format t (cons msg args))))
@@ -322,5 +310,3 @@
 	   for system-filename = (asdf-system-directory-search system-name libraries-directory)
 	   when system-filename
 	   return system-filename))))
-
-(push 'asdf-system-search asdf:*system-definition-search-functions*)

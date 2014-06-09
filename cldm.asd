@@ -25,6 +25,7 @@ THE SOFTWARE."
 			:components
 			((:file "package")
 			 (:file "util")
+			 (:file "config")
 			 (:file "version")
 			 (:file "interval")
 			 (:file "requirement")
@@ -34,9 +35,11 @@ THE SOFTWARE."
 			 (:file "pbo")
 			 (:file "deflibrary")
 			 (:file "asdf")
-			 (:file "cldm"))		
+			 (:file "cldm")
+			 (:file "initialize"))		
 			:serial t))
     :depends-on (#:alexandria
+		 #:anaphora
 		 #:ironclad
 		 #:md5
 		 #:cl-ppcre
