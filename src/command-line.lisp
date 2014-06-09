@@ -11,6 +11,34 @@
 
 (defparameter +CLDM-version+ "0.0.1")
 
+(defparameter +config-commands+
+  (list
+   (cons "set"
+	 (clon:defsynopsis (:make-default nil :postfix "VARIABLE VALUE")
+	   (text :contents "Sets a CLDM configuration variable value.")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "get"
+	 (clon:defsynopsis (:make-default nil :postfix "VARIABLE VALUE")
+	   (text :contents "Gets a CLDM configuration variable value.")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "add-repository"
+	 (clon:defsynopsis (:make-default nil :postfix "NAME TYPE ARGS")
+	   (text :contents "Adds a CLD repository to the configuration")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "remove-repository"
+	 (clon:defsynopsis (:make-default nil :postfix "NAME")
+	   (text :contents "Removes the CLD repository named NAME from the configuration")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "append-repository"
+	 (clon:defsynopsis (:make-default nil :postfix "NAME TYPE ARGS")
+	   (text :contents "Appends a CLD repository to the configuration")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))))
+
 (defparameter +commands+
   (list
    ;; init command
@@ -68,7 +96,18 @@
 		   :description "Run in verbose mode")
 	   (switch :long-name "lenient"
 		   :default-value nil
-		   :description "Allow some of the dependencies not to be updated.")))))
+		   :description "Allow some of the dependencies not to be updated.")))
+   ;; config command
+   (cons "config"
+	 (clon:defsynopsis (:make-default nil
+					  :postfix (format nil "CONFIG-CMD [OPTIONS]"))
+	   (text :contents (format nil "Manage CLDM configuration.~%
+Config commands: ~{~A~^, ~}~%" (mapcar #'car +config-commands+)))
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")
+	   (enum :long-name "scope"
+		 :enum (list :global :user :local)
+		 :default-value :local)))))
 
 (defun print-command-list ()
   (format nil "~{~A~^, ~}" (mapcar #'car +commands+)))
@@ -276,5 +315,61 @@ Use 'cldm <command> --help' to get command-specific help.
     (when (not project-cld-file)
       (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
       (clon:exit 1))))
+
+(defparameter +config-variables+
+  (list (cons :libraries-directory (lambda (value scope)
+				     (cldm::config-set-libraries-directory (pathname value) scope)))
+	(cons :local-libraries-directory (lambda (value scope)
+					   (cldm::config-set-local-libraries-directory (pathname value) scope)))
+	(cons :verbose (lambda (value scope)
+			 (cldm::config-set-verbose (not (member value (list "no" "false") :test #'equalp)) scope)))
+	(cons :minisat+-binary #'cldm::config-set-minisat+-binary)
+	(cons :solving-mode (lambda (value scope)
+			      (cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
+							     scope)))))
+
+(defun find-config-command (name)
+  (cdr (assoc name +config-commands+ :test #'string=)))
+
+(defmethod process-command ((command (eql :config)))
+  (let ((scope (or (clon:getopt :long-name "scope")
+		   :local)))
+    (clon:make-context
+     :synopsis (let ((command-name (car (clon:remainder))))
+		 (let ((command (find-config-command command-name)))
+		   (if command
+		       command
+		       (progn
+			 (format t "Unknown config command.~%")
+			 (clon:exit 1)))))
+     :cmdline (clon:remainder))
+    (cond ((clon:getopt :short-name "h")
+	   (clon:help))
+	  (t ;; Process the config command
+	   (process-config-command (intern (string-upcase (clon:progname)) :keyword)
+				   scope)))))
+
+(defmethod process-config-command ((command (eql :set)) scope)
+  (let ((variable-name (car (clon:remainder)))
+	(variable-value (cadr (clon:remainder))))
+    (let* ((variable-keyword (intern (string-upcase variable-name) :keyword))
+	   (variable-setter (cdr (assoc variable-keyword +config-variables+))))
+      (when (not variable-setter)
+	(format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
+		variable-name
+		(mapcar #'car +config-variables+))
+	(clon:exit 1))
+      (funcall variable-setter variable-value scope))))
+
+(defmethod process-config-command ((command (eql :get)) scope)
+  (let* ((variable-name (car (clon:remainder)))
+	 (variable-keyword (intern (string-upcase variable-name) :keyword)))
+    (when (not (assoc variable-keyword +config-variables+))
+      (format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
+	      variable-name
+	      (mapcar #'car +config-variables+))
+      (clon:exit 1))
+    (format t "~A~%"
+	    (cldm::get-config-var variable-keyword scope))))
 
 (clon:dump "cldm" main)

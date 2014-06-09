@@ -142,6 +142,9 @@
 (defun config-set-minisat+-binary (minisat scope &optional (reload t))
   (set-config-var :minisat+-binary 'pathname minisat scope reload))
 
+(defun config-set-solving-mode (solving-mode scope &optional (reload t))
+  (set-config-var :solving-mode '(member :strict :lenient) solving-mode scope reload))
+
 (defun config-set-repositories (repositories scope &optional (reload t))
   (set-config-var :repositories 'cons repositories scope reload))
 
