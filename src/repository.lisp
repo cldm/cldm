@@ -53,6 +53,11 @@
 (defclass cached-ssh-cld-repository (ssh-cld-repository cached-cld-repository)
   ())
 
+(defun find-cld-repository (name &optional (repositories *cld-repositories*))
+  (find name (mapcar #'eval *cld-repositories*)
+	:key #'name
+	:test #'equalp))
+
 (defmethod find-cld ((cld-repository directory-cld-repository) library-name)
   (let ((cld-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
                                    (repository-directory cld-repository))))

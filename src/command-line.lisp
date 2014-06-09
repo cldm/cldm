@@ -22,20 +22,28 @@
 	 (clon:defsynopsis (:make-default nil :postfix "VARIABLE VALUE")
 	   (text :contents "Gets a CLDM configuration variable value.")
 	   (flag :short-name "h" :long-name "help"
-		 :description "Print this help and exit.")))
-   (cons "add-repository"
+		 :description "Print this help and exit.")))))
+
+(defparameter +repositories-commands+
+  (list
+   (cons "add"
 	 (clon:defsynopsis (:make-default nil :postfix "NAME TYPE ARGS")
 	   (text :contents "Adds a CLD repository to the configuration")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")))
-   (cons "remove-repository"
+   (cons "remove"
 	 (clon:defsynopsis (:make-default nil :postfix "NAME")
 	   (text :contents "Removes the CLD repository named NAME from the configuration")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")))
-   (cons "append-repository"
+   (cons "append"
 	 (clon:defsynopsis (:make-default nil :postfix "NAME TYPE ARGS")
 	   (text :contents "Appends a CLD repository to the configuration")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "list"
+	 (clon:defsynopsis (:make-default nil)
+	   (text :contents "List CLD repositories")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")))))
 
@@ -107,6 +115,17 @@ Config commands: ~{~A~^, ~}~%" (mapcar #'car +config-commands+)))
 		 :description "Print this help and exit.")
 	   (enum :long-name "scope"
 		 :enum (list :global :user :local)
+		 :default-value :local)))
+   ;; repositories command
+   (cons "repositories"
+	 (clon:defsynopsis (:make-default nil
+					  :postfix (format nil "REPOSITORIES-CMD [OPTIONS]"))
+	   (text :contents (format nil "Manage CLDM CLD repositories.~%
+Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repositories-commands+)))
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")
+	   (enum :long-name "scope"
+		 :enum (list :global :user :local)
 		 :default-value :local)))))
 
 (defun print-command-list ()
@@ -141,6 +160,10 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun main ()
   "Entry point for the standalone application."
+  ;; Load cldm config
+  (cldm::load-cldm-config)
+
+  ;; Prepare to process command line
   (clon:make-context)
   (cond ((or (clon:getopt :short-name "h")
 	     (not (clon:cmdline-p)))
@@ -396,5 +419,47 @@ Use 'cldm <command> --help' to get command-specific help.
       (clon:exit 1))
     (format t "~A~%"
 	    (cldm::get-config-var variable-keyword scope))))
+
+(defun find-repositories-command (name)
+  (cdr (assoc name +repositories-commands+ :test #'string=)))
+
+(defmethod process-command ((command (eql :repositories)))
+  (let ((scope (or (clon:getopt :long-name "scope")
+		   :local)))
+    (clon:make-context
+     :synopsis (let ((command-name (car (clon:remainder))))
+		 (let ((command (find-repositories-command command-name)))
+		   (if command
+		       command
+		       (progn
+			 (format t "Unknown repositories command.~%")
+			 (clon:exit 1)))))
+     :cmdline (clon:remainder))
+    (cond ((clon:getopt :short-name "h")
+	   (clon:help))
+	  (t ;; Process the config command
+	   (process-repositories-command
+	    (intern (string-upcase (clon:progname)) :keyword)
+	    scope)))))
+
+(defmethod process-repositories-command ((command (eql :add)) scope)
+  (let ((repository-name (car (clon:remainder)))
+	(repository-type (intern (cadr (clon:remainder)) :cldm))
+	(args (cddr (clon:remainder))))
+      (cldm::config-add-repository `(,repository-type :name ,repository-name ,@args)
+				   scope)))
+
+(defmethod process-repositories-command ((command (eql :remove)) scope)
+  (let ((repository-name (car (clon:remainder))))
+    (let ((repository
+	   (cldm::find-cld-repository repository-name)))
+      (when (not repository)
+	(format t "Repository not found: ~A~%" repository-name)
+	(clon:exit 1))
+      (cldm::config-remove-repository repository-name scope))))
+
+(defmethod process-repositories-command ((command (eql :list)) scope)
+  (loop for repository in (mapcar #'eval cldm:*cld-repositories*)
+       do (format t "~A~%" repository)))
 
 (clon:dump "cldm" main)
