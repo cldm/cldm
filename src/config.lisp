@@ -24,14 +24,14 @@
 (defparameter *minisat+-binary* "/usr/bin/minisat+"
   "minisat+ binary for PBO solving")
 
-(defparameter *local-libraries-directory* (merge-pathnames (pathname ".cldm/")
+(defparameter *local-libraries-directory* (merge-pathnames (pathname "lib/")
 							   (osicat:current-directory)))
 
 ;; Configuration files
 
 (defparameter *global-config-file* #p"/etc/cldm/config")
 (defparameter *user-config-file* #p"~/.cldm/config")
-(defparameter *local-config-file* (merge-pathnames (pathname ".cldm/config")
+(defparameter *local-config-file* (merge-pathnames (pathname ".cldm")
 						   (osicat:current-directory)))
 
 (defun call-with-libraries-directory (pathname function)

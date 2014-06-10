@@ -2,7 +2,7 @@
 
 (require :cldm)
 
-(ql:quickload :com.dvlsoft.clon)
+(require :com.dvlsoft.clon)
 
 (setq *load-verbose* nil)
 
@@ -173,9 +173,9 @@ Use 'cldm <command> --help' to get command-specific help.
   ;; Load cldm config
   (setf cldm::*global-config-file* #p"/etc/cldm/config")
   (setf cldm::*user-config-file* #p"~/.cldm/config")
-  (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm/config")
+  (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm")
                                                     (osicat:current-directory)))
-  (setf cldm::*local-libraries-directory* (merge-pathnames (pathname ".cldm/")
+  (setf cldm::*local-libraries-directory* (merge-pathnames (pathname "lib/")
                                                            (osicat:current-directory)))
   (cldm::load-cldm-config)
 
