@@ -2,3 +2,4 @@
 *.fasl
 /cache
 /cldm
+/doc/manual/_build
