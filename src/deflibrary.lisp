@@ -46,8 +46,11 @@
 		     (setf (stability library-version-copy) stability)
 		     (setf (description library-version-copy) description)
 		     (if repositories
-			 (setf (repositories library-version-copy)
-			       (parse-version-repositories repositories))
+			 ;; Set the repositories of the version copy
+			   (setf (repositories library-version-copy)
+				 (loop for repository in (parse-version-repositories repositories)
+				      do (setf (library-version repository) library-version-copy)
+				      collect repository))			   
 			 ; else
 			 (progn
 			   (loop for repository in (parse-version-repositories add-repositories)
