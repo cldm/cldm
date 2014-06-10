@@ -41,9 +41,19 @@
 	   (text :contents "Appends a CLD repository to the configuration")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")))
+   (cons "unappend"
+	 (clon:defsynopsis (:make-default nil :postfix "NAME")
+	   (text :contents "Removes a CLD repository from the list of appended repositories")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))   
    (cons "list"
 	 (clon:defsynopsis (:make-default nil)
 	   (text :contents "List CLD repositories")
+	   (flag :short-name "h" :long-name "help"
+		 :description "Print this help and exit.")))
+   (cons "cache"
+	 (clon:defsynopsis (:make-default nil :postfix "REPOSITORY-NAME [LOCATION]")
+	   (text :contents "Caches a remote repository, if the repository is cacheable")
 	   (flag :short-name "h" :long-name "help"
 		 :description "Print this help and exit.")))))
 
@@ -165,6 +175,8 @@ Use 'cldm <command> --help' to get command-specific help.
   (setf cldm::*user-config-file* #p"~/.cldm/config")
   (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm/config")
 						    (osicat:current-directory)))
+  (setf cldm::*local-libraries-directory* (merge-pathnames (pathname ".cldm/")
+							   (osicat:current-directory)))
   (cldm::load-cldm-config)
 
   ;; Prepare to process command line
@@ -265,6 +277,13 @@ Use 'cldm <command> --help' to get command-specific help.
      :dependencies ,dependencies))
 
 (defgeneric process-command (command))
+
+(defmethod process-command :around (command)
+  (handler-case
+      (call-next-method)
+    (error (e)
+      (format t "An error ocurred: ~A~%" e)
+      (clon:exit 1))))
 
 (defmethod process-command ((command (eql :init)))
   (let ((project-name (car (clon:remainder))))
@@ -447,10 +466,13 @@ Use 'cldm <command> --help' to get command-specific help.
 	    scope)))))
 
 (defmethod process-repositories-command ((command (eql :add)) scope)
-  (let ((repository-name (car (clon:remainder)))
-	(repository-type (intern (cadr (clon:remainder)) :cldm))
-	(args (cddr (clon:remainder))))
-      (cldm::config-add-repository `(,repository-type :name ,repository-name ,@args)
+  (destructuring-bind (repository-name repository-type &rest args) (clon:remainder)
+    (setf repository-type (intern (string-upcase (cadr (clon:remainder))) :cldm))
+    (setf args (loop for prop in args by #'cddr
+		    for val in (cdr args) by #'cddr
+		    collect (intern (string-upcase prop) :keyword)
+		    collect val))
+    (cldm::config-add-repository `(,repository-type :name ,repository-name ,@args)
 				   scope)))
 
 (defmethod process-repositories-command ((command (eql :remove)) scope)
@@ -461,6 +483,25 @@ Use 'cldm <command> --help' to get command-specific help.
 	(format t "Repository not found: ~A~%" repository-name)
 	(clon:exit 1))
       (cldm::config-remove-repository repository-name scope))))
+
+(defmethod process-repositories-command ((command (eql :append)) scope)
+  (destructuring-bind (repository-name repository-type &rest args) (clon:remainder)
+    (setf repository-type (intern (string-upcase (cadr (clon:remainder))) :cldm))
+    (setf args (loop for prop in args by #'cddr
+		    for val in (cdr args) by #'cddr
+		    collect (intern (string-upcase prop) :keyword)
+		    collect val))
+    (cldm::config-append-repository `(,repository-type :name ,repository-name ,@args)
+				    scope)))
+
+(defmethod process-repositories-command ((command (eql :unappend)) scope)
+  (let ((repository-name (car (clon:remainder))))
+    (let ((repository
+	   (cldm::find-cld-repository repository-name)))
+      (when (not repository)
+	(format t "Repository not found: ~A~%" repository-name)
+	(clon:exit 1))
+      (cldm::config-unappend-repository repository-name scope))))
 
 (defmethod process-repositories-command ((command (eql :list)) scope)
   (loop for repository in (mapcar #'eval cldm:*cld-repositories*)

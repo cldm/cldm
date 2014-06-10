@@ -60,7 +60,7 @@
 
 (defmethod find-cld ((cld-repository directory-cld-repository) library-name)
   (let ((cld-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
-                                   (repository-directory cld-repository))))
+                                   (pathname (repository-directory cld-repository)))))
     (verbose-msg "Checking if ~A exists~%" cld-file)
     (probe-file cld-file)))
 
@@ -109,10 +109,10 @@
             (verbose-msg "Failed.~%"))))))
 
 (defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
-  (ensure-directories-exist (cache-directory cld-repository))
+  (ensure-directories-exist (pathname (cache-directory cld-repository)))
   (let ((cached-file (merge-pathnames
 		      (pathname (format nil "~A.cld" library-name))
-		      (cache-directory cld-repository))))
+		      (pathname (cache-directory cld-repository)))))
     (if (probe-file cached-file)
 	cached-file
 	;; else
@@ -318,7 +318,7 @@
   (:method ((repository-address directory-repository-address))
     (list :directory (repository-directory repository-address)))
   (:method ((repository-address url-repository-address))
-    (list :url (repository-url repository-address)))
+    (list :url (url repository-address)))
   (:method ((repository-address git-repository-address))
     `(:git ,(url repository-address)
 	   ,@(when (commit repository-address)

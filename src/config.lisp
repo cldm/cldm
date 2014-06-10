@@ -148,19 +148,35 @@
 (defun config-set-repositories (repositories scope &optional (reload t))
   (set-config-var :repositories 'cons repositories scope reload))
 
-(defun config-add-repository (repository scope &optional (reload t))
-  (let ((repositories (get-config-var :repositories scope)))
-    (push repository repositories)
-    (set-config-var :repositories 'cons repositories scope reload)))
+(defun validate-repository-spec (repository-spec)
+  (assert (listp repository-spec))
+  (assert (subtypep (first repository-spec) 'cld-repository))
+  (apply #'make-instance repository-spec)
+  t)
+
+(defun config-add-repository (repository-spec scope &optional (reload t))
+  (validate-repository-spec repository-spec)
+  
+  ;; If successful, add it to the repositories list
+  (let ((repositories-specs (get-config-var :repositories scope)))
+    (push repository-spec repositories-specs)
+    (set-config-var :repositories 'cons repositories-specs scope reload)))
 
 (defun config-remove-repository (name scope &optional (reload t))
   (let ((repositories (get-config-var :repositories scope)))
     (setf repositories (remove name repositories
 			       :key #'car
 			       :test #'equalp))
-    (set-config-var :repositories 'cons repositories scope reload)))
+    (set-config-var :repositories 'list repositories scope reload)))
 
 (defun config-append-repository (repository scope &optional (reload t))
-  (let ((repositories (get-config-var :add-repositories scope)))
+  (let ((repositories (get-config-var :append-repositories scope)))
     (push repository repositories)
     (set-config-var :append-repositories 'cons repositories scope reload)))
+
+(defun config-unappend-repository (name scope &optional (reload t))
+  (let ((repositories (get-config-var :append-repositories scope)))
+    (setf repositories (remove name repositories
+			       :key #'car
+			       :test #'equalp))
+    (set-config-var :append-repositories 'list repositories scope reload)))
