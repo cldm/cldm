@@ -69,8 +69,10 @@
 	   #:deflibrary
 	   #:list-libraries
 	   #:find-library
-	   #:setup
+	   #:install-library
 	   #:load-library
+	   #:install-project
+	   #:load-project
 	   #:with-libraries-directory
 	   #:with-cld-repositories
 

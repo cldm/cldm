@@ -193,6 +193,10 @@
               :documentation "The repository filesystem directory"))
   (:documentation "A repository in a file system directory"))
 
+(defmethod print-object ((repository-address directory-repository-address) stream)
+  (print-unreadable-object (repository-address stream :type t :identity t)
+    (format stream "~A" (repository-directory repository-address))))
+
 (defclass git-repository-address (repository-address)
   ((url :initarg :url
         :initform (error "Provide the git url")
@@ -215,12 +219,20 @@
         :documentation "The repository url"))
   (:documentation "A remote repository package"))
 
+(defmethod print-object ((repository-address url-repository-address) stream)
+  (print-unreadable-object (repository-address stream :type t :identity t)
+    (format stream "~A" (url repository-address))))
+
 (defclass ssh-repository-address (repository-address)
   ((address :initarg :address
 	    :initform (error "Provide the repository address")
 	    :accessor address
 	    :documentation "The repository ssh address"))
   (:documentation "A remote ssh repository address"))
+
+(defmethod print-object ((repository-address ssh-repository-address) stream)
+  (print-unreadable-object (repository-address stream :type t :identity t)
+    (format stream "~A" (address repository-address))))
 
 (defgeneric cache-repository-from-address (repository-address repository target-directory)
   (:documentation "Cache the given repository from repository-address to target-directory.

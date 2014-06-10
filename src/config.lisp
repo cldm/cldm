@@ -1,5 +1,9 @@
 (in-package :cldm)
 
+(defparameter *verbose-mode* nil "When true, verbose messages are displayed on the standard output")
+
+(defparameter *debug-mode* nil "When true, debugging messages are displayed on the standard output")
+
 (defparameter *libraries-directory*
   (pathname "~/.cldm/cache/libraries/"))
 
@@ -12,8 +16,6 @@
 (defparameter *cld-repositories* (list *standard-cldm-repo*))
 
 (defparameter *address-cache-operation* :symlink "What to do when caching a local file system directory. Can be either :symlink or :copy (copy the directory recursively). Default is :symlink")
-
-(defparameter *verbose-mode* t)
 
 (defparameter *solving-mode* :strict "One of :strict, :lenient. If :strict, errors are signaled if a cld cannot be found, or a dependency version is not specified. If :lenient, signal warnings and try to solve dependencies loading latest versions and the like.")
 
