@@ -46,7 +46,7 @@
 
 (defun find-library-version (library version &optional (error-p t))
   (loop for library-version in (library-versions library)
-     when (equalp (version library-version) version)
+     when (version= (version library-version) version)
      do (return-from find-library-version library-version))
   (when error-p
     (error "~A version ~A not found" library version)))
