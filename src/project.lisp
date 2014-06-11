@@ -79,3 +79,42 @@
   
 (defmethod initialize-instance :after ((project project) &rest initargs)
   (initialize-project project))
+
+(defun create-lock-file (installed-libraries)
+  (let ((lock-file-pathname (merge-pathnames "cldm.lock"
+                                             (osicat:current-directory))))
+    (with-open-file (f lock-file-pathname
+                       :direction :output
+                       :if-exists :supersede
+                       :if-does-not-exist :create)
+      (format f "~S"
+              (loop for installed-library in installed-libraries
+                 collect
+                   (destructuring-bind (library-version library-directory repository) installed-library
+                     (list
+                      (library-name (library library-version))
+		      (print-version-to-string (version library-version))
+                      library-directory
+		      (list (name repository)
+                            (repository-address-sexp (repository-address repository)))
+		      (directory-checksum library-directory))))))))
+
+(defun read-lock-file (file)
+  (let ((installed-libraries-info (read-from-string (file-to-string file))))
+    (loop for installed-library-info in installed-libraries-info
+	 collect
+	 (destructuring-bind (library version library-directory repository-spec md5)
+	     installed-library-info
+	     (let* ((library (find-library library))
+		    (library-version (find-library-version library
+							   (or (and version
+								    (read-version-from-string version))"latest"))))
+		    
+	     (list library-version
+		   library-directory
+		   (destructuring-bind (name rep-address-sexp) repository-spec
+		       (make-instance 'library-version-repository
+				      :name name
+				      :library-version library-version
+				      :address (parse-version-repository-address rep-address-sexp)))
+		   md5))))))

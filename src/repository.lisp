@@ -265,6 +265,13 @@
            :documentation "Commit to fetch"))
   (:documentation "A git repository"))
 
+(defmethod print-object ((repository-address git-repository-address) stream)
+  (print-unreadable-object (repository-address stream :type t :identity t)
+    (format stream "~A ~@[ commit: ~A~] ~@[ branch: ~A~]"
+	    (url repository-address)
+	    (commit repository-address)
+	    (branch repository-address))))
+
 (defclass url-repository-address (repository-address)
   ((url :initarg :url
         :initform (error "Provide the repository package url")

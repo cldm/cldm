@@ -48,6 +48,10 @@
   (loop for library-version in (library-versions library)
      when (version= (version library-version) version)
      do (return-from find-library-version library-version))
+  (when (equalp version :max-version)
+    (let ((library-version (first (library-versions library))))
+      (when library-version
+	(return-from find-library-version library-version))))
   (when error-p
     (error "~A version ~A not found" library version)))
 
