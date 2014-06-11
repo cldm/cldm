@@ -54,7 +54,7 @@
     (lambda ()
       ,@body)))
 
-(defun list-cldm-repositories ()
+(defun list-cld-repositories ()
   (let ((*package* (find-package :cldm)))
     (mapcar #'eval *cld-repositories*)))
 
