@@ -1,13 +1,19 @@
 (in-package :cl-user)
 
 (require :cldm)
-
 (require :com.dvlsoft.clon)
-
-(setq *load-verbose* nil)
+(require :trivial-backtrace)
 
 (eval-when (:execute :load-toplevel :compile-toplevel)
   (com.dvlsoft.clon:nickname-package))
+
+(defpackage :cldm-command-line
+  (:use :cl))
+
+(in-package :cldm-command-line)
+
+(defparameter *debug-mode* nil)
+(defparameter *verbose-mode* nil)
 
 (defparameter +CLDM-version+ "0.0.1")
 
@@ -162,7 +168,8 @@ Use 'cldm <command> --help' to get command-specific help.
   (flag :long-name "version"
         :description "Print the CLDM version")
   (switch :short-name "v" :long-name "verbose"
-          :description "Run in verbose mode")
+          :description "Run in verbose mode"
+	  :env-var "VERBOSE")
   (switch :short-name "d" :long-name "debug"
           :description "Turn debugging on or off."
           :argument-style :on/off
@@ -190,19 +197,22 @@ Use 'cldm <command> --help' to get command-specific help.
          (unless (clon:remainder)
            (format t "Missing command.~%")
            (clon:exit 1))
-         (clon:make-context
-          :synopsis (let ((command-name (car (clon:remainder))))
-                      (let ((command (find-command command-name)))
-                        (if command
-                            command
-                            (progn
-                              (format t "Unknown command.~%")
-                              (clon:exit 1)))))
-          :cmdline (clon:remainder))
-         (cond ((clon:getopt :short-name "h")
-                (clon:help))
-               (t ;; Process the command
-                (process-command (intern (string-upcase (clon:progname)) :keyword))))))
+	 ;; Process switches
+	 (let ((*verbose-mode* (clon:getopt :long-name "verbose"))
+	       (*debug-mode* (clon:getopt :long-name "debug")))
+	   (clon:make-context
+	    :synopsis (let ((command-name (car (clon:remainder))))
+			(let ((command (find-command command-name)))
+			  (if command
+			      command
+			      (progn
+				(format t "Unknown command.~%")
+				(clon:exit 1)))))
+	    :cmdline (clon:remainder))
+	   (cond ((clon:getopt :short-name "h")
+		  (clon:help))
+		 (t ;; Process the command
+		  (process-command (intern (string-upcase (clon:progname)) :keyword)))))))
   (clon:exit))
 
 (defun create-cld-template (project-name &rest keys &key cld description author dependencies interactive)
@@ -283,6 +293,8 @@ Use 'cldm <command> --help' to get command-specific help.
       (call-next-method)
     (error (e)
       (format t "An error ocurred: ~A~%" e)
+      (when *debug-mode*
+	(trivial-backtrace:print-backtrace e))
       (clon:exit 1))))
 
 (defmethod process-command ((command (eql :init)))
