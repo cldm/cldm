@@ -327,8 +327,8 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun install-project-command ()
   (let ((project (cldm::load-project-from-directory (osicat:current-directory))))
-    (when (not project-cld-file)
-      (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
+    (when (not project)
+      (format t "Couldn't find a CLDM project in the current directory. Run `cldm init` to start.~%")
       (clon:exit 1))
     (let ((solving-mode (or (and (clon:getopt :long-name "lenient")
                                  :lenient)
@@ -339,9 +339,10 @@ Use 'cldm <command> --help' to get command-specific help.
               (cldm::project-name project)
               (cldm::libraries-directory project))
       (cldm:install-project project
-				:solving-mode solving-mode
-                                :verbose verbose-mode)
-      (format t "Done.~%"))))
+			    :solving-mode solving-mode
+			    :verbose verbose-mode)
+      (format t "Done.~%")
+      (clon:exit 0))))
 
 (defun install-library-command ()
   (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
@@ -350,7 +351,7 @@ Use 'cldm <command> --help' to get command-specific help.
                                :lenient)
                           :strict))
         (verbose-mode (or (clon:getopt :long-name "verbose")
-                          nil))
+			  nil))
         (library-name (car (clon:remainder)))
         (library-version-string (cadr (clon:remainder))))
     (cldm:install-library library-name
@@ -358,13 +359,29 @@ Use 'cldm <command> --help' to get command-specific help.
 			  :libraries-directory libraries-directory
 			  :solving-mode solving-mode
 			  :verbose verbose-mode)
-    (format t "Done.~%")))
+    (format t "Done.~%")
+    (clon:exit 0)))
+
+(defun update-project-command ()
+  (let ((project (cldm::load-project-from-directory (osicat:current-directory))))
+    (when (not project)
+      (format t "Couldn't find a CLDM project in the current directory. Run `cldm init` to start.~%")
+      (clon:exit 1))
+    (let ((solving-mode (or (and (clon:getopt :long-name "lenient")
+                                 :lenient)
+                            :strict))
+          (verbose-mode (or (clon:getopt :long-name "verbose")
+                            nil)))
+      (format t "Updating ~A dependencies~%"
+	      (cldm::project-name project))
+      (cldm:update-project project
+			   :solving-mode solving-mode
+			   :verbose verbose-mode)
+      (format t "Done.~%")
+      (clon:exit 0))))
 
 (defmethod process-command ((command (eql :update)))
-  (let ((project-cld-file (find-project-cld-file)))
-    (when (not project-cld-file)
-      (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
-      (clon:exit 1))))
+  (update-project-command))
 
 (defparameter +config-variables+
   (list (cons :libraries-directory

@@ -73,6 +73,7 @@
 	   #:load-library
 	   #:install-project
 	   #:load-project
+	   #:update-project
 	   #:with-libraries-directory
 	   #:with-cld-repositories
 
