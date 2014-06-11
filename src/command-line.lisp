@@ -520,7 +520,7 @@ Use 'cldm <command> --help' to get command-specific help.
       (cldm::config-unappend-repository repository-name scope))))
 
 (defmethod process-repositories-command ((command (eql :list)) scope)
-  (loop for repository in (mapcar #'eval cldm:*cld-repositories*)
+  (loop for repository in (cldm:list-cld-repositories)
      do (format t "~A~%" repository)))
 
 (clon:dump "cldm" main)

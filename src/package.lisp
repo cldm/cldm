@@ -76,7 +76,8 @@
 	   #:update-project
 	   #:with-libraries-directory
 	   #:with-cld-repositories
-
+	   #:list-cld-repositories
+	   
 	   #:*cld-repositories*
 	   #:*minisat+-binary*
 	   #:*libraries-directory*

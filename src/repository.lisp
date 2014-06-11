@@ -73,8 +73,8 @@
             (repository-address cld-repository)
 	    (cache-directory cld-repository))))
 
-(defun find-cld-repository (name &optional (repositories *cld-repositories*))
-  (find name (mapcar #'eval *cld-repositories*)
+(defun find-cld-repository (name &optional (repositories (list-cld-repositories)))
+  (find name repositories
 	:key #'name
 	:test #'equalp))
 

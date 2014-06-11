@@ -14,9 +14,9 @@
   (when (or *verbose-mode* *debug-mode*)
     (apply #'format t (cons msg args))))
 
-(defun find-library-cld (library-name &optional (cld-repositories *cld-repositories*))
+(defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
   (loop
-     for cld-repository in (mapcar #'eval cld-repositories)
+     for cld-repository in (list-cld-repositories)
      for cld = (find-cld cld-repository
                          library-name)
      when cld
@@ -96,17 +96,17 @@
               ;; else
               (progn
                 (loop
-                   for cld-repository in *cld-repositories*
+                   for cld-repository in (list-cld-repositories)
                    while (not cld)
-                   do (let ((cld-repository (eval cld-repository)))
-                        (let ((repository-cld (find-cld cld-repository
-                                                        library-name)))
-                          (setf cld (and repository-cld
-                                         (load-cld repository-cld)))
-                          (when cld
-                            (verbose-msg "~A cld found in ~A~%"
-                                         library-name
-                                         cld-repository)))))
+                   do 
+		     (let ((repository-cld (find-cld cld-repository
+						     library-name)))
+		       (setf cld (and repository-cld
+				      (load-cld repository-cld)))
+		       (when cld
+			 (verbose-msg "~A cld found in ~A~%"
+				      library-name
+				      cld-repository))))
                 (if cld
                     (progn
                       (setup library-name version)
@@ -263,16 +263,16 @@
                    (progn
                      (verbose-msg "No cld could be loaded.~%")
                      (loop
-                        for cld-repository in *cld-repositories*
+                        for cld-repository in (list-cld-repositories)
                         while (not cld)
-                        do (let ((cld-repository (eval cld-repository)))
-                             (let ((repository-cld (find-cld cld-repository
-                                                             (library-name dependency))))
-                               (setf cld (and repository-cld (load-cld repository-cld)))
-                               (when cld
-                                 (verbose-msg "~A cld found in ~A~%"
-                                              (library-name dependency)
-                                              cld-repository)))))
+                        do 
+			  (let ((repository-cld (find-cld cld-repository
+							  (library-name dependency))))
+			    (setf cld (and repository-cld (load-cld repository-cld)))
+			    (when cld
+			      (verbose-msg "~A cld found in ~A~%"
+					   (library-name dependency)
+					   cld-repository))))
                      (if cld
                          ;; A cld for the dependency was found, load the dependency
                          (load-dependency dependency)

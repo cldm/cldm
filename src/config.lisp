@@ -54,6 +54,10 @@
     (lambda ()
       ,@body)))
 
+(defun list-cldm-repositories ()
+  (let ((*package* (find-package :cldm)))
+    (mapcar #'eval *cld-repositories*)))
+
 (defun read-config-file (pathname)
   (when (probe-file pathname)
     (read-from-string (file-to-string pathname) nil)))
