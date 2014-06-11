@@ -154,7 +154,8 @@
 		      downloaded-file))))))))) 
 
 (defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
-  (info-msg "Installing ~A...~%" (library-version-unique-name library-version))
+  (info-msg "Installing ~A...~%"
+	    (library-version-unique-name library-version))
   (ensure-directories-exist libraries-directory)
   (let* ((repository-name (format nil "~A-~A"
 				  (library-name (library library-version))
@@ -189,7 +190,7 @@
 (defun update-library-version (library-version project)
   (let ((installed-library-info
 	 (find-installed-library-info project
-				      (library-name (library library-version)))))
+				      (library-name library-version))))
     (if installed-library-info
 	;; There's a library version installed already
 	;; Try to update the repository
@@ -198,14 +199,14 @@
 	  (if (not updated)
 	      ;; The library repository was not updateable
 	      ;; Install the library instead
-	      (cache-library-version library-version)
+	      (cache-library-version library-version (libraries-directory project))
 	      ;; else, return the repository-directory and repository
 	      (values repository-directory repository))
 	;; else, just install the library version
-	(cache-library-version library-version)))))
+	(cache-library-version library-version (libraries-directory project))))))
 
 (defun update-repository (installed-library-info library-version)
-  (destructuring-bind (library-name library-version install-directory origin-repository md5)
+  (destructuring-bind (library-version install-directory origin-repository md5)
       installed-library-info
     (update-repository-from-address (repository-address origin-repository)
 				    origin-repository
@@ -393,17 +394,18 @@
   (flet ((run-or-fail (&rest args)
            (multiple-value-bind (result code status)
                (apply #'trivial-shell:shell-command args)
+	     (declare (ignorable result code))
              (when (not (zerop status))
                (return-from update-repository-from-address nil)))))
     (let ((library-version-repository (find-library-version-repository
 				       library-version
-				       (repository-name repository))))
-      (when (and library-verison-repository
+				       (name repository))))
+      (when (and library-version-repository
 		 (typep (repository-address library-version-repository)
 			'git-repository-address))
 	(let ((library-version-repository-address (repository-address library-version-repository)))
 	  ;; Ok, try the update
-	  (verbose-msg "Updating ~A" library-version)
+	  (info-msg "Updating ~A" library-version)
 	  (let ((command (format nil "cd ~A; git pull" install-directory)))
 	    (verbose-msg command)
 	    (run-or-fail command))
@@ -416,7 +418,7 @@
 	      (verbose-msg command)
 	      (run-or-fail command)))
 	  ;; Return the install directory and repository
-	  (values t ;; The update was successful
+	  (values t		    ;; The update was successful
 		  install-directory ;; In which directory the update was made
 		  library-version-repository)))))) ;; The repository from which the update was made
 

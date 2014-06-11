@@ -47,14 +47,18 @@
       (when (not (libraries-directory project))
 	(setf (libraries-directory project)
 	      (merge-pathnames #p"lib/"
-			       (project-directory project))))			   
+			       (project-directory project)))))))
 
-      ;; Read the list of installed libraries
-      (let ((lock-file (merge-pathnames (pathname "cldm.lock")
+(defmethod installed-libraries ((project project))
+  (aif (slot-value project 'installed-libraries)
+    it
+    ;; Read the list of installed libraries
+    (let ((lock-file (merge-pathnames (pathname "cldm.lock")
 					(project-directory project))))
-	(when (probe-file lock-file)
-	  (setf (installed-libraries project)
-		(read-lock-file lock-file)))))))
+      (when (probe-file lock-file)
+	(setf (installed-libraries project)
+	      (read-lock-file lock-file)))
+      (slot-value project 'installed-libraries))))
 
 (defun find-project-cld-file (directory)
   (first
@@ -79,6 +83,11 @@
   
 (defmethod initialize-instance :after ((project project) &rest initargs)
   (initialize-project project))
+
+(defun find-installed-library-info (project library-name)
+  (find library-name (installed-libraries project)
+	:key (compose #'library-name #'first)
+	:test #'equalp))
 
 (defun create-lock-file (installed-libraries)
   (let ((lock-file-pathname (merge-pathnames "cldm.lock"
