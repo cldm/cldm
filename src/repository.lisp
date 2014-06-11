@@ -40,6 +40,12 @@
 	    :documentation "The cld repository ssh address"))
   (:documentation "A cld repository accessible via ssh"))
 
+(defmethod print-object ((cld-repository ssh-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A"
+            (name cld-repository)
+            (repository-address cld-repository))))
+
 (defclass cached-cld-repository (cld-repository)
   ((cache-directory :initarg :cache-directory
                     :initform (error "Provide the cache directory")
@@ -50,8 +56,22 @@
 (defclass cached-http-cld-repository (http-cld-repository cached-cld-repository)
   ())
 
+(defmethod print-object ((cld-repository cached-http-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A (cache: ~A)"
+            (name cld-repository)
+            (repository-url cld-repository)
+	    (cache-directory cld-repository))))
+
 (defclass cached-ssh-cld-repository (ssh-cld-repository cached-cld-repository)
   ())
+
+(defmethod print-object ((cld-repository cached-ssh-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A (cache: ~A)"
+            (name cld-repository)
+            (repository-address cld-repository)
+	    (cache-directory cld-repository))))
 
 (defun find-cld-repository (name &optional (repositories *cld-repositories*))
   (find name (mapcar #'eval *cld-repositories*)

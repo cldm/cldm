@@ -55,7 +55,8 @@
       ,@body)))
 
 (defun read-config-file (pathname)
-  (read-from-string (file-to-string pathname) nil))
+  (when (probe-file pathname)
+    (read-from-string (file-to-string pathname) nil)))
 
 (defun read-config (scope)
   (let ((config-file (ecase scope
