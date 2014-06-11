@@ -50,9 +50,11 @@
 			       (project-directory project))))			   
 
       ;; Read the list of installed libraries
-      (setf (installed-libraries project)
-	    (read-lock-file (merge-pathnames (pathname "cldm.lock")
-					     (project-directory project)))))))
+      (let ((lock-file (merge-pathnames (pathname "cldm.lock")
+					(project-directory project))))
+	(when (probe-file lock-file)
+	  (setf (installed-libraries project)
+		(read-lock-file lock-file)))))))
 
 (defun find-project-cld-file (directory)
   (first
