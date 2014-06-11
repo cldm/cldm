@@ -113,15 +113,30 @@
                       t)
                     (error "Couldn't find a cld for ~S library~%" library-name))))))))
 
-(defun load-project (library &key
-                               version
-                               (verbose *verbose-mode*)
-                               (solving-mode *solving-mode*)
-                               (clean-asdf-environment *clean-asdf-environment*)
-                               (libraries-directory *local-libraries-directory*))
+(defmethod load-project ((directory pathname)
+			 &key
+			   version
+			   libraries-directory
+			   (verbose *verbose-mode*)
+			   (solving-mode *solving-mode*)
+			   (clean-asdf-environment *clean-asdf-environment*))
+  (load-project (load-project-from-directory directory)
+		:version version
+		:libraries-directory libraries-directory
+		:verbose verbose
+		:solving-mode solving-mode
+		:clean-asdf-environment clean-asdf-environment))
+
+(defmethod load-project ((project project)
+			 &key
+			   version
+			   libraries-directory
+			   (verbose *verbose-mode*)
+			   (solving-mode *solving-mode*)
+			   (clean-asdf-environment *clean-asdf-environment*))
   "Install a project dependencies and load the project in the current lisp image"
 
-  (install-project library
+  (install-project project
                    :version version
                    :verbose verbose
                    :solving-mode solving-mode
@@ -131,26 +146,28 @@
     (asdf:clear-source-registry)
     (asdf:clear-configuration)
     (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
-  (asdf:load-system (library-name library)
+  (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
 
-(defun install-project (library
-                        &key
-                          version
-                          (verbose *verbose-mode*)
-                          (solving-mode *solving-mode*)
-                          (clean-asdf-environment *clean-asdf-environment*)
-                          (load-asdf-system t)
-                          (libraries-directory *local-libraries-directory*))
-  "Loads a project from its cld"
+(defmethod install-project ((project project)
+			    &key
+			      version
+			      libraries-directory
+			      (verbose *verbose-mode*)
+			      (solving-mode *solving-mode*))
+  "Installs a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
-        (*solving-mode* solving-mode))
-
-    (verbose-msg "Loading ~A.~%" library)
+        (*solving-mode* solving-mode)
+	(version (or version
+		     (project-version project)))
+	(libraries-directory (or libraries-directory
+				 (libraries-directory project)
+				 *local-libraries-directory*)))
+    (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
-                               (find-library-version library version)
-                               (first (library-versions library)))))
+                               (find-library-version (library project) version)
+                               (first (library-versions (library library))))))
       ;; Load libraries metadata
       (load-library-version library-version)
 
@@ -164,7 +181,7 @@
         (let ((library-versions (pbo-solve-library-versions library-version
                                                             library-versions-involved)))
           ;; Remove the project library from the library versions list
-          (setf library-versions (remove (library-name library) library-versions
+          (setf library-versions (remove (library-name (library project)) library-versions
                                          :key #'library-name
                                          :test #'equalp))
 
@@ -176,6 +193,54 @@
                do
                  (multiple-value-bind (pathname repository)
                      (cache-library-version version libraries-directory)
+                   (push pathname asdf:*central-registry*)
+                   (push (list version pathname repository) installed-libraries)))
+            (create-lock-file installed-libraries)))))
+    (verbose-msg "Done.~%")
+    t))
+
+(defmethod update-project ((project project)
+			    &key
+			      version
+			      libraries-directory
+			      (verbose *verbose-mode*)
+			      (solving-mode *solving-mode*))
+  "Updates a CLDM project dependencies"
+
+  (let ((*verbose-mode* verbose)
+        (*solving-mode* solving-mode)
+	(version (or version
+		     (project-version project)))
+	(libraries-directory (or libraries-directory
+				 (libraries-directory project)
+				 *local-libraries-directory*)))
+    (verbose-msg "Loading ~A.~%" project)
+    (let ((library-version (if version
+                               (find-library-version (library project) version)
+                               (first (library-versions (library library))))))
+      ;; Load libraries metadata
+      (load-library-version library-version)
+
+      ;; Calculate list of library-versions involved
+      (let ((library-versions-involved
+             (calculate-library-versions-involved library-version)))
+
+        ;; Validate the library versions list
+                                        ;(validate-library-versions-list library-versions)
+
+        (let ((library-versions (pbo-solve-library-versions library-version
+                                                            library-versions-involved)))
+          ;; Remove the project library from the library versions list
+          (setf library-versions (remove (library-name (library project)) library-versions
+                                         :key #'library-name
+                                         :test #'equalp))
+
+	  ;; Check the version existance and download if not
+          (let ((installed-libraries ()))
+            (loop for version in library-versions
+               do
+                 (multiple-value-bind (pathname repository)
+                     (update-library-version version project libraries-directory)
                    (push pathname asdf:*central-registry*)
                    (push (list version pathname repository) installed-libraries)))
             (create-lock-file installed-libraries)))))
@@ -319,11 +384,30 @@
                  collect
                    (destructuring-bind (library-version library-directory repository) installed-library
                      (list
-                      (library-version-unique-name library-version)
-                      (list library-directory
-                            (directory-checksum library-directory))
-                      (list (name repository)
-                            (repository-address-sexp (repository-address repository))))))))))
+                      (library-name (library library-version))
+		      (version library-version)
+                      library-directory
+		      (list (name repository)
+                            (repository-address-sexp (repository-address repository)))
+		      (directory-checksum library-directory))))))))
+
+(defun read-lock-file (file)
+  (let ((installed-libraries-info (read-from-string (file-to-string file))))
+    (loop for installed-library-info in installed-libraries-info
+	 collect
+	 (destructuring-bind (library version library-directory repository-spec md5)
+	     (let* ((library (find-library library))
+		    (library-version (find-library-version library
+							   (or version "latest"))))
+		    
+	     (list library-version
+		   library-directory
+		   (destructuring-bind (name rep-address-sexp)
+		       (make-instance 'library-version-repository
+				      :name name
+				      :library-version library-version
+				      :address (apply #'make-instance rep-address-sexp)))
+		   md5))))))
 
 ;; ASDF plugging
 

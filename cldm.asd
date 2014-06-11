@@ -32,6 +32,7 @@ THE SOFTWARE."
 			 (:file "library")
 			 (:file "cld")
 			 (:file "repository")
+			 (:file "project")
 			 (:file "pbo")
 			 (:file "deflibrary")
 			 (:file "asdf")

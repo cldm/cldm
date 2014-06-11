@@ -320,45 +320,27 @@ Use 'cldm <command> --help' to get command-specific help.
                   (create-cld-file))
               (create-cld-file)))))))
 
-(defun find-project-cld-file ()
-  (first
-   (directory
-    (make-pathname :directory (pathname-directory (osicat:current-directory))
-                   :name :wild
-                   :type "cld"))))
-
 (defmethod process-command ((command (eql :install)))
   (if (clon:remainder)
       (install-library-command)
       (install-project-command)))
 
 (defun install-project-command ()
-  (let ((project-cld-file (find-project-cld-file)))
+  (let ((project (cldm::load-project-from-directory (osicat:current-directory))))
     (when (not project-cld-file)
       (format t "Couldn't find a CLDM project file in the current directory. Run `cldm init` to start.~%")
       (clon:exit 1))
-    (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
-                                   cldm:*local-libraries-directory*))
-          (solving-mode (or (and (clon:getopt :long-name "lenient")
+    (let ((solving-mode (or (and (clon:getopt :long-name "lenient")
                                  :lenient)
                             :strict))
           (verbose-mode (or (clon:getopt :long-name "verbose")
-                            nil))
-          (library (progn
-                     (cldm::load-cld project-cld-file)
-                     (loop for library being the hash-values of cldm::*libraries*
-                        do (return library)))))
+                            nil)))
       (format t "Installing ~A dependencies to ~A~%"
-              (cldm::library-name library)
-              libraries-directory)
-      (handler-case
-          (cldm:install-project library
-                                :libraries-directory libraries-directory
-                                :solving-mode solving-mode
+              (cldm::project-name project)
+              (cldm::libraries-directory project))
+      (cldm:install-project project
+				:solving-mode solving-mode
                                 :verbose verbose-mode)
-        (error (e)
-          (format t "An error ocurred: ~A~%" e)
-          (clon:exit 1)))
       (format t "Done.~%"))))
 
 (defun install-library-command ()
@@ -371,15 +353,11 @@ Use 'cldm <command> --help' to get command-specific help.
                           nil))
         (library-name (car (clon:remainder)))
         (library-version-string (cadr (clon:remainder))))
-    (handler-case
-        (cldm:install-library library-name
-                              :version library-version-string
-                              :libraries-directory libraries-directory
-                              :solving-mode solving-mode
-                              :verbose verbose-mode)
-      (error (e)
-        (format t "An error ocurred: ~A~%" e)
-        (clon:exit 1)))
+    (cldm:install-library library-name
+			  :version library-version-string
+			  :libraries-directory libraries-directory
+			  :solving-mode solving-mode
+			  :verbose verbose-mode)
     (format t "Done.~%")))
 
 (defmethod process-command ((command (eql :update)))
@@ -389,16 +367,24 @@ Use 'cldm <command> --help' to get command-specific help.
       (clon:exit 1))))
 
 (defparameter +config-variables+
-  (list (cons :libraries-directory (lambda (value scope)
-                                     (cldm::config-set-libraries-directory (pathname value) scope)))
-        (cons :local-libraries-directory (lambda (value scope)
-                                           (cldm::config-set-local-libraries-directory (pathname value) scope)))
-        (cons :verbose (lambda (value scope)
-                         (cldm::config-set-verbose (not (member value (list "no" "false") :test #'equalp)) scope)))
-        (cons :minisat+-binary #'cldm::config-set-minisat+-binary)
-        (cons :solving-mode (lambda (value scope)
-                              (cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
-                                                             scope)))))
+  (list (cons :libraries-directory
+	      (lambda (value scope)
+		(cldm::config-set-libraries-directory (pathname value) scope)))
+        (cons :local-libraries-directory
+	      (lambda (value scope)
+		(cldm::config-set-local-libraries-directory (pathname value) scope)))
+        (cons :verbose
+	      (lambda (value scope)
+		(cldm::config-set-verbose
+		 (not (member value (list "no" "false")
+			      :test #'equalp))
+		 scope)))
+        (cons :minisat+-binary
+	      #'cldm::config-set-minisat+-binary)
+        (cons :solving-mode
+	      (lambda (value scope)
+		(cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
+					       scope)))))
 
 (defun find-config-command (name)
   (cdr (assoc name +config-commands+ :test #'string=)))
