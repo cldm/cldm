@@ -33,24 +33,26 @@
 	    (project-directory project))))
 
 (defun initialize-project (project)
-  ;; Read project configuration  
-  (let ((config (read-config-file (merge-pathnames (pathname ".cldm")
-						   (project-directory project)))))
-    (awhen (getf config :libraries-directory)
-      (setf (libraries-directory project) it))
-    (awhen (getf config :project-version)
-      (setf (project-version project) it)))
+  ;; Read project configuration
+  (let ((project-config-file (merge-pathnames (pathname ".cldm")
+					      (project-directory project))))
+    (when (probe-file project-config-file)
+      (let ((config (read-config-file project-config-file)))
+	(awhen (getf config :libraries-directory)
+	  (setf (libraries-directory project) it))
+	(awhen (getf config :project-version)
+	  (setf (project-version project) it)))
 
-  ;; Configure unconfigured variables
-  (when (not (libraries-directory project))
-    (setf (libraries-directory project)
-	  (merge-pathnames #p"lib/"
-			   (project-directory project))))			   
+      ;; Configure unconfigured variables
+      (when (not (libraries-directory project))
+	(setf (libraries-directory project)
+	      (merge-pathnames #p"lib/"
+			       (project-directory project))))			   
 
-  ;; Read the list of installed libraries
-  (setf (installed-libraries project)
-	(read-lock-file (merge-pathnames (pathname "cldm.lock")
-					 (project-directory project)))))
+      ;; Read the list of installed libraries
+      (setf (installed-libraries project)
+	    (read-lock-file (merge-pathnames (pathname "cldm.lock")
+					     (project-directory project)))))))
 
 (defun find-project-cld-file (directory)
   (first
@@ -59,13 +61,19 @@
                    :name :wild
                    :type "cld"))))
 
-(defun load-project-from-directory (directory)
+(defun load-project-from-directory (directory &optional (error-p t))
   (let ((project-cld-file (find-project-cld-file directory)))
-    (let ((library *latest-registered-library*))
-      (make-instance 'project
-		     :name (library-name library)
-		     :library library
-		     :directory directory))))      
-
+    (if (not project-cld-file)
+	(when error-p
+	  (error "There's no CLDM project in ~A" directory))
+	;; else
+	(progn
+	  (load-cld project-cld-file)
+	  (let ((library *latest-registered-library*))
+	    (make-instance 'project
+			   :name (library-name library)
+			   :library library
+			   :directory directory))))))
+  
 (defmethod initialize-instance :after ((project project) &rest initargs)
   (initialize-project project))
