@@ -154,8 +154,6 @@
 		      downloaded-file))))))))) 
 
 (defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
-  (info-msg "Installing ~A...~%"
-	    (library-version-unique-name library-version))
   (ensure-directories-exist libraries-directory)
   (let* ((repository-name (format nil "~A-~A"
 				  (library-name (library library-version))
@@ -173,7 +171,8 @@
 	  (return-from cache-library-version))
                                         ;else
 	(progn
-	  (verbose-msg "Repository does not exist for ~A. Caching...~%" library-version)
+	  (info-msg "Installing ~A...~%"
+	    (library-version-unique-name library-version))
 	  (let ((done nil))
 	    (loop for repository in (repositories library-version)
 	       while (not done)
@@ -190,21 +189,20 @@
     (values t repository-directory return-repository)))
 
 (defun update-library-version (library-version project)
+  "Update a library version"
+
   (let ((installed-library-info
 	 (find-installed-library-info project
 				      (library-name library-version))))
     (if installed-library-info
 	;; There's a library version installed already
-	;; Try to update the repository
-	(multiple-value-bind (updated repository-directory repository)
-	    (update-repository installed-library-info library-version)
-	  (if (not updated)
-	      ;; The library repository was not updateable
-	      ;; Install the library instead
-	      (cache-library-version library-version (libraries-directory project))
-	      ;; else, return the repository-directory and repository
-	      (values updated repository-directory repository)))
-	;; else, just install the library version
+	(let ((installed-library-version (first installed-library-info)))
+	  (when (or (equalp library-version :max-version)
+		    (version/= (version library-version)
+			       (version installed-library-version)))
+	    ;; The update conditions are satisfied, try to update the repository
+	    (update-repository installed-library-info library-version)))
+	;; else, the library is not installed: install the library version
 	(cache-library-version library-version (libraries-directory project)))))
 
 (defun update-repository (installed-library-info library-version)
