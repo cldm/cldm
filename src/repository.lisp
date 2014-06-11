@@ -166,9 +166,11 @@
 	 (return-repository nil))
     (verbose-msg "Repository directory: ~A~%" repository-directory)
     (if (probe-file repository-directory)
-	(verbose-msg "Repository for ~A already exists in ~A~%"
-		     library-version
-		     repository-directory)
+	(progn
+	  (verbose-msg "Repository for ~A already exists in ~A~%"
+		       library-version
+		       repository-directory)
+	  (return-from cache-library-version))
                                         ;else
 	(progn
 	  (verbose-msg "Repository does not exist for ~A. Caching...~%" library-version)
@@ -185,7 +187,7 @@
 	    (when (not done)
 	      (error "Couldn't cache repository from ~{~A~}~%"
 		     (repositories library-version))))))
-    (values repository-directory return-repository)))
+    (values t repository-directory return-repository)))
 
 (defun update-library-version (library-version project)
   (let ((installed-library-info
@@ -201,9 +203,9 @@
 	      ;; Install the library instead
 	      (cache-library-version library-version (libraries-directory project))
 	      ;; else, return the repository-directory and repository
-	      (values repository-directory repository))
+	      (values updated repository-directory repository)))
 	;; else, just install the library version
-	(cache-library-version library-version (libraries-directory project))))))
+	(cache-library-version library-version (libraries-directory project)))))
 
 (defun update-repository (installed-library-info library-version)
   (destructuring-bind (library-version install-directory origin-repository md5)
@@ -218,7 +220,7 @@
 					   install-directory
 					   library-version)
   ;; repository-addresses are not updateable by default
-  nil)
+  (values nil nil nil))
 
 (defmethod cache-repository (repository directory)
   (cache-repository-from-address (repository-address repository)
@@ -396,7 +398,7 @@
                (apply #'trivial-shell:shell-command args)
 	     (declare (ignorable result code))
              (when (not (zerop status))
-               (return-from update-repository-from-address nil)))))
+               (return-from update-repository-from-address (values nil nil nil))))))
     (let ((library-version-repository (find-library-version-repository
 				       library-version
 				       (name repository))))
@@ -405,17 +407,17 @@
 			'git-repository-address))
 	(let ((library-version-repository-address (repository-address library-version-repository)))
 	  ;; Ok, try the update
-	  (info-msg "Updating ~A" library-version)
+	  (info-msg "Updating ~A...~%" (library-version-unique-name library-version))
 	  (let ((command (format nil "cd ~A; git pull" install-directory)))
-	    (verbose-msg command)
+	    (verbose-msg (format nil "~A~%" command))
 	    (run-or-fail command))
 	  (awhen (branch library-version-repository-address)
 	    (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-	      (verbose-msg command)
+	      (verbose-msg (format nil "~A~%" command))
 	      (run-or-fail command)))
 	  (awhen (commit library-version-repository-address)
 	    (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-	      (verbose-msg command)
+	      (verbose-msg (format nil "~A~%" command))
 	      (run-or-fail command)))
 	  ;; Return the install directory and repository
 	  (values t		    ;; The update was successful

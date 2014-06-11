@@ -47,7 +47,7 @@
 
           ;; Check the version existance and download if not
           ;; After that, push to asdf:*central-registry*
-          (loop for version in library-versions
+          #+nil(loop for version in library-versions
              do
                (let ((pathname (cache-library-version version libraries-directory)))
                  (push pathname asdf:*central-registry*)))))))
@@ -191,20 +191,20 @@
           (let ((installed-libraries ()))
             (loop for version in library-versions
                do
-                 (multiple-value-bind (pathname repository)
+                 (multiple-value-bind (executed pathname repository)
                      (cache-library-version version libraries-directory)
-                   (push pathname asdf:*central-registry*)
-                   (push (list version pathname repository) installed-libraries)))
+		   (assert executed)
+		   (push (list version pathname repository) installed-libraries)))
             (create-lock-file installed-libraries)))))
     (verbose-msg "Done.~%")
     t))
 
 (defmethod update-project ((project project)
-			    &key
-			      version
-			      libraries-directory
-			      (verbose *verbose-mode*)
-			      (solving-mode *solving-mode*))
+			   &key
+			     version
+			     libraries-directory
+			     (verbose *verbose-mode*)
+			     (solving-mode *solving-mode*))
   "Updates a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
@@ -239,10 +239,19 @@
           (let ((installed-libraries ()))
             (loop for version in library-versions
                do
-                 (multiple-value-bind (pathname repository)
+                 (multiple-value-bind (executed pathname repository)
                      (update-library-version version project)
-                   (push pathname asdf:*central-registry*)
-                   (push (list version pathname repository) installed-libraries)))
+		   (if executed
+		       (progn
+			 (assert pathname)
+			 (assert repository)
+			 (push (list version pathname repository) installed-libraries))
+		       ;; else
+		       (destructuring-bind (version pathname repository md5)
+			   (find-installed-library-info
+			    project
+			    (library-name version))
+			 (push (list version pathname repository) installed-libraries)))))
             (create-lock-file installed-libraries)))))
     (verbose-msg "Done.~%")
     t))
