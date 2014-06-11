@@ -3,21 +3,25 @@
 (defclass project ()
   ((name :initarg :name
 	 :accessor project-name
-	 :initform nil
+	 :initform (error "Provide the project name")
 	 :documentation "The project name")
+   (library :initarg :library
+	    :accessor library
+	    :initform (error "Provide the project library")
+	    :documentation "The project library")	    
    (version :initarg :version
 	    :accessor project-version
 	    :initform nil
 	    :documentation "The project version")
    (project-directory :initarg :directory
 		      :accessor project-directory
-		      :initform nil
+		      :initform (error "Provide the project directory")
 		      :documentation "The project directory")
    (installed-libraries :accessor installed-libraries
 			:initform nil
 			:documentation "The project's installed libraries and metadata")
    (libraries-directory :accessor libraries-directory
-			:initform *local-libraries-directory*
+			:initform nil
 			:documentation "Where dependency libraries are/are to be installed"))
   (:documentation "A CLDM project"))
 
@@ -37,9 +41,16 @@
     (awhen (getf config :project-version)
       (setf (project-version project) it)))
 
+  ;; Configure unconfigured variables
+  (when (not (libraries-directory project))
+    (setf (libraries-directory project)
+	  (merge-pathnames #p"lib/"
+			   (project-directory project))))			   
+
   ;; Read the list of installed libraries
-  
-  )
+  (setf (installed-libraries project)
+	(read-lock-file (merge-pathnames (pathname "cldm.lock")
+					 (project-directory project)))))
 
 (defun find-project-cld-file (directory)
   (first
@@ -49,9 +60,12 @@
                    :type "cld"))))
 
 (defun load-project-from-directory (directory)
-      (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
-                                   cldm:*local-libraries-directory*))
-
+  (let ((project-cld-file (find-project-cld-file directory)))
+    (let ((library *latest-registered-library*))
+      (make-instance 'project
+		     :name (library-name library)
+		     :library library
+		     :directory directory))))      
 
 (defmethod initialize-instance :after ((project project) &rest initargs)
   (initialize-project project))

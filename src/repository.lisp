@@ -199,40 +199,6 @@
   ;; repository-addresses are not updateable by default
   nil)
 
-(defmethod update-repository-from-address ((repository-address git-repository-address)
-					   repository
-					   install-directory
-					   library-version)
-  (flet ((run-or-fail (&rest args)
-           (multiple-value-bind (result code status)
-               (apply #'trivial-shell:shell-command args)
-             (when (not (zerop status))
-               (return-from update-repository-from-address nil)))))
-    (let ((library-version-repository (find-library-version-repository
-				       library-version
-				       (repository-name repository))))
-      (when (and library-verison-repository
-		 (typep (repository-address library-version-repository)
-			'git-repository-address))
-	(let ((library-version-repository-address (repository-address library-version-repository)))
-	  ;; Ok, try the update
-	  (verbose-msg "Updating ~A" library-version)
-	  (let ((command (format nil "cd ~A; git pull") install-directory))
-	    (verbose-msg command)
-	    (run-or-fail command))
-	  (awhen (branch library-version-repository-address)
-	    (let ((command "cd ~A; git checkout ~A" install-directory it))
-	      (verbose-msg command)
-	      (run-or-fail command)))
-	  (awhen (commit library-version-repository-address)
-	    (let ((command "cd ~A; git checkout ~A" install-directory it))
-	      (verbose-msg command)
-	      (run-or-fail command)))
-	  ;; Return the install directory and repository
-	  (values t ;; The update was successful
-		  install-directory ;; In which directory the update was made
-		  library-version-repository)))))) ;; The repository from which the update was made
-
 (defmethod cache-repository (repository directory)
   (cache-repository-from-address (repository-address repository)
                                  repository directory))
@@ -248,29 +214,6 @@
    (format nil "cp -r ~A ~A"
            (princ-to-string from)
            (princ-to-string to))))
-
-(defclass library-version-repository ()
-  ((library-version :initarg :library-version
-                    :initform nil
-                    :accessor library-version
-                    :documentation "The library version of the repository")
-   (name :initarg :name
-         :initform (error "Provide the repository name")
-         :accessor name
-         :documentation "The repository name")
-   (address :initarg :address
-            :initform (error "Provide the repository address")
-            :accessor repository-address
-            :documentation "The repository address. Can be a pathname, an url or a git reference"))
-  (:documentation "A library version repository"))
-
-(defmethod print-object ((version-repository library-version-repository) stream)
-  (print-unreadable-object (version-repository stream :type t :identity t)
-    (print-library-version (library-version version-repository)
-                           stream)
-    (format stream " ~A ~A"
-            (name version-repository)
-            (repository-address version-repository))))
 
 (defclass repository-address ()
   ()
@@ -415,6 +358,40 @@
         (verbose-msg "~A~%" command)
         (run-or-fail command)))
     t))
+
+(defmethod update-repository-from-address ((repository-address git-repository-address)
+					   repository
+					   install-directory
+					   library-version)
+  (flet ((run-or-fail (&rest args)
+           (multiple-value-bind (result code status)
+               (apply #'trivial-shell:shell-command args)
+             (when (not (zerop status))
+               (return-from update-repository-from-address nil)))))
+    (let ((library-version-repository (find-library-version-repository
+				       library-version
+				       (repository-name repository))))
+      (when (and library-verison-repository
+		 (typep (repository-address library-version-repository)
+			'git-repository-address))
+	(let ((library-version-repository-address (repository-address library-version-repository)))
+	  ;; Ok, try the update
+	  (verbose-msg "Updating ~A" library-version)
+	  (let ((command (format nil "cd ~A; git pull" install-directory)))
+	    (verbose-msg command)
+	    (run-or-fail command))
+	  (awhen (branch library-version-repository-address)
+	    (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+	      (verbose-msg command)
+	      (run-or-fail command)))
+	  (awhen (commit library-version-repository-address)
+	    (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+	      (verbose-msg command)
+	      (run-or-fail command)))
+	  ;; Return the install directory and repository
+	  (values t ;; The update was successful
+		  install-directory ;; In which directory the update was made
+		  library-version-repository)))))) ;; The repository from which the update was made
 
 (defgeneric repository-address-sexp (repository-address)
   (:method ((repository-address directory-repository-address))

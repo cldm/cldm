@@ -1,6 +1,30 @@
 (in-package :cldm)
 
 (defparameter *libraries* (make-hash-table :test #'equalp))
+(defparameter *latest-registered-library* nil)
+
+(defclass library-version-repository ()
+  ((library-version :initarg :library-version
+                    :initform nil
+                    :accessor library-version
+                    :documentation "The library version of the repository")
+   (name :initarg :name
+         :initform (error "Provide the repository name")
+         :accessor name
+         :documentation "The repository name")
+   (address :initarg :address
+            :initform (error "Provide the repository address")
+            :accessor repository-address
+            :documentation "The repository address. Can be a pathname, an url or a git reference"))
+  (:documentation "A library version repository"))
+
+(defmethod print-object ((version-repository library-version-repository) stream)
+  (print-unreadable-object (version-repository stream :type t :identity t)
+    (print-library-version (library-version version-repository)
+                           stream)
+    (format stream " ~A ~A"
+            (name version-repository)
+            (repository-address version-repository))))
 
 (defun find-library (name &optional (error-p t))
   (or (gethash name *libraries*)
@@ -17,7 +41,8 @@
      collect library))
 
 (defun register-library (library)
-  (setf (gethash (library-name library) *libraries*) library))
+  (setf (gethash (library-name library) *libraries*) library)
+  (setf *latest-registered-library* library))
 
 (defun find-library-version (library version &optional (error-p t))
   (loop for library-version in (library-versions library)

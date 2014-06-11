@@ -167,7 +167,7 @@
     (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
                                (find-library-version (library project) version)
-                               (first (library-versions (library library))))))
+                               (first (library-versions (library project))))))
       ;; Load libraries metadata
       (load-library-version library-version)
 
@@ -217,7 +217,7 @@
     (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
                                (find-library-version (library project) version)
-                               (first (library-versions (library library))))))
+                               (first (library-versions (library project))))))
       ;; Load libraries metadata
       (load-library-version library-version)
 
@@ -240,7 +240,7 @@
             (loop for version in library-versions
                do
                  (multiple-value-bind (pathname repository)
-                     (update-library-version version project libraries-directory)
+                     (update-library-version version project)
                    (push pathname asdf:*central-registry*)
                    (push (list version pathname repository) installed-libraries)))
             (create-lock-file installed-libraries)))))
@@ -396,13 +396,14 @@
     (loop for installed-library-info in installed-libraries-info
 	 collect
 	 (destructuring-bind (library version library-directory repository-spec md5)
+	     installed-library-info
 	     (let* ((library (find-library library))
 		    (library-version (find-library-version library
 							   (or version "latest"))))
 		    
 	     (list library-version
 		   library-directory
-		   (destructuring-bind (name rep-address-sexp)
+		   (destructuring-bind (name rep-address-sexp) repository-spec
 		       (make-instance 'library-version-repository
 				      :name name
 				      :library-version library-version

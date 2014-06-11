@@ -93,7 +93,8 @@
            (let ((pathname (call-next-method)))
              (when pathname
                (let ((*package* (find-package :cldm)))
-                 (load pathname)))))
+                 (load pathname)
+		 *latest-registered-library*))))
   (:method ((cld-address pathname-cld-address))
     (cld-pathname cld-address))
   (:method ((cld-address git-cld-address))
