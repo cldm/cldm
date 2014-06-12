@@ -46,11 +46,9 @@
                     (mapcar #'library-version-unique-name library-versions))
 
           ;; Check the version existance and download if not
-          ;; After that, push to asdf:*central-registry*
-          #+nil(loop for version in library-versions
+          (loop for version in library-versions
              do
-               (let ((pathname (cache-library-version version libraries-directory)))
-                 (push pathname asdf:*central-registry*)))))))
+               (cache-library-version version libraries-directory))))))
   (verbose-msg "Done.~%"))
 
 (defun load-library (library-name
