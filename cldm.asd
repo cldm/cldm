@@ -41,7 +41,6 @@ THE SOFTWARE."
 			:serial t))
     :depends-on (#:alexandria
 		 #:anaphora
-		 #:ironclad
 		 #:md5
 		 #:cl-ppcre
 		 #:cl-syntax
