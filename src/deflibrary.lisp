@@ -2,7 +2,7 @@
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
-                            licence cld versions tags)
+                            licence cld versions keywords)
       options
     `(make-instance 'library
                     :name ',(if (symbolp name)
@@ -14,7 +14,7 @@
                     :licence ,licence
                     :cld (parse-cld-address ',cld)
                     :versions (parse-library-versions ',versions)
-                    :tags ',tags)))
+                    :keywords ',keywords)))
 
 (defun parse-library-versions (versions)
   (let ((parsed-versions))

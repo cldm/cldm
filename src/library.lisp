@@ -84,10 +84,10 @@
              :initform (error "Provide a library version at least")
              :accessor library-versions
              :documentation "The library versions")
-   (tags :initarg :tags
-         :initform nil
-         :accessor library-tags
-         :documentation "Library tags"))
+   (keywords :initarg :keywords
+	     :initform nil
+	     :accessor library-keywords
+         :documentation "Library keywords"))
   (:documentation "A library meta description"))
 
 (defmethod print-object ((library library) stream)
