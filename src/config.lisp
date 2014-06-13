@@ -59,7 +59,8 @@
     (mapcar #'eval *cld-repositories*)))
 
 (defun read-config-file (pathname)
-  (when (probe-file pathname)
+  (when (and (probe-file pathname)
+	     (not (cl-fad:directory-pathname-p pathname)))
     (read-from-string (file-to-string pathname) nil)))
 
 (defun read-config (scope)
