@@ -7,3 +7,4 @@
 * symbolic versions?
 * Add timestamp attribute to versions (date and time when a version was completed)
 * deflibrary unit tests
+* Separate version.lisp and version manipulation to a new cl-semver library. See: https://github.com/zafarkhaja/java-semver
