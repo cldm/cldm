@@ -2,7 +2,7 @@
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
-                            licence cld versions keywords)
+                            licence cld versions keywords &allow-other-keys)
       options
     `(make-instance 'library
                     :name ',(if (symbolp name)
@@ -94,7 +94,9 @@
      collect
        (cond
 	 ((listp dependency)
-	  (destructuring-bind (library-name &key version-constraints cld) dependency
+	  (destructuring-bind (library-name &key version version-constraints cld) dependency
+	    (when version
+	      (push (list :== (read-version-from-string version)) version-constraints))
 	    (apply #'make-instance 'requirement
 		   `(:library-name ,(if (symbolp library-name)
 					(string-downcase (symbol-name library-name))
@@ -103,8 +105,12 @@
 					   (list :version-constraints
 						 (loop for version-constraint in version-constraints
 						    collect (list (first version-constraint)
-								  (read-version-from-string
-								   (second version-constraint))))))
+								  (cond
+								    ((stringp (second version-constraint))
+								     (read-version-from-string (second version-constraint)))
+								    ((versionp (second version-constraint))
+								     (second version-constraint))
+								    (t (error "Invalid version ~A" (second version-constraint))))))))
 				   ,@(when cld
 					   (list :cld (parse-cld-address cld)))))))
 	 ((symbolp dependency)

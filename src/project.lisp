@@ -19,7 +19,7 @@
 		      :documentation "The project directory")
    (installed-libraries :accessor installed-libraries
 			:initform nil
-			:documentation "The project's installed libraries and metadata")
+			:documentation "The project's installed libraries metadata")
    (libraries-directory :accessor libraries-directory
 			:initform nil
 			:documentation "Where dependency libraries are/are to be installed"))

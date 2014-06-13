@@ -81,6 +81,9 @@
 (defmethod print-object ((version semantic-version) stream)
   (format stream "#v\"~A\"" (print-version-to-string version)))
 
+(defun versionp (object)
+  (typep object 'version))
+
 ;; Version comparison
 (defmethod version= (version1 version2)
   nil)
