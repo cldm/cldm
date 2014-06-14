@@ -90,6 +90,11 @@
          :documentation "Library keywords"))
   (:documentation "A library meta description"))
 
+(defmethod library-versions ((library library))
+  (sort (slot-value library 'versions)
+	#'version>= 
+	:key #'version))
+
 (defmethod print-object ((library library) stream)
   (print-unreadable-object (library stream :type t :identity t)
     (format stream "~A (~A)"
