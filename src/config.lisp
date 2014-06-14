@@ -71,8 +71,9 @@
     (read-config-file config-file)))
 
 (defun load-config-file (pathname)
-  (when (probe-file pathname)
-    (let ((configuration (read-config-file pathname)))
+  (when (and (probe-file pathname)
+	     (not (cl-fad:directory-pathname-p pathname)))
+    (let ((configuration (ignore-errors (read-config-file pathname))))
       (when configuration
 	(awhen (getf configuration :minisat+-binary)
 	  (setf *minisat+-binary* it))
