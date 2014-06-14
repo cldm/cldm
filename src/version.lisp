@@ -93,7 +93,11 @@
        (equalp (version-minor version1)
 	       (version-minor version2))
        (equalp (version-patch version1)
-	       (version-patch version2))))
+	       (version-patch version2))
+       (equalp (version-pre-release version1)
+	       (version-pre-release version2))
+       (equalp (version-build version1)
+	       (version-build version2))))
 
 (defmethod version== (version1 version2)
   nil)
