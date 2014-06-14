@@ -95,6 +95,9 @@
 	#'version>= 
 	:key #'version))
 
+(defmethod latest-library-version ((library library))
+  (first (library-versions library)))
+
 (defmethod print-object ((library library) stream)
   (print-unreadable-object (library stream :type t :identity t)
     (format stream "~A (~A)"

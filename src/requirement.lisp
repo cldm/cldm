@@ -120,16 +120,29 @@
 				version>
 				version<))
 
-(defrule version-number (and decimal #\. decimal #\. decimal)
-  (:function (lambda (match)
-	       (destructuring-bind (major dot1 minor dot2 patch) match
-		 (make-semantic-version major minor patch)))))
+(defrule version-build (+ (or (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
+			      (character-ranges (#\a #\z) (#\A #\Z) #\_)))
+  (:text t))
 
+(defrule version-pre-release (+ (or (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
+				    (character-ranges (#\a #\z) (#\A #\Z) #\_)))
+  (:text t))
+
+(defrule version (and decimal #\. decimal #\. decimal
+		      (? (and #\+ version-pre-release))
+		      (? (and #\+ version-build)))
+  (:function (lambda (match)
+	       (destructuring-bind (major dot1 minor dot2 patch pre-release build) match
+		 (make-semantic-version major minor patch
+					(and pre-release
+					     (second pre-release))
+					(and build
+					     (second build)))))))
 (defrule spaces (+ #\ ))
 
 (defrule version-constraint (and version-comparison
 				 spaces
-				 version-number)
+				 version)
   (:function (lambda (match)
 	       (destructuring-bind (comp spaces number) match
 		   (list comp number)))))
@@ -244,7 +257,7 @@
 			     (version= (second constraint1)
 				       (second constraint2))))))))
 
-(defrule library-unique-name (and distribution-name-part (? (and #\- (or version-number library-unique-name))))
+(defrule library-unique-name (and distribution-name-part (? (and #\- (or version library-unique-name))))
   (:function (lambda (match)
 	       (destructuring-bind (dnp rest) match
 		 (if (or (null (second rest))

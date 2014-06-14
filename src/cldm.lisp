@@ -22,6 +22,19 @@
      when cld
      return (values cld cld-repository)))
 
+(defun library-versions-to-install (library-version &key reload)
+  "Calculates the library versions to install for a given LIBRARY-VERSION"
+  
+  ;; Load libraries metadata
+  (load-library-version library-version :reload reload)
+
+      ;; Calculate list of library-versions involved
+  (let ((library-versions-involved
+	 (calculate-library-versions-involved library-version)))
+
+    (pbo-solve-library-versions library-version
+				library-versions-involved)))
+
 (defun setup (library-name &optional version (libraries-directory *libraries-directory*))
   "Setup an already loaded library and its dependencies"
   (let ((library (find-library library-name)))
