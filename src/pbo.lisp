@@ -50,7 +50,7 @@
 				'>= 0
 				(format nil "~A dependency: ~A"
 					(library-version-unique-name library-version)
-					(library-name dependency))))))))
+					(print-requirement-to-string dependency))))))))
 	
 (defun encode-conflict (library-version-1 library-version-2)
   (make-pbo-constraint*
@@ -82,15 +82,23 @@
 		     collect (encode-library-version library-version)))))
       pbo-constraints)))
 
+(defun library-versions-conflict-p (library-version-1 library-version-2)
+  (and (equalp (library-name library-version-1)
+	       (library-name library-version-2))
+       (and
+	(version/== (version library-version-1)
+		    (version library-version-2))
+	(not (and (equalp (version library-version-1) :max-version)
+	     (equalp (version library-version-2) :max-version))))))
+  
 (defun encode-library-versions-conflicts (library-versions)
   (loop for library-version-1 in library-versions
-       for library-version-2 in (cdr library-versions)
-       when (and (equalp (library-name library-version-1)
-			 (library-name library-version-2))
-		 (version/== (version library-version-1)
-			     (version library-version-2)))
-       collect (encode-conflict library-version-1
-				library-version-2)))  
+       appending
+       (loop for library-version-2 in (cdr library-versions)
+	  when (library-versions-conflict-p library-version-1
+					    library-version-2)
+	  collect (encode-conflict library-version-1
+				   library-version-2))))
 
 (defun encode-library-version-dependencies (library-version)
   (let ((dependency-constraints
