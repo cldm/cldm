@@ -1,6 +1,7 @@
 (in-package :cldm)
 
 (defparameter *libraries* (make-hash-table :test #'equalp))
+(defparameter *if-already-registered-library* :append)
 (defparameter *latest-registered-library* nil)
 
 (defclass library-version-repository ()
@@ -40,9 +41,23 @@
   (loop for library being the hash-values of *libraries*
      collect library))
 
-(defun register-library (library)
-  (setf (gethash (library-name library) *libraries*) library)
+(defun register-library (library &key (if-already-registered *if-already-registered-library*))
+  (check-type if-already-registered (member :append :replace :error :ignore))
+  (aif (find-library (library-name library) nil)
+       (ecase if-already-registered
+	 (:error (error "The library ~A has already been registered" (library-name library)))
+	 (:replace (setf (gethash (library-name library) *libraries*) library))
+	 (:ignore nil)
+	(:append (append-to-library library it)))
+					;else
+      (setf (gethash (library-name library) *libraries*) library))
   (setf *latest-registered-library* library))
+
+(defun append-to-library (library target-library)
+  "Appends library versions found in LIBRARY to TARGET-LIBRARY"
+  (setf (library-versions target-library)
+	(append (library-versions target-library)
+		(library-versions library))))
 
 (defun find-library-version (library version &optional (error-p t))
   (loop for library-version in (library-versions library)

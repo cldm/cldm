@@ -22,11 +22,11 @@
      when cld
      return (values cld cld-repository)))
 
-(defun library-versions-to-install (library-version &key reload)
+(defun library-versions-to-install (library-version)
   "Calculates the library versions to install for a given LIBRARY-VERSION"
   
   ;; Load libraries metadata
-  (load-library-version library-version :reload reload)
+  (load-library-version library-version)
 
       ;; Calculate list of library-versions involved
   (let ((library-versions-involved
@@ -267,7 +267,7 @@
     (verbose-msg "Done.~%")
     t))
 
-(defun load-library-version (library-version &key reload)
+(defun load-library-version (library-version &key (if-already-loaded *if-already-loaded-cld*))
   "Load a library version dependencies clds"
   (verbose-msg "Loading ~A.~%" library-version)
   (labels ((load-dependency (dependency)
@@ -275,10 +275,11 @@
              (let* ((library (find-library (library-name dependency)))
                     (library-versions (find-library-versions library dependency)))
                (loop for library-version in library-versions
-                  do (load-library-version library-version :reload reload))))
+                  do (load-library-version library-version :if-already-loaded if-already-loaded))))
            (load-dependency-cld (dependency)
              (let ((cld (and (cld dependency)
-                             (load-cld (cld dependency)))))
+                             (load-cld (cld dependency)
+				       :if-already-loaded if-already-loaded))))
                (if (not cld)
                    (progn
                      (verbose-msg "No cld could be loaded.~%")
@@ -288,7 +289,9 @@
                         do 
 			  (let ((repository-cld (find-cld cld-repository
 							  (library-name dependency))))
-			    (setf cld (and repository-cld (load-cld repository-cld)))
+			    (setf cld (and repository-cld (load-cld repository-cld
+								    :if-already-loaded
+								    if-already-loaded)))
 			    (when cld
 			      (verbose-msg "~A cld found in ~A~%"
 					   (library-name dependency)
@@ -308,15 +311,8 @@
     (loop for dependency in (dependencies library-version)
        do (progn
             (verbose-msg "Handling ~A.~%" dependency)
-            ;; For each dependency, try to load its cld, if it is not already loaded
-            (if (find-library (library-name dependency) nil)
-                (progn
-                  (verbose-msg "Metadata for ~A is already loaded~%" (library-name dependency))
-                  (when reload
-                    (verbose-msg "Reloading...")
-                    (load-dependency-cld dependency)))
-                ;; else
-                (load-dependency-cld dependency))))))
+            ;; For each dependency, try to load its cld
+	    (load-dependency-cld dependency)))))
 
 (defun calculate-library-versions-involved (library-version &optional visited)
   (remove-duplicates
