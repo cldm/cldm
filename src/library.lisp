@@ -33,7 +33,7 @@
 
 (defun find-library-versions (library requirement)
   (loop for library-version in (library-versions library)
-       when (library-version-matches library-version requirement)
+       when (equalp (library-version-matches library-version requirement) :match)
        collect library-version))
 
 (defun list-libraries ()
