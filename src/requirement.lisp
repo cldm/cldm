@@ -129,7 +129,7 @@
   (:text t))
 
 (defrule version (and decimal #\. decimal #\. decimal
-		      (? (and #\+ version-pre-release))
+		      (? (and #\- version-pre-release))
 		      (? (and #\+ version-build)))
   (:function (lambda (match)
 	       (destructuring-bind (major dot1 minor dot2 patch pre-release build) match
