@@ -1,6 +1,6 @@
-(asdf:defsystem #:cldm
+(asdf:defsystem #:cldm-loader
   :serial t
-  :description "Common Lisp Dependency Manager"
+  :description "Common Lisp Dependency Manager project loader"
   :author "Mariano Montone"
   :license "Copyright (c) 2014 Mariano Montone
 
@@ -23,35 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE."
   :components ((:module :src
 			:components
-			((:file "package")
-			 (:file "util")
-			 (:file "config")
-			 (:file "version")
-			 (:file "interval")
-			 (:file "requirement")
-			 (:file "library")
-			 (:file "cld")
-			 (:file "repository")
-			 (:file "project")
-			 (:file "pbo")
-			 (:file "deflibrary")
-			 (:file "asdf")
-			 (:file "cldm")
-			 (:file "initialize"))		
+			((:file "cldm-loader"))		
 			:serial t))
-    :depends-on (#:alexandria
-		 #:anaphora
-		 #:md5
-		 #:cl-ppcre
-		 #:cl-syntax
-		 #:esrap
-		 #:trivial-shell
-		 #:puri
-		 #:split-sequence
-		 #:cl-fad
-		 #:osicat
-		 #:cldm-loader))
-
-(defmethod perform ((o test-op) (c (eql (find-system 'cldm))))
-  (oos 'load-op 'cldm-test)
-  (oos 'test-op 'cldm-test))
+  :depends-on (#:osicat))

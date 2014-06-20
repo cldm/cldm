@@ -4,9 +4,6 @@
 
 (defparameter *debug-mode* nil "When true, debugging messages are displayed on the standard output")
 
-(defparameter *libraries-directory*
-  (pathname "~/.cldm/cache/libraries/"))
-
 (defparameter *standard-cldm-repo*
   `(make-instance 'cldm:cached-http-cld-repository
                   :name "cldm-repo"
@@ -23,9 +20,6 @@
 
 (defparameter *minisat+-binary* "/usr/bin/minisat+"
   "minisat+ binary for PBO solving")
-
-(defparameter *local-libraries-directory* (merge-pathnames (pathname "lib/")
-							   (osicat:current-directory)))
 
 ;; Configuration files
 
