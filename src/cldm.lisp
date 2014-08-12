@@ -221,10 +221,7 @@
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode)
 	(version (or version
-		     (project-version project)))
-	(libraries-directory (or libraries-directory
-				 (libraries-directory project)
-				 *local-libraries-directory*)))
+		     (project-version project))))
     (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
                                (find-library-version (library project) version)
@@ -235,7 +232,7 @@
       ;; Calculate list of library-versions involved
       (let ((library-versions-involved
              (calculate-library-versions-involved library-version)))
-
+	
         ;; Validate the library versions list
                                         ;(validate-library-versions-list library-versions)
 
