@@ -7,7 +7,7 @@
 (defparameter *standard-cldm-repo*
   `(make-instance 'cldm:cached-http-cld-repository
                   :name "cldm-repo"
-                  :url "http://mmontone.github.io/cldm-repo/cld"
+                  :url "http://cldm.github.io/cldm-repo/cld"
 		  :cache-directory (pathname "~/.cldm/cache/cld-repositories/cldm-repo/")))
 
 (defparameter *cld-repositories* (list *standard-cldm-repo*))
