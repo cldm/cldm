@@ -1,4 +1,9 @@
-(in-package :cldm)
+(defpackage :cldm.asdf
+  (:use :cl :cldm)
+  (:export #:deflibrary-file-from-asdf-system
+	   #:deflibrary-from-asdf-system))
+	   
+(in-package :cldm.asdf)
 
 (defun deflibrary-file-from-asdf-system (asdf-system cld pathname &key (if-exists :supersede)
 								    repositories)
@@ -7,6 +12,9 @@
 		     :if-exists if-exists
 		     :if-does-not-exist :create)
     (deflibrary-from-asdf-system asdf-system cld f :repositories repositories)))
+
+(defmethod deflibrary-from-asdf-system ((asdf-system symbol) cld stream &key repositories)
+  (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream :repositories repositories))
 
 (defmethod deflibrary-from-asdf-system ((asdf-system string) cld stream &key repositories)
   (deflibrary-from-asdf-system (asdf:find-system asdf-system) cld stream :repositories repositories))
