@@ -16,5 +16,6 @@
 * name parameter for cld-repositories and get-repository-named implementation
 * Change deflibrary to something else? defpackage, defproject, defbundle, ...
 * Add :repositories option to libraries?
+* In-memory repository
 
 
