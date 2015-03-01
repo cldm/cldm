@@ -16,5 +16,5 @@
 * Change deflibrary to something else? defpackage, defproject, defbundle, ...
 * Add :repositories option to libraries?
 * In-memory repository
-
+* Interactive cldm init command
 
