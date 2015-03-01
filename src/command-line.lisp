@@ -19,6 +19,11 @@
 
 (defparameter +config-commands+
   (list
+   (cons "print"
+	 (clon:defsynopsis (:make-default nil)
+	   (text :contents "Prints configuration values")
+           (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
    (cons "set"
          (clon:defsynopsis (:make-default nil :postfix "VARIABLE VALUE")
            (text :contents "Sets a CLDM configuration variable value.")
@@ -75,9 +80,7 @@
                    :description "Force cld file creation")
            (stropt :long-name "project-name"
                    :argument-name "PROJECT-NAME"
-                   :argument-type :optional
-                   :default-value ""
-                   :description "The project name")
+		   :description "The project name")
            (stropt :long-name "cld"
                    :argument-name "CLD"
                    :default-value ""
@@ -458,6 +461,13 @@ Use 'cldm <command> --help' to get command-specific help.
       (clon:exit 1))
     (format t "~A~%"
             (cldm::get-config-var variable-keyword scope))))
+
+(defmethod process-config-command ((command (eql :print)) scope)
+  (loop for config-var in (mapcar #'car +config-variables+)
+       do
+       (format t "~A: ~A~%"
+	       config-var
+	       (cldm::get-config-var config-var scope))))
 
 (defun find-repositories-command (name)
   (cdr (assoc name +repositories-commands+ :test #'string=)))
