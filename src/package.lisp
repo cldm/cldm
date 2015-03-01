@@ -46,7 +46,7 @@
 	   #:valid-library-name-p
 	   #:print-library
 	   #:print-library-to-string
-	   #:read-library-from-string
+	   #:read-library-version-from-string
 	   #:library=
 	   #:library-matches
 	   #:library-id

@@ -216,7 +216,7 @@
 (defun read-library-version-from-string (string)
   (destructuring-bind (unique-name requirements)
       (parse 'library string)
-    (make-instance 'library
+    (make-instance 'library-version
 		   :name (first unique-name)
 		   :version (second unique-name)
 		   :dependencies
