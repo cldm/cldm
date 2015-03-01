@@ -37,7 +37,7 @@
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))))
 
-(defparameter +repositories-commands+
+(defparameter +repo-commands+
   (list
    (cons "add"
          (clon:defsynopsis (:make-default nil :postfix "NAME TYPE ARGS")
@@ -138,11 +138,11 @@ Config commands: ~{~A~^, ~}~%" (mapcar #'car +config-commands+)))
                  :enum (list :global :user :local)
                  :default-value :local)))
    ;; repositories command
-   (cons "repositories"
+   (cons "repo"
          (clon:defsynopsis (:make-default nil
-                                          :postfix (format nil "REPOSITORIES-CMD [OPTIONS]"))
+                                          :postfix (format nil "REPO-CMD [OPTIONS]"))
            (text :contents (format nil "Manage CLDM CLD repositories.~%
-Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repositories-commands+)))
+Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repo-commands+)))
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")
            (enum :long-name "scope"
@@ -472,17 +472,17 @@ Use 'cldm <command> --help' to get command-specific help.
 	       config-var
 	       (cldm::get-config-var config-var scope))))
 
-(defun find-repositories-command (name)
-  (cdr (assoc name +repositories-commands+ :test #'string=)))
+(defun find-repo-command (name)
+  (cdr (assoc name +repo-commands+ :test #'string=)))
 
-(defgeneric process-repositories-command (command scope))
+(defgeneric process-repo-command (command scope))
 
-(defmethod process-command ((command (eql :repositories)))
+(defmethod process-command ((command (eql :repo)))
   (let ((scope (or (clon:getopt :long-name "scope")
                    :local)))
     (clon:make-context
      :synopsis (let ((command-name (car (clon:remainder))))
-                 (let ((command (find-repositories-command command-name)))
+                 (let ((command (find-repo-command command-name)))
                    (if command
                        command
                        (progn
@@ -492,11 +492,11 @@ Use 'cldm <command> --help' to get command-specific help.
     (cond ((clon:getopt :short-name "h")
            (clon:help))
           (t ;; Process the config command
-           (process-repositories-command
+           (process-repo-command
             (intern (string-upcase (clon:progname)) :keyword)
             scope)))))
 
-(defmethod process-repositories-command ((command (eql :add)) scope)
+(defmethod process-repo-command ((command (eql :add)) scope)
   (destructuring-bind (repository-name repository-type &rest args) (clon:remainder)
     (setf repository-type (intern (string-upcase (cadr (clon:remainder))) :cldm))
     (setf args (loop for prop in args by #'cddr
@@ -506,7 +506,7 @@ Use 'cldm <command> --help' to get command-specific help.
     (cldm::config-add-repository `(,repository-type :name ,repository-name ,@args)
                                  scope)))
 
-(defmethod process-repositories-command ((command (eql :remove)) scope)
+(defmethod process-repo-command ((command (eql :remove)) scope)
   (let ((repository-name (car (clon:remainder))))
     (let ((repository
            (cldm::find-cld-repository repository-name)))
@@ -515,7 +515,7 @@ Use 'cldm <command> --help' to get command-specific help.
         (clon:exit 1))
       (cldm::config-remove-repository repository-name scope))))
 
-(defmethod process-repositories-command ((command (eql :append)) scope)
+(defmethod process-repo-command ((command (eql :append)) scope)
   (destructuring-bind (repository-name repository-type &rest args) (clon:remainder)
     (setf repository-type (intern (string-upcase (cadr (clon:remainder))) :cldm))
     (setf args (loop for prop in args by #'cddr
@@ -525,7 +525,7 @@ Use 'cldm <command> --help' to get command-specific help.
     (cldm::config-append-repository `(,repository-type :name ,repository-name ,@args)
                                     scope)))
 
-(defmethod process-repositories-command ((command (eql :unappend)) scope)
+(defmethod process-repo-command ((command (eql :unappend)) scope)
   (let ((repository-name (car (clon:remainder))))
     (let ((repository
            (cldm::find-cld-repository repository-name)))
@@ -534,7 +534,7 @@ Use 'cldm <command> --help' to get command-specific help.
         (clon:exit 1))
       (cldm::config-unappend-repository repository-name scope))))
 
-(defmethod process-repositories-command ((command (eql :list)) scope)
+(defmethod process-repo-command ((command (eql :list)) scope)
   (loop for repository in (cldm:list-cld-repositories)
      do (format t "~A~%" repository)))
 
