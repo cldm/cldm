@@ -24,16 +24,16 @@
 
 (defun library-versions-to-install (library-version)
   "Calculates the library versions to install for a given LIBRARY-VERSION"
-  
+
   ;; Load libraries metadata
   (load-library-version library-version)
 
-      ;; Calculate list of library-versions involved
+  ;; Calculate list of library-versions involved
   (let ((library-versions-involved
-	 (calculate-library-versions-involved library-version)))
+         (calculate-library-versions-involved library-version)))
 
     (pbo-solve-library-versions library-version
-				library-versions-involved)))
+                                library-versions-involved)))
 
 (defun setup (library-name &optional version (libraries-directory *libraries-directory*))
   "Setup an already loaded library and its dependencies"
@@ -109,15 +109,15 @@
                 (loop
                    for cld-repository in (list-cld-repositories)
                    while (not cld)
-                   do 
-		     (let ((repository-cld (find-cld cld-repository
-						     library-name)))
-		       (setf cld (and repository-cld
-				      (load-cld repository-cld)))
-		       (when cld
-			 (verbose-msg "~A cld found in ~A~%"
-				      library-name
-				      cld-repository))))
+                   do
+                     (let ((repository-cld (find-cld cld-repository
+                                                     library-name)))
+                       (setf cld (and repository-cld
+                                      (load-cld repository-cld)))
+                       (when cld
+                         (verbose-msg "~A cld found in ~A~%"
+                                      library-name
+                                      cld-repository))))
                 (if cld
                     (progn
                       (setup library-name version)
@@ -125,26 +125,26 @@
                     (error "Couldn't find a cld for ~S library~%" library-name))))))))
 
 (defmethod load-project ((directory pathname)
-			 &key
-			   version
-			   libraries-directory
-			   (verbose *verbose-mode*)
-			   (solving-mode *solving-mode*)
-			   (clean-asdf-environment *clean-asdf-environment*))
+                         &key
+                           version
+                           libraries-directory
+                           (verbose *verbose-mode*)
+                           (solving-mode *solving-mode*)
+                           (clean-asdf-environment *clean-asdf-environment*))
   (load-project (load-project-from-directory directory)
-		:version version
-		:libraries-directory libraries-directory
-		:verbose verbose
-		:solving-mode solving-mode
-		:clean-asdf-environment clean-asdf-environment))
+                :version version
+                :libraries-directory libraries-directory
+                :verbose verbose
+                :solving-mode solving-mode
+                :clean-asdf-environment clean-asdf-environment))
 
 (defmethod load-project ((project project)
-			 &key
-			   version
-			   libraries-directory
-			   (verbose *verbose-mode*)
-			   (solving-mode *solving-mode*)
-			   (clean-asdf-environment *clean-asdf-environment*))
+                         &key
+                           version
+                           libraries-directory
+                           (verbose *verbose-mode*)
+                           (solving-mode *solving-mode*)
+                           (clean-asdf-environment *clean-asdf-environment*))
   "Install a project dependencies and load the project in the current lisp image"
 
   (install-project project
@@ -161,20 +161,20 @@
                     :force-not (asdf:registered-systems)))
 
 (defmethod install-project ((project project)
-			    &key
-			      version
-			      libraries-directory
-			      (verbose *verbose-mode*)
-			      (solving-mode *solving-mode*))
+                            &key
+                              version
+                              libraries-directory
+                              (verbose *verbose-mode*)
+                              (solving-mode *solving-mode*))
   "Installs a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode)
-	(version (or version
-		     (project-version project)))
-	(libraries-directory (or libraries-directory
-				 (libraries-directory project)
-				 *local-libraries-directory*)))
+        (version (or version
+                     (project-version project)))
+        (libraries-directory (or libraries-directory
+                                 (libraries-directory project)
+                                 *local-libraries-directory*)))
     (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
                                (find-library-version (library project) version)
@@ -204,24 +204,24 @@
                do
                  (multiple-value-bind (executed pathname repository)
                      (cache-library-version version libraries-directory)
-		   (assert executed)
-		   (push (list version pathname repository) installed-libraries)))
+                   (assert executed)
+                   (push (list version pathname repository) installed-libraries)))
             (create-lock-file installed-libraries)))))
     (verbose-msg "Done.~%")
     t))
 
 (defmethod update-project ((project project)
-			   &key
-			     version
-			     libraries-directory
-			     (verbose *verbose-mode*)
-			     (solving-mode *solving-mode*))
+                           &key
+                             version
+                             libraries-directory
+                             (verbose *verbose-mode*)
+                             (solving-mode *solving-mode*))
   "Updates a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode)
-	(version (or version
-		     (project-version project))))
+        (version (or version
+                     (project-version project))))
     (verbose-msg "Loading ~A.~%" project)
     (let ((library-version (if version
                                (find-library-version (library project) version)
@@ -232,7 +232,7 @@
       ;; Calculate list of library-versions involved
       (let ((library-versions-involved
              (calculate-library-versions-involved library-version)))
-	
+
         ;; Validate the library versions list
                                         ;(validate-library-versions-list library-versions)
 
@@ -243,23 +243,23 @@
                                          :key #'library-name
                                          :test #'equalp))
 
-	  ;; Check the version existance and download if not
+          ;; Check the version existance and download if not
           (let ((installed-libraries ()))
             (loop for version in library-versions
                do
                  (multiple-value-bind (executed pathname repository)
                      (update-library-version version project)
-		   (if executed
-		       (progn
-			 (assert pathname)
-			 (assert repository)
-			 (push (list version pathname repository) installed-libraries))
-		       ;; else
-		       (destructuring-bind (version pathname repository md5)
-			   (find-installed-library-info
-			    project
-			    (library-name version))
-			 (push (list version pathname repository) installed-libraries)))))
+                   (if executed
+                       (progn
+                         (assert pathname)
+                         (assert repository)
+                         (push (list version pathname repository) installed-libraries))
+                       ;; else
+                       (destructuring-bind (version pathname repository md5)
+                           (find-installed-library-info
+                            project
+                            (library-name version))
+                         (push (list version pathname repository) installed-libraries)))))
             (create-lock-file installed-libraries)))))
     (verbose-msg "Done.~%")
     t))
@@ -274,42 +274,51 @@
                (loop for library-version in library-versions
                   do (load-library-version library-version :if-already-loaded if-already-loaded))))
            (load-dependency-cld (dependency)
-             (let ((cld (and (cld dependency)
-                             (load-cld (cld dependency)
-				       :if-already-loaded if-already-loaded))))
-               (if (not cld)
-                   (progn
-                     (verbose-msg "No cld could be loaded.~%")
-                     (loop
-                        for cld-repository in (list-cld-repositories)
-                        while (not cld)
-                        do 
-			  (let ((repository-cld (find-cld cld-repository
-							  (library-name dependency))))
-			    (setf cld (and repository-cld (load-cld repository-cld
-								    :if-already-loaded
-								    if-already-loaded)))
-			    (when cld
-			      (verbose-msg "~A cld found in ~A~%"
-					   (library-name dependency)
-					   cld-repository))))
-                     (if cld
-                         ;; A cld for the dependency was found, load the dependency
-                         (load-dependency dependency)
-                         ;; else, no dependency was found. What to do in this case??
-                         ;; we can signal an error, or ignore this (signal a warning), as
-                         ;; the library version may be loadable from the user system repository
-                         ;; anyway (.i.e. Quicklisp)
-                         (ecase *solving-mode*
-                           (:lenient (warn "Couldn't find a cld for ~A" dependency))
-                           (:strict (error "Couldn't find a cld for ~A" dependency)))))
-                                        ;else
-                   (load-dependency dependency)))))
+	     ; To load a dependency cld, we try looking in repositories first, and, if we couldn't find
+             ; a cld there, we try to load the cld specified in the dependency. This is so that we can give
+             ; the user an opportunity to have some control of which cld files he wants to take priority over others
+             ; by adding a cld repository to *cld-repositories*
+	     (let (cld)
+	       (loop
+		  for cld-repository in (list-cld-repositories)
+		  while (not cld)
+		  do
+		    (let ((repository-cld (find-cld cld-repository
+						    (library-name dependency))))
+		      (setf cld (and repository-cld (load-cld repository-cld
+							      :if-already-loaded
+							      if-already-loaded)))
+		      (when cld
+			(verbose-msg "~A cld found in ~A~%"
+				     (library-name dependency)
+				     cld-repository))))
+	       (if cld
+		   ;; A cld was found in repositories, load it
+		   (load-dependency dependency)
+		   ;; Otherwise, a cld could not be found in repositories, try with the dependency cld, if it exists
+		   (progn
+		     (setf cld (and (cld dependency)
+				    (load-cld (cld dependency)
+					      :if-already-loaded if-already-loaded)))
+		     (if cld
+			 ;; the cld specified in the dependency was found, load the dependency
+			 (load-dependency dependency)
+			 
+		       ;; else, In this case a cld was not found either in repositories or by looking at the cld
+		       ;; specified in the dependency
+		       ;; What to do in this case??
+		       ;; we can signal an error, or ignore this (signal a warning), as
+		       ;; the library version may be loadable from the user system repository
+		       ;; anyway (.i.e. Quicklisp)
+		       (ecase *solving-mode*
+			 (:lenient (warn "Couldn't find a cld for ~A" dependency))
+			 (:strict (error "Couldn't find a cld for ~A" dependency)))))))))
+    ;; Load the dependencies for the library version
     (loop for dependency in (dependencies library-version)
        do (progn
             (verbose-msg "Handling ~A.~%" dependency)
             ;; For each dependency, try to load its cld
-	    (load-dependency-cld dependency)))))
+            (load-dependency-cld dependency)))))
 
 (defun calculate-library-versions-involved (library-version &optional visited)
   (remove-duplicates
