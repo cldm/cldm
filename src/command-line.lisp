@@ -156,13 +156,7 @@ Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repo-commands+)))
   (cdr (assoc name +commands+ :test #'string=)))
 
 (clon:defsynopsis (:postfix "command [OPTIONS]")
-  (text :contents (format nil "  ___ _    ___  __  __
- / __| |  |   \\|  \\/  |
-| (__| |__| |) | |\\/| |
- \\___|____|___/|_|  |_|
-
-
-CLDM is a Common Lisp Dependency Manager.
+  (text :contents (format nil "CLDM is a Common Lisp Dependency Manager.
 
 Available commands: ~A
 
