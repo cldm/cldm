@@ -4,9 +4,9 @@
 
 (in-suite cldm-test)
 
-(defparameter +hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-(defparameter +hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-(defparameter +hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
+(defparameter +hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+(defparameter +hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+(defparameter +hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
 
 (deftest repository-creation-test ()
   (let ((libraries (list +hunchentoot-1.0.0+

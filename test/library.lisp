@@ -31,9 +31,9 @@
 			    :version #v"1.0.0")))
     (is (equalp (print-library-to-string lib) "hunchentoot-1.0.0"))))
 
-(deftest read-library-from-string-test ()
+(deftest read-library-version-from-string-test ()
   (let ((lib-string "hunchentoot-1.0.0"))
-    (let ((lib (read-library-from-string lib-string)))
+    (let ((lib (read-library-version-from-string lib-string)))
       (is (library= lib (make-instance 'library
 				       :name "hunchentoot"
 				       :version #v"1.0.0")))
@@ -42,7 +42,7 @@
 
 (deftest library-dependencies-test ()
   (let ((lib-string "hunchentoot-1.0.0; depends (chunga >= 1.2.0)"))
-    (let ((lib1 (read-library-from-string lib-string))
+    (let ((lib1 (read-library-version-from-string lib-string))
 	  (lib2 (make-instance 'library
 			       :name "hunchentoot"
 			       :version #v"1.0.0"
@@ -52,7 +52,7 @@
 
 (deftest library-provides-test ()
   (let ((lib-string "hunchentoot-1.0.0; provides (cl-ppcre == 1.4.0)"))
-    (let ((lib1 (read-library-from-string lib-string))
+    (let ((lib1 (read-library-version-from-string lib-string))
 	  (lib2 (make-instance 'library :name "hunchentoot"
 			       :version #v"1.0.0"
 			       :provides (list (read-requirement-from-string "cl-ppcre == 1.4.0")))))
@@ -61,7 +61,7 @@
 
 (deftest library-multiple-dependencies-test ()
   (let ((lib-string "hunchentoot-1.0.0; depends (chunga >= 1.0.0, cffi >= 2.0.0)"))
-    (let ((lib1 (read-library-from-string lib-string))
+    (let ((lib1 (read-library-version-from-string lib-string))
 	  (lib2 (make-instance 'library :name "hunchentoot"
 			       :version #v"1.0.0"
 			       :dependencies (list (read-requirement-from-string "chunga >= 1.0.0")
@@ -71,7 +71,7 @@
       (is (equalp (print-library-to-string lib2) lib-string)))))
 
 (deftest library-matching-test ()
-  (let ((hunchentoot-1.0.0 (read-library-from-string "hunchentoot-1.0.0")))
+  (let ((hunchentoot-1.0.0 (read-library-version-from-string "hunchentoot-1.0.0")))
     (setf (library-provides hunchentoot-1.0.0)
 	  (list (read-requirement-from-string "cl-ppcre")))
     (setf (library-replaces hunchentoot-1.0.0)

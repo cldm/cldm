@@ -8,10 +8,10 @@
   (read-requirement-from-string string))
 
 (deftest pool-find-library-by-id-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository (make-instance 'repository
 				     :name "test"
@@ -27,10 +27,10 @@
 		    +hunchentoot-1.1.1+))))))
 
 (deftest pool-has-library-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository (make-instance 'repository
 				     :name "test"
@@ -43,10 +43,10 @@
 
 (deftest add-repository-test ()
   "Ensure we do not add the same library twice"
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository1 (make-instance 'repository
 				      :name "test1"
@@ -59,10 +59,10 @@
 	(is (equalp (length (what-provides pool (req "hunchentoot"))) 3))))))
 
 (deftest what-provides-simple-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository (make-instance 'repository
 				     :name "test"
@@ -84,10 +84,10 @@
 		       :test #'library=))))))
 
 (deftest what-provides-direct-only-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository (make-instance 'repository
 				     :name "test"
@@ -98,10 +98,10 @@
 		       :test #'library=))))))
 
 (deftest what-provides-include-indirect-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
     (let ((repository (make-instance 'repository
 				     :name "test"
@@ -132,12 +132,12 @@
 		       :test #'library=))))))
 
 (deftest what-provides-replaces-test ()
-  (let ((+hunchentoot-1.0.0+ (read-library-from-string "hunchentoot-1.0.0"))
-	(+hunchentoot-1.0.1+ (read-library-from-string "hunchentoot-1.0.1"))
-	(+hunchentoot-1.1.1+ (read-library-from-string "hunchentoot-1.1.1"))
-	(+hunchentoot-no-threaded-1.1.1+ (read-library-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
+  (let ((+hunchentoot-1.0.0+ (read-library-version-from-string "hunchentoot-1.0.0"))
+	(+hunchentoot-1.0.1+ (read-library-version-from-string "hunchentoot-1.0.1"))
+	(+hunchentoot-1.1.1+ (read-library-version-from-string "hunchentoot-1.1.1"))
+	(+hunchentoot-no-threaded-1.1.1+ (read-library-version-from-string "hunchentoot-no-threaded-1.1.1; depends (hunchentoot == 1.1.1); provides (hunchentoot == 1.1.1)")))
 
-    (let ((hunchentoot-replacement (read-library-from-string "webserver-1.1.2; replaces (hunchentoot == 1.1.1)")))
+    (let ((hunchentoot-replacement (read-library-version-from-string "webserver-1.1.2; replaces (hunchentoot == 1.1.1)")))
       (let ((repository (make-instance 'repository
 				       :name "test"
 				       :libraries (list +hunchentoot-1.1.1+
