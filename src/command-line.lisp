@@ -17,6 +17,8 @@
 
 (defparameter +CLDM-version+ "0.0.1")
 
+(defgeneric process-command (command))
+
 (defparameter +config-commands+
   (list
    (cons "print"
@@ -218,10 +220,12 @@ Use 'cldm <command> --help' to get command-specific help.
 		  (process-command (intern (string-upcase (clon:progname)) :keyword)))))))
   (clon:exit))
 
-(defun create-cld-template (project-name &rest keys &key cld description author dependencies interactive)
-  (if interactive
-      (apply #'create-cld-template-interactive project-name keys)
-      (apply #'create-cld-template-batch project-name keys)))
+(defun create-cld-template-batch (project-name &key cld description author dependencies &allow-other-keys)
+  `(cldm:deflibrary ,project-name
+     :cld ,cld
+     :description ,description
+     :author ,author
+     :dependencies ,dependencies))
 
 (defun create-cld-template-interactive (project-name &key cld description author dependencies &allow-other-keys)
   (flet ((read-project-name ()
@@ -282,14 +286,11 @@ Use 'cldm <command> --help' to get command-specific help.
                                  :author final-author
                                  :dependencies final-dependencies))))
 
-(defun create-cld-template-batch (project-name &key cld description author dependencies &allow-other-keys)
-  `(cldm:deflibrary ,project-name
-     :cld ,cld
-     :description ,description
-     :author ,author
-     :dependencies ,dependencies))
-
-(defgeneric process-command (command))
+(defun create-cld-template (project-name &rest keys &key cld description author dependencies interactive)
+  (declare (ignorable cld description author dependencies))
+  (if interactive
+      (apply #'create-cld-template-interactive project-name keys)
+      (apply #'create-cld-template-batch project-name keys)))
 
 (defmethod process-command :around (command)
   (handler-case
@@ -335,11 +336,6 @@ Use 'cldm <command> --help' to get command-specific help.
                   (create-cld-file))
               (create-cld-file)))))))
 
-(defmethod process-command ((command (eql :install)))
-  (if (clon:remainder)
-      (install-library-command)
-      (install-project-command)))
-
 (defun install-project-command ()
   (let ((project (cldm::load-project-from-directory (osicat:current-directory))))
     (when (not project)
@@ -376,6 +372,11 @@ Use 'cldm <command> --help' to get command-specific help.
 			  :verbose verbose-mode)
     (format t "Done.~%")
     (clon:exit 0)))
+
+(defmethod process-command ((command (eql :install)))
+  (if (clon:remainder)
+      (install-library-command)
+      (install-project-command)))
 
 (defun update-project-command ()
   (let ((project (cldm::load-project-from-directory (osicat:current-directory))))
@@ -420,6 +421,8 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun find-config-command (name)
   (cdr (assoc name +config-commands+ :test #'string=)))
+
+(defgeneric process-config-command (command scope))
 
 (defmethod process-command ((command (eql :config)))
   (let ((scope (or (clon:getopt :long-name "scope")
@@ -471,6 +474,8 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun find-repositories-command (name)
   (cdr (assoc name +repositories-commands+ :test #'string=)))
+
+(defgeneric process-repositories-command (command scope))
 
 (defmethod process-command ((command (eql :repositories)))
   (let ((scope (or (clon:getopt :long-name "scope")
