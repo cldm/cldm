@@ -32,6 +32,10 @@
 (defgeneric stop-download-session (cld-repository)
   (:method ((cld-repository cld-repository))))
 
+(defgeneric publish-cld (cld-repository cld-pathname)
+  (:method ((cld-repository cld-repository) cld-pathname)
+    (error "~A repository doesn't support publishing" cld-repository)))
+
 (defclass directory-cld-repository (cld-repository)
   ((directory :initarg :directory
               :initform (error "Provide the cld repository directory")
@@ -98,16 +102,17 @@
             (repository-address cld-repository)
 	    (cache-directory cld-repository))))
 
-(defun find-cld-repository (name &optional (repositories (list-cld-repositories)))
-  (find name repositories
-	:key #'name
-	:test #'equalp))
-
 (defmethod find-cld ((cld-repository directory-cld-repository) library-name)
   (let ((cld-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
                                    (pathname (repository-directory cld-repository)))))
     (verbose-msg "Checking if ~A exists~%" cld-file)
     (probe-file cld-file)))
+
+(defmethod publish-cld ((cld-repository directory-cld-repository) cld-pathname)
+  (copy-file (or (probe-file cld-pathname)
+		 (error "cld file does not exists ~A" cld-pathname))
+	     (merge-pathnames (file-namestring cld-pathname)
+			      (pathname (repository-directory cld-repository)))))
 
 (defmethod cld-url-address ((cld-repository http-cld-repository) library-name)
   (format nil "~A/~A.cld"
@@ -181,6 +186,23 @@
 	      (verbose-msg "Failed.~%")
 	      nil ;; it is important to return nil if couldn't fetch
 	      ))))))
+
+(defmethod publish-cld ((cld-repository ssh-cld-repository) cld-pathname)
+  (let*  ((cld-address (format nil "~A/~A"
+			       (repository-address cld-repository)
+			       cld-pathname))
+	  (command (format nil "scp ~A ~A"
+			   (or (probe-file cld-pathname)
+			       (error "cld file does not exists ~A" cld-pathname))
+			   cld-address)))
+    (multiple-value-bind (result error status)
+	(trivial-shell:shell-command command)
+      (declare (ignore result error))
+      (if (equalp status 0)
+	  (progn
+	    (verbose-msg "~A published.~%" cld-pathname)
+	    cld-pathname)
+	  (error "Error publishing ~A to ~A" cld-pathname cld-repository)))))
 
 (defmethod find-cld :around ((cld-repository ssh-cld-repository) library-name)
   (if *download-session*
@@ -506,7 +528,15 @@
 	  (values t		    ;; The update was successful
 		  install-directory ;; In which directory the update was made
 		  library-version-repository ;; The repository from which the update was made
-)))))) 
+))))))
+
+(defun find-cld-repository (name &optional (error-p t))
+  (let ((cld-repository (find name (list-cld-repositories) 
+			      :key #'name
+			      :test #'equalp)))
+    (when (and error-p (not cld-repository))
+      (error "cld repository ~A not found" name))
+    cld-repository))
 
 (defgeneric repository-address-sexp (repository-address)
   (:method ((repository-address directory-repository-address))

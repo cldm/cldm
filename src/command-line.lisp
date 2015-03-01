@@ -64,6 +64,17 @@
            (text :contents "List CLD repositories")
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))
+   (cons "publish"
+	 (clon:defsynopsis (:make-default nil :postfix "CLD REPO")
+	   (text :contents "Publish a cld file to a repository")
+	   (stropt :long-name "cld"
+                   :argument-name "CLD"
+		   :description "The cld file to publish")
+	   (stropt :long-name "repo"
+                   :argument-name "REPO"
+		   :description "The repository to publish to")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
    (cons "cache"
          (clon:defsynopsis (:make-default nil :postfix "REPOSITORY-NAME [LOCATION]")
            (text :contents "Caches a remote repository, if the repository is cacheable")
@@ -531,5 +542,11 @@ Use 'cldm <command> --help' to get command-specific help.
 (defmethod process-repo-command ((command (eql :list)) scope)
   (loop for repository in (cldm:list-cld-repositories)
      do (format t "~A~%" repository)))
+
+(defmethod process-repo-command ((command (eql :publish)) scope)
+  (destructuring-bind (cld-filepath repository-name) (clon:remainder)
+    (let ((cld-pathname (pathname cld-filepath))
+	  (cld-repository (cldm:find-cld-repository repository-name)))
+      (cldm:publish-cld cld-repository cld-pathname))))
 
 (clon:dump "cldm" main)

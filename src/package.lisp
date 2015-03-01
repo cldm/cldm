@@ -59,12 +59,14 @@
 	   #:has-library
 	   #:repository-libraries
 	   #:repository-length
-
+	   
 	   #:http-cld-repository
 	   #:ssh-cld-repository
 	   #:directory-cld-repository
 	   #:cached-http-cld-repository
 	   #:cached-ssh-cld-repository
+	   #:find-cld-repository
+	   #:publish-cld
 
 	   #:deflibrary
 	   #:list-libraries
