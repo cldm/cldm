@@ -67,12 +67,6 @@
    (cons "publish"
 	 (clon:defsynopsis (:make-default nil :postfix "CLD REPO")
 	   (text :contents "Publish a cld file to a repository")
-	   (stropt :long-name "cld"
-                   :argument-name "CLD"
-		   :description "The cld file to publish")
-	   (stropt :long-name "repo"
-                   :argument-name "REPO"
-		   :description "The repository to publish to")
 	   (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))
    (cons "cache"
