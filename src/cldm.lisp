@@ -49,9 +49,6 @@
       (let ((library-versions-involved
              (calculate-library-versions-involved library-version)))
 
-        ;; Validate the library versions list
-                                        ;(validate-library-versions-list library-versions)
-
         (let ((library-versions (pbo-solve-library-versions library-version
                                                             library-versions-involved)))
 
@@ -187,9 +184,6 @@
 	(let ((library-versions-involved
 	       (calculate-library-versions-involved library-version)))
 
-	  ;; Validate the library versions list
-                                        ;(validate-library-versions-list library-versions)
-
 	  (let ((library-versions (pbo-solve-library-versions library-version
 							      library-versions-involved)))
 	    ;; Remove the project library from the library versions list
@@ -234,10 +228,7 @@
 	;; Calculate list of library-versions involved
 	(let ((library-versions-involved
 	       (calculate-library-versions-involved library-version)))
-
-	  ;; Validate the library versions list
-                                        ;(validate-library-versions-list library-versions)
-
+	  
 	  (let ((library-versions (pbo-solve-library-versions library-version
 							      library-versions-involved)))
 	    ;; Remove the project library from the library versions list
@@ -347,21 +338,6 @@
                                           dependency))
                           (:strict (error "Coudn't load ~A" dependency))))))))
    :test #'library-version=))
-
-(defun validate-library-versions-list (versions-list)
-  (loop for i from 0 to (1- (length versions-list))
-     for vi = (elt versions-list i)
-     do
-       (loop for j from 1 to (1- (length versions-list))
-          for vj = (elt versions-list j)
-          when (and (not (equalp i j))
-                    (and (equalp (library-name (library vi))
-                                 (library-name (library vj)))
-                         (and (version vi)
-                              (version vj)
-                              (not (equalp (version vi)
-                                           (version vj))))))
-          do (error "Cannot load ~A and ~A" vi vj))))
 
 (defun pick-library-version (library-versions)
   "Picks a version from a library list of versions"
