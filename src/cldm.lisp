@@ -97,32 +97,32 @@
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode))
-
-    (let ((cld (and cld (load-cld (parse-cld-address cld)))))
-      (if cld
-          (setup library-name version libraries-directory)
-          ;; else
-          (if (find-library library-name nil)
-              (setup library-name version libraries-directory)
-              ;; else
-              (progn
-                (loop
-                   for cld-repository in (list-cld-repositories)
-                   while (not cld)
-                   do
-                     (let ((repository-cld (find-cld cld-repository
-                                                     library-name)))
-                       (setf cld (and repository-cld
-                                      (load-cld repository-cld)))
-                       (when cld
-                         (verbose-msg "~A cld found in ~A~%"
-                                      library-name
-                                      cld-repository))))
-                (if cld
-                    (progn
-                      (setup library-name version)
-                      t)
-                    (error "Couldn't find a cld for ~S library~%" library-name))))))))
+    (with-download-session ()
+      (let ((cld (and cld (load-cld (parse-cld-address cld)))))
+	(if cld
+	    (setup library-name version libraries-directory)
+	    ;; else
+	    (if (find-library library-name nil)
+		(setup library-name version libraries-directory)
+		;; else
+		(progn
+		  (loop
+		     for cld-repository in (list-cld-repositories)
+		     while (not cld)
+		     do
+		       (let ((repository-cld (find-cld cld-repository
+						       library-name)))
+			 (setf cld (and repository-cld
+					(load-cld repository-cld)))
+			 (when cld
+			   (verbose-msg "~A cld found in ~A~%"
+					library-name
+					cld-repository))))
+		  (if cld
+		      (progn
+			(setup library-name version)
+			t)
+		      (error "Couldn't find a cld for ~S library~%" library-name)))))))))
 
 (defmethod load-project ((directory pathname)
                          &key
@@ -176,39 +176,40 @@
                                  (libraries-directory project)
                                  *local-libraries-directory*)))
     (verbose-msg "Loading ~A.~%" project)
-    (let ((library-version (if version
-                               (find-library-version (library project) version)
-                               (first (library-versions (library project))))))
-      ;; Load libraries metadata
-      (load-library-version library-version)
+    (with-download-session ()
+      (let ((library-version (if version
+				 (find-library-version (library project) version)
+				 (first (library-versions (library project))))))
+	;; Load libraries metadata
+	(load-library-version library-version)
 
-      ;; Calculate list of library-versions involved
-      (let ((library-versions-involved
-             (calculate-library-versions-involved library-version)))
+	;; Calculate list of library-versions involved
+	(let ((library-versions-involved
+	       (calculate-library-versions-involved library-version)))
 
-        ;; Validate the library versions list
+	  ;; Validate the library versions list
                                         ;(validate-library-versions-list library-versions)
 
-        (let ((library-versions (pbo-solve-library-versions library-version
-                                                            library-versions-involved)))
-          ;; Remove the project library from the library versions list
-          (setf library-versions (remove (library-name (library project)) library-versions
-                                         :key #'library-name
-                                         :test #'equalp))
+	  (let ((library-versions (pbo-solve-library-versions library-version
+							      library-versions-involved)))
+	    ;; Remove the project library from the library versions list
+	    (setf library-versions (remove (library-name (library project)) library-versions
+					   :key #'library-name
+					   :test #'equalp))
 
-          (info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+	    (info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
-          ;; Check the version existance and download if not
-          (let ((installed-libraries ()))
-            (loop for version in library-versions
-               do
-                 (multiple-value-bind (executed pathname repository)
-                     (cache-library-version version libraries-directory)
-                   (assert executed)
-                   (push (list version pathname repository) installed-libraries)))
-            (create-lock-file installed-libraries)))))
-    (verbose-msg "Done.~%")
-    t))
+	    ;; Check the version existance and download if not
+	    (let ((installed-libraries ()))
+	      (loop for version in library-versions
+		 do
+		   (multiple-value-bind (executed pathname repository)
+		       (cache-library-version version libraries-directory)
+		     (assert executed)
+		     (push (list version pathname repository) installed-libraries)))
+	      (create-lock-file installed-libraries)))))
+      (verbose-msg "Done.~%")
+      t)))
 
 (defmethod update-project ((project project)
                            &key
@@ -223,46 +224,47 @@
         (version (or version
                      (project-version project))))
     (verbose-msg "Loading ~A.~%" project)
-    (let ((library-version (if version
-                               (find-library-version (library project) version)
-                               (first (library-versions (library project))))))
-      ;; Load libraries metadata
-      (load-library-version library-version)
+    (with-download-session ()
+      (let ((library-version (if version
+				 (find-library-version (library project) version)
+				 (first (library-versions (library project))))))
+	;; Load libraries metadata
+	(load-library-version library-version)
 
-      ;; Calculate list of library-versions involved
-      (let ((library-versions-involved
-             (calculate-library-versions-involved library-version)))
+	;; Calculate list of library-versions involved
+	(let ((library-versions-involved
+	       (calculate-library-versions-involved library-version)))
 
-        ;; Validate the library versions list
+	  ;; Validate the library versions list
                                         ;(validate-library-versions-list library-versions)
 
-        (let ((library-versions (pbo-solve-library-versions library-version
-                                                            library-versions-involved)))
-          ;; Remove the project library from the library versions list
-          (setf library-versions (remove (library-name (library project)) library-versions
-                                         :key #'library-name
-                                         :test #'equalp))
+	  (let ((library-versions (pbo-solve-library-versions library-version
+							      library-versions-involved)))
+	    ;; Remove the project library from the library versions list
+	    (setf library-versions (remove (library-name (library project)) library-versions
+					   :key #'library-name
+					   :test #'equalp))
 
-          ;; Check the version existance and download if not
-          (let ((installed-libraries ()))
-            (loop for version in library-versions
-               do
-                 (multiple-value-bind (executed pathname repository)
-                     (update-library-version version project)
-                   (if executed
-                       (progn
-                         (assert pathname)
-                         (assert repository)
-                         (push (list version pathname repository) installed-libraries))
-                       ;; else
-                       (destructuring-bind (version pathname repository md5)
-                           (find-installed-library-info
-                            project
-                            (library-name version))
-                         (push (list version pathname repository) installed-libraries)))))
-            (create-lock-file installed-libraries)))))
-    (verbose-msg "Done.~%")
-    t))
+	    ;; Check the version existance and download if not
+	    (let ((installed-libraries ()))
+	      (loop for version in library-versions
+		 do
+		   (multiple-value-bind (executed pathname repository)
+		       (update-library-version version project)
+		     (if executed
+			 (progn
+			   (assert pathname)
+			   (assert repository)
+			   (push (list version pathname repository) installed-libraries))
+			 ;; else
+			 (destructuring-bind (version pathname repository md5)
+			     (find-installed-library-info
+			      project
+			      (library-name version))
+			   (push (list version pathname repository) installed-libraries)))))
+	      (create-lock-file installed-libraries)))))
+      (verbose-msg "Done.~%")
+      t)))
 
 (defun load-library-version (library-version &key (if-already-loaded *if-already-loaded-cld*))
   "Load a library version dependencies clds"

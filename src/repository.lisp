@@ -1,11 +1,36 @@
 (in-package :cldm)
 
+(defvar *download-session-enabled-p* t)
+(defvar *download-session* nil)
+(defvar *download-session-failed-uris* nil)
+
+(defun call-with-download-session (function)
+  (let ((*download-session* t)
+	(*download-session-failed-uris* nil))
+    (let ((repos (list-cld-repositories)))
+      (loop for repo in repos
+	 do (start-download-session repo))
+      (unwind-protect
+	   (funcall function)
+	(loop for repo in repos
+	   do (stop-download-session repo))))))
+
+(defmacro with-download-session ((&optional (enabled-p '*download-session-enabled-p*)) &body body)
+  `(when ,enabled-p
+     (call-with-download-session (lambda () ,@body))))			    
+
 (defclass cld-repository ()
   ((name :initarg :name
          :accessor name
          :initform nil
          :documentation "The cld repository name"))
   (:documentation "A .cld files repository"))
+
+(defgeneric start-download-session (cld-repository)
+  (:method ((cld-repository cld-repository))))
+
+(defgeneric stop-download-session (cld-repository)
+  (:method ((cld-repository cld-repository))))
 
 (defclass directory-cld-repository (cld-repository)
   ((directory :initarg :directory
@@ -84,10 +109,13 @@
     (verbose-msg "Checking if ~A exists~%" cld-file)
     (probe-file cld-file)))
 
+(defmethod cld-url-address ((cld-repository http-cld-repository) library-name)
+  (format nil "~A/~A.cld"
+	  (repository-url cld-repository)
+	  library-name))
+
 (defmethod find-cld ((cld-repository http-cld-repository) library-name)
-  (let* ((cld-url-address (format nil "~A/~A.cld"
-                                  (repository-url cld-repository)
-                                  library-name))
+  (let* ((cld-url-address (cld-url-address cld-repository library-name))
          (temporal-directory #p"/tmp/")
          (temporal-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
                                          temporal-directory)))
@@ -104,7 +132,30 @@
               (verbose-msg "~A downloaded.~%" cld-url-address)
               temporal-file)
                                         ; else
-            (verbose-msg "Failed.~%"))))))
+	    (progn
+	      (verbose-msg "Failed.~%")
+	      nil ;; it is important to return nil if not found
+	      ))))))
+
+(defmethod find-cld :around ((cld-repository http-cld-repository) library-name)
+  (if *download-session*
+      ;; If we are in a download session, check that cld-url-address
+      ;; has not previously failed
+      (let ((cld-url-address (cld-url-address cld-repository library-name)))
+	(if (member cld-url-address *download-session-failed-uris* :test #'equalp)
+	    ;; The uri has previously failed, do nothing
+	    (return-from find-cld nil)
+	    ;; else, the uri has not previously failed, try loading the cld from there
+	    (let ((cld (call-next-method)))
+	      (when (not cld)
+		;; the uri failed, add the uri to failed ones
+		(push cld-url-address *download-session-failed-uris*))
+	      cld)))))	
+
+(defmethod cld-url-address ((cld-repository ssh-cld-repository) library-name)
+  (format nil "~A/~A.cld"
+	  (repository-address cld-repository)
+	  library-name))
 
 (defmethod find-cld ((cld-repository ssh-cld-repository) library-name)
   (let* ((cld-address (format nil "~A/~A.cld"
@@ -126,7 +177,25 @@
               (verbose-msg "~A downloaded.~%" cld-address)
               temporal-file)
                                         ; else
-            (verbose-msg "Failed.~%"))))))
+            (progn
+	      (verbose-msg "Failed.~%")
+	      nil ;; it is important to return nil if couldn't fetch
+	      ))))))
+
+(defmethod find-cld :around ((cld-repository ssh-cld-repository) library-name)
+  (if *download-session*
+      ;; If we are in a download session, check that cld-url-address
+      ;; has not previously failed
+      (let ((cld-url-address (cld-url-address cld-repository library-name)))
+	(if (member cld-url-address *download-session-failed-uris* :test #'equalp)
+	    ;; The uri has previously failed, do nothing
+	    (return-from find-cld nil)
+	    ;; else, the uri has not previously failed, try loading the cld from there
+	    (let ((cld (call-next-method)))
+	      (when (not cld)
+		;; the uri failed, add the uri to failed ones
+		(push cld-url-address *download-session-failed-uris*))
+	      cld)))))	
 
 (defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
   (ensure-directories-exist (pathname (cache-directory cld-repository)))
