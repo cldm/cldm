@@ -88,7 +88,7 @@
 			     :pathname (pathname pathname)
 			     :branch (or branch "HEAD")))))))
 
-(defparameter *if-already-loaded-cld* :append)
+(defparameter *if-already-loaded-cld* :ignore)
 
 (defgeneric load-cld (cld-address &key if-already-loaded)
   (:method :around (cld-address &key (if-already-loaded *if-already-loaded-cld*))
