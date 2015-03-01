@@ -3,6 +3,7 @@
 * symbolic versions?
 * Add timestamp attribute to versions (date and time when a version was completed)
 * Unit tests / tests scenarios
+* Documentation
 * Separate version.lisp and version manipulation to a new cl-semver library. See: https://github.com/zafarkhaja/java-semver
 * Web interface and web api for global cld registry
 * Download sessions. Avoid downloading twice from a failed url in the same download session.
@@ -15,4 +16,5 @@
 * name parameter for cld-repositories and get-repository-named implementation
 * Change deflibrary to something else? defpackage, defproject, defbundle, ...
 * Add :repositories option to libraries?
+
 
