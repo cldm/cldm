@@ -332,14 +332,19 @@
    (commit :initarg :commit
            :initform nil
            :accessor commit
-           :documentation "Commit to fetch"))
+           :documentation "Commit to fetch")
+   (tag :initarg :tag
+	:initform nil
+	:accessor tag
+	:documentation "Tag to fetch"))
   (:documentation "A git repository"))
 
 (defmethod print-object ((repository-address git-repository-address) stream)
   (print-unreadable-object (repository-address stream :type t :identity t)
-    (format stream "~A ~@[ commit: ~A~] ~@[ branch: ~A~]"
+    (format stream "~A ~@[ commit: ~A~] ~@[ tag: ~A~] ~@[ branch: ~A~]"
 	    (url repository-address)
 	    (commit repository-address)
+	    (tag repository-address)
 	    (branch repository-address))))
 
 (defclass url-repository-address (repository-address)
@@ -454,6 +459,13 @@
                               (commit repository-address))))
         (verbose-msg "~A~%" command)
         (run-or-fail command)))
+    (when (tag repository-address)
+      (info-msg "Checking out tag ~A~%" (tag repository-address))
+      (let ((command  (format nil "cd ~A; git checkout tags/~A"
+                              (princ-to-string target-directory)
+                              (tag repository-address))))
+        (verbose-msg "~A~%" command)
+        (run-or-fail command)))
     t))
 
 (defmethod update-repository-from-address ((repository-address git-repository-address)
@@ -486,10 +498,15 @@
 	    (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
 	      (verbose-msg (format nil "~A~%" command))
 	      (run-or-fail command)))
+	  (awhen (tag library-version-repository-address)
+	    (let ((command (format nil "cd ~A; git checkout tags/~A" install-directory it)))
+	      (verbose-msg (format nil "~A~%" command))
+	      (run-or-fail command)))
 	  ;; Return the install directory and repository
 	  (values t		    ;; The update was successful
 		  install-directory ;; In which directory the update was made
-		  library-version-repository)))))) ;; The repository from which the update was made
+		  library-version-repository ;; The repository from which the update was made
+)))))) 
 
 (defgeneric repository-address-sexp (repository-address)
   (:method ((repository-address directory-repository-address))
@@ -500,6 +517,8 @@
     `(:git ,(url repository-address)
 	   ,@(when (commit repository-address)
 		   (list :commit (commit repository-address)))
+	   ,@(when (tag repository-address)
+		   (list :tag (tag repository-address)))
 	   ,@(when (branch repository-address)
 		   (list :branch (branch repository-address)))))
   (:method ((repository-address ssh-repository-address))

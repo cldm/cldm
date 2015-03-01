@@ -7,7 +7,6 @@
 * Separate version.lisp and version manipulation to a new cl-semver library. See: https://github.com/zafarkhaja/java-semver
 * Web interface and web api for global cld registry
 * Download sessions. Avoid downloading twice from a failed url in the same download session.
-* :tag option (apart from :commit and :branch) in git dependencies repositories
 * Remove *latest-registered-library* variable to avoid global variable state.
 * publish method in cld-repositories. 
 
