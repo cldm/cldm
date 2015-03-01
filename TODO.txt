@@ -1,10 +1,17 @@
-* Add a default *main-repository* -> http://mmontone.github.io/cldm/cld
-* Add baselines
-* Add versions extension (:version "1.2.3" :extends "1.2.0")
-* Add :default-dependencies-cld option
 * Change :stability for :blessing ?
 * :after and :before install code execution
 * symbolic versions?
 * Add timestamp attribute to versions (date and time when a version was completed)
-* deflibrary unit tests
+* Unit tests / tests scenarios
 * Separate version.lisp and version manipulation to a new cl-semver library. See: https://github.com/zafarkhaja/java-semver
+* Web interface and web api for global cld registry
+* Download sessions. Avoid downloading twice from a failed url in the same download session.
+* :tag option (apart from :commit and :branch) in git dependencies repositories
+* Remove *latest-registered-library* variable to avoid global variable state.
+* publish method in cld-repositories. 
+
+(defgeneric publish (cld-repository file))
+
+* name parameter for cld-repositories and get-repository-named implementation
+* Change deflibrary to something else? defpackage, defproject, defbundle, ...
+
