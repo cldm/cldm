@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>CLDM by cldm</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>CLDM</h1>
+        <p>Common Lisp Dependency Manager</p>
+
+        <p class="view"><a href="https://github.com/cldm/cldm">View the Project on GitHub <small>cldm/cldm</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/cldm/cldm/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/cldm/cldm/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/cldm/cldm">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="-cldm---common-lisp-dependency-manager" class="anchor" href="#-cldm---common-lisp-dependency-manager" aria-hidden="true"><span class="octicon octicon-link"></span></a>
+<img src="https://raw.githubusercontent.com/cldm/cldm/master/doc/logo_extra_small.png" alt="cldm logo" title="CLDM logo"> CLDM - Common Lisp Dependency Manager</h1>
+
+<p><strong>CLDM</strong> is a distributed dependency manager for Common Lisp. </p>
+
+<p>Its design is similar to that of <a href="https://code.google.com/p/metacello">Smalltalk Metacello</a>. But unlike Metacello, it allows version constraints (like &lt;, &lt;=, &gt;=, &gt;) and solves them using Pseudo Boolean Optimization (PBO) as described in <a href="http://www.mancoosi.org/papers/ase10.pdf">this paper</a>. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. <a href="https://github.com/niklasso/minisatp">minisat+</a> is the PBO solver being used at the moment, but support for other like <a href="http://www.sat4j.org">sat4j</a> is also planned.</p>
+
+<p>Common Lisp libraries and its versions are described in <code>.cld</code> files, that should be made accessible to <strong>CLDM</strong> somehow (url, filesystem, git)</p>
+
+<p>Then <strong>CLDM</strong> download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their <code>.asd</code> definitions to <code>asdf:*central-registry*</code> and from that point on asdf is in charge.</p>
+
+<p>For instance, here is the library description <code>.cld</code> file for some versions of the <strong>Hunchentoot</strong> CL web server:</p>
+
+<div class="highlight highlight-lisp"><pre>
+<span class="pl-c">;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-</span>
+
+(cldm:deflibrary hunchentoot
+  :author <span class="pl-s1"><span class="pl-pds">"</span>Dr. Edmund Weitz<span class="pl-pds">"</span></span>
+  :description <span class="pl-s1"><span class="pl-pds">"</span>Hunchentoot is a HTTP server based on USOCKET and</span>
+<span class="pl-s1">  BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a</span>
+<span class="pl-s1">  simple framework for user-defined handlers and can be extended</span>
+<span class="pl-s1">  through subclassing.<span class="pl-pds">"</span></span>
+  :cld <span class="pl-s1"><span class="pl-pds">"</span>http://cldm.github.io/cldm-repo/cld/hunchentoot.cld<span class="pl-pds">"</span></span>
+  :tags (<span class="pl-s1"><span class="pl-pds">"</span>web<span class="pl-pds">"</span></span> <span class="pl-s1"><span class="pl-pds">"</span>web server<span class="pl-pds">"</span></span>)
+  :versions
+  ((:version <span class="pl-s1"><span class="pl-pds">"</span>1.2.26<span class="pl-pds">"</span></span>
+         :stability :beta
+         :description <span class="pl-s1"><span class="pl-pds">"</span>Latest version<span class="pl-pds">"</span></span>
+         :repositories
+         ((:official (:url <span class="pl-s1"><span class="pl-pds">"</span>http://weitz.de/files/hunchentoot.tar.gz<span class="pl-pds">"</span></span>))
+          (:github (:git <span class="pl-s1"><span class="pl-pds">"</span>https://github.com/edicl/hunchentoot.git<span class="pl-pds">"</span></span>
+                 :commit <span class="pl-s1"><span class="pl-pds">"</span>8885f17a15333d1c247a099ee3ced9e49a94103f<span class="pl-pds">"</span></span>)))
+         :depends-on
+         (:chunga
+          :cl-base64
+          :cl-fad
+          :cl-ppcre
+          :flexi-streams
+          <span class="pl-c1">#-</span>(<span class="pl-k">or</span> :lispworks :hunchentoot-no-ssl) :cl+ssl
+          :md5
+          :rfc2388
+          :trivial-backtrace
+          <span class="pl-c1">#-:lispworks</span> :usocket
+          <span class="pl-c1">#-:lispworks</span> :bordeaux-threads))
+   (:version <span class="pl-s1"><span class="pl-pds">"</span>1.2.0<span class="pl-pds">"</span></span>
+         :description <span class="pl-s1"><span class="pl-pds">"</span>Stable release<span class="pl-pds">"</span></span>
+         :stability :stable
+         :repositories
+         ((:github (:git <span class="pl-s1"><span class="pl-pds">"</span>https://github.com/edicl/hunchentoot.git<span class="pl-pds">"</span></span>
+                 :commit <span class="pl-s1"><span class="pl-pds">"</span>2a36b12532958d50ecf0948f8c20b6cff84c4300<span class="pl-pds">"</span></span>))))))
+</pre></div>
+
+<h2>
+<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h2>
+
+<p>Download <strong>CLDM</strong>:</p>
+
+<pre><code>git clone git@github.com:cldm/cldm.git
+</code></pre>
+
+<p>and add the library to Quicklisp:</p>
+
+<pre><code>cd ~/quicklisp/local-projects; ln -s &lt;cldm_directory&gt;
+</code></pre>
+
+<p>Then install the required dependencies via Quicklisp (recommended). </p>
+
+<p>Finally, build the command line tool:</p>
+
+<pre><code>sh make.sh
+</code></pre>
+
+<p>and install it:</p>
+
+<pre><code>sudo sh install.sh
+</code></pre>
+
+<p>Now you should be able to install libraries in your system:</p>
+
+<pre><code>cldm install hunchentoot
+</code></pre>
+
+<p><strong>CLDM</strong> will calculate the required library versions and download them.</p>
+
+<p>Although <strong>CLDM</strong> is distributed in nature, I'm building a central repository here: <a href="http://cldm.github.io/cldm-repo">http://cldm.github.io/cldm-repo</a> for generally useful Common Lisp libraries, and <strong>CLDM</strong> fetches <code>.cld</code> definitions from there if isn't told otherwise.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/cldm">cldm</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
