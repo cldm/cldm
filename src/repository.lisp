@@ -3,6 +3,7 @@
 (defvar *download-session-enabled-p* t)
 (defvar *download-session* nil)
 (defvar *download-session-failed-uris* nil)
+(defvar *if-already-installed-library-version* :supersede)
 
 (defun call-with-download-session (function)
   (let ((*download-session* t)
@@ -244,7 +245,23 @@
 		      (verbose-msg "Could not cache cdl file ~A~%" downloaded-file)
 		      downloaded-file))))))))) 
 
-(defun install-library-version (library-version &optional (libraries-directory *libraries-directory*))
+(defun remove-directory (directory)
+  (multiple-value-bind (output error status)
+      (trivial-shell:shell-command (format nil "rm -r ~A" directory))
+    (declare (ignore output))
+    (when (not (zerop status))
+      (error error))))
+
+(defun install-library-version (library-version &optional
+						  (libraries-directory *libraries-directory*)
+						  (if-installed *if-already-installed-library-version*))
+  "Installs LIBRARY-VERSION to LIBRARIES-DIRECTORY.
+   LIBRARIES-DIRECTORY is the root directory where the library version is to be installed. 
+   IF-INSTALLED controls what is done if the library is already installed. One of :supersede, :reinstall, :ignore, :error.
+   Return values: INSTALLED: a boolean value indicating if the installation took place. If the installation failed, then this is NIL. Else, it is T.
+                  REPOSITORY-DIRECTORY: the filesystem directory the library version was installed into
+                  REPOSITORY: the library-repository the library version was installed from"                 
+
   (ensure-directories-exist libraries-directory)
   (let* ((repository-name (format nil "~A-~A"
 				  (library-name (library library-version))
@@ -253,31 +270,49 @@
 				(pathname (format nil "~A/" repository-name))
 				libraries-directory))
 	 (return-repository nil))
-    (verbose-msg "Repository directory: ~A~%" repository-directory)
-    (if (probe-file repository-directory)
-	(progn
-	  (verbose-msg "Repository for ~A already exists in ~A~%"
-		       library-version
-		       repository-directory)
-	  (return-from install-library-version))
-                                        ;else
-	(progn
-	  (info-msg "Installing ~A...~%"
-	    (library-version-unique-name library-version))
-	  (let ((done nil))
-	    (loop for repository in (repositories library-version)
-	       while (not done)
-	       do (progn
-		    (verbose-msg "Trying with ~A...~%" repository)
-		    (setf return-repository repository)
-		    (setf done (install-repository repository repository-directory))
-		    (if (not done)
-			(verbose-msg "Failed.~%")
-			(verbose-msg "Success.~%"))))
-	    (when (not done)
-	      (error "Couldn't cache repository from ~{~A~}~%"
-		     (repositories library-version))))))
-    (values t repository-directory return-repository)))
+    (flet ((%install-library-version ()
+	     (info-msg "Installing ~A...~%"
+		       (library-version-unique-name library-version))
+	     (let ((done nil))
+	       (loop for repository in (repositories library-version)
+		  while (not done)
+		  do (progn
+		       (verbose-msg "Trying with ~A...~%" repository)
+		       (setf return-repository repository)
+		       (setf done (install-repository repository repository-directory))
+		       (if (not done)
+			   (verbose-msg "Failed.~%")
+			   (verbose-msg "Success.~%"))))
+	       (when (not done)
+		 (error "Couldn't install repository from ~{~A~}~%"
+			(repositories library-version))))
+	     (values t repository-directory return-repository))
+	   (%remove-installed-library-version ()
+	     (remove-directory repository-directory)))
+      (verbose-msg "Repository directory: ~A~%" repository-directory)
+      (if (probe-file repository-directory)
+	  ;; If the repository directory exists, we assume the library version
+	  ;; is already installed.
+	  ;; Act according to IF-INSTALLED variable
+	  ;; TODO: this assumption can be incorrect. How to fix?
+	  (progn
+	    (verbose-msg "Repository for ~A already exists in ~A~%"
+			 library-version
+			 repository-directory)
+	    (ecase if-installed
+	      (:supersede 
+	       (verbose-msg "Reinstalling ~A~%" library-version)
+	       (%remove-installed-library-version)
+	       (%install-library-version))
+	      (:install 
+	       (verbose-msg "Reinstalling ~A~%" library-version)
+	       (%remove-installed-library-version)
+	       (%install-library-version))
+	      (:error (error "~A is already installed." library-version))
+	      (:ignore
+	       (values t repository-directory))))
+	  ;; else, the library is not installed. Install.
+	  (%install-library-version)))))
 
 (defun update-library-version (library-version project)
   "Update a library version"

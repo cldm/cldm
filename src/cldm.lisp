@@ -197,9 +197,8 @@
 	    (let ((installed-libraries ()))
 	      (loop for version in library-versions
 		 do
-		   (multiple-value-bind (executed pathname repository)
+		   (multiple-value-bind (installed-p pathname repository)
 		       (install-library-version version libraries-directory)
-		     (assert executed)
 		     (push (list version pathname repository) installed-libraries)))
 	      (create-lock-file installed-libraries)))))
       (verbose-msg "Done.~%")
@@ -240,9 +239,9 @@
 	    (let ((installed-libraries ()))
 	      (loop for version in library-versions
 		 do
-		   (multiple-value-bind (executed pathname repository)
+		   (multiple-value-bind (installed-p pathname repository)
 		       (update-library-version version project)
-		     (if executed
+		     (if installed-p
 			 (progn
 			   (assert pathname)
 			   (assert repository)
