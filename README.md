@@ -1,4 +1,4 @@
-CLDM - A Common Lisp Dependency Manager
+![cldm logo](https://raw.githubusercontent.com/cldm/cldm/master/doc/logo_extra_small.png "CLDM logo") CLDM - A Common Lisp Dependency Manager
 =========
 
 **CLDM** is a distributed dependency manager for Common Lisp. 
