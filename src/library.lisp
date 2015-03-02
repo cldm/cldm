@@ -457,3 +457,27 @@
 	(remove library-name
 		(dependencies library-version)
 		:key #'library-name :test #'equalp)))
+
+(defclass installed-library-version ()
+  ((name :initarg :name
+	 :initform (error "Provide the library name")
+	 :accessor name)
+   (version :initarg :version
+	    :initform (error "Provide the library version")
+	    :accessor version)
+   (install-directory :initarg :install-directory
+		      :initform (error "Provide the install directory")
+		      :accessor install-directory)
+   (repository :initarg :repository
+	       :initform (error "Provide the repository")
+	       :accessor repository)
+   (checksum  :initarg :checksum
+	      :accessor checksum
+	      :initform nil)))
+
+(defmethod print-object ((ilv installed-library-version) stream)
+  (print-unreadable-object (ilv stream :type t :identity t)
+    (format stream "~A-~A"
+	    (name ilv)
+	    (print-version-to-string (version ilv)))))
+  

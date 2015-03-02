@@ -206,13 +206,13 @@
 	    (info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
 	    ;; Check the version existance and download if not
-	    (let ((installed-libraries ()))
+	    (let ((installed-library-versions ()))
 	      (loop for version in library-versions
 		 do
-		   (multiple-value-bind (installed-p pathname repository)
-		       (install-library-version version libraries-directory)
-		     (push (list version pathname repository) installed-libraries)))
-	      (create-lock-file installed-libraries)))))
+		   (let ((installed-library-version
+			  (install-library-version version libraries-directory)))
+		     (push installed-library-version installed-library-versions)))
+	      (create-lock-file installed-library-versions)))))
       (verbose-msg "Done.~%")
       t)))
 
@@ -251,23 +251,20 @@
 					   :test #'equalp))
 
 	    ;; Check the version existance and download if not
-	    (let ((installed-libraries ()))
+	    (let ((installed-library-versions ()))
 	      (loop for version in library-versions
 		 do
-		   (multiple-value-bind (installed-p pathname repository)
-		       (update-library-version version project)
-		     (if installed-p
-			 (progn
-			   (assert pathname)
-			   (assert repository)
-			   (push (list version pathname repository) installed-libraries))
+		   (let ((updated-library-version
+			  (update-library-version version project)))
+		     (if updated-library-version
+			 (push updated-library-version installed-library-versions)
 			 ;; else
-			 (destructuring-bind (version pathname repository md5)
-			     (find-installed-library-info
-			      project
-			      (library-name version))
-			   (push (list version pathname repository) installed-libraries)))))
-	      (create-lock-file installed-libraries)))))
+			 (let ((installed-library-version
+				(find-installed-library-version
+				 project
+				 (library-name version))))
+			   (push installed-library-version installed-library-versions)))))
+	      (create-lock-file installed-library-versions)))))
       (verbose-msg "Done.~%")
       t)))
 
