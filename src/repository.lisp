@@ -376,11 +376,13 @@
           (library-name library-version))))
     (if installed-library-version
         ;; There's a library version installed already
-        (when (or (equalp library-version :max-version)
+        (if (or (equalp library-version :max-version)
                   (version/= (version library-version)
                              (version installed-library-version)))
           ;; The update conditions are satisfied, try to update the repository
-          (update-repository installed-library-version library-version))
+          (update-repository installed-library-version library-version)
+	  ;; else, the library does not need update
+	  installed-library-version)
         ;; else, the library is not installed: install the library version
         (install-library-version library-version (libraries-directory project)))))
 
