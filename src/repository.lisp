@@ -242,8 +242,14 @@
                     cached-file
                     ;; else
                     (progn
-                      (verbose-msg "Could not cache cdl file ~A~%" downloaded-file)
+                      (verbose-msg "Could not cache cld file ~A~%" downloaded-file)
                       downloaded-file)))))))))
+
+(defgeneric clear-cache (cld-repository)
+  (:method ((cld-repository cached-cld-repository))
+    (remove-directory (pathname (cache-directory cld-repository))))
+  (:method ((cld-repository cld-repository))
+    (error "Cannot clear the cache of this kind of repository")))
 
 (defun remove-directory (directory)
   (multiple-value-bind (output error status)
