@@ -127,6 +127,7 @@
                  :checksum (getf data :checksum)))
 
 (defun read-lock-file (file)
+  (verbose-msg "Reading lock file ~A~%" file)
   (let ((installed-libraries-info (read-from-string (file-to-string file))))
     (loop for data in installed-libraries-info
        collect (unserialize-installed-library-version data))))

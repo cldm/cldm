@@ -252,16 +252,26 @@
     (error "Cannot clear the cache of this kind of repository")))
 
 (defun remove-directory (directory)
-  (multiple-value-bind (output error status)
-      (trivial-shell:shell-command (format nil "rm -r ~A" directory))
-    (declare (ignore output))
-    (when (not (zerop status))
-      (error error))))
+  (when (fad:directory-exists-p directory)
+    (multiple-value-bind (output error status)
+        (trivial-shell:shell-command (format nil "rm -r ~A" directory))
+      (declare (ignore output))
+      (when (not (zerop status))
+        (error error)))))
+
+(defmethod remove-library-version ((library-version library-version) libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (library-name (library library-version))
+                                         (print-version-to-string (version library-version))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory)))
+    (remove-directory install-directory)))
 
 (defmethod install-library-version ((library-version library-version)
-				    &optional
-				      (libraries-directory *libraries-directory*)
-				      (if-installed *if-already-installed-library-version*))
+                                    &optional
+                                      (libraries-directory *libraries-directory*)
+                                      (if-installed *if-already-installed-library-version*))
   "Installs LIBRARY-VERSION to LIBRARIES-DIRECTORY.
    LIBRARIES-DIRECTORY is the root directory where the library version is to be installed.
    IF-INSTALLED controls what is done if the library is already installed. One of :supersede, :reinstall, :ignore, :error.
@@ -298,7 +308,8 @@
                             :install-directory install-directory
                             :repository installed-repository))
            (%remove-installed-library-version ()
-             (remove-directory install-directory)))
+             (remove-directory install-directory)
+             ))
       (verbose-msg "Repository directory: ~A~%" install-directory)
       (if (probe-file install-directory)
           ;; If the install directory exists, we assume the library version
@@ -324,10 +335,19 @@
           ;; else, the library is not installed. Install.
           (%install-library-version)))))
 
+(defmethod remove-library-version ((ilv installed-library-version) libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (name ilv)
+                                         (print-version-to-string (version ilv))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory)))
+    (remove-directory install-directory)))
+
 (defmethod install-library-version ((ilv installed-library-version)
-				    &optional
-				      (libraries-directory *libraries-directory*)
-				      (if-installed *if-already-installed-library-version*))
+                                    &optional
+                                      (libraries-directory *libraries-directory*)
+                                      (if-installed *if-already-installed-library-version*))
   "Installs LIBRARY-VERSION specified in lock file to LIBRARIES-DIRECTORY.
    LIBRARIES-DIRECTORY is the root directory where the library version is to be installed.
    IF-INSTALLED controls what is done if the library is already installed. One of :supersede, :reinstall, :ignore, :error.
@@ -341,37 +361,38 @@
                              (pathname (format nil "~A/" install-directory-name))
                              libraries-directory)))
     (flet ((%install-library-version ()
-	     (info-msg "Installing ~A-~A...~%"
-		       (name ilv)
-		       (print-version-to-string (version ilv)))
-	     (when (not (install-repository (repository ilv) install-directory))
-	       (error "Couldn't install from ~A~%" (repository ilv)))
-	     ilv)
-	   (%remove-installed-library-version ()
-             (remove-directory install-directory)))
+             (info-msg "Installing ~A-~A...~%"
+                       (name ilv)
+                       (print-version-to-string (version ilv)))
+             (when (not (install-repository (repository ilv) install-directory))
+               (error "Couldn't install from ~A~%" (repository ilv)))
+             ilv)
+           (%remove-installed-library-version ()
+             (remove-directory install-directory)
+             ))
       (if (probe-file install-directory)
-	  ;; If the install directory exists, we assume the library version
-	  ;; is already installed.
-	  ;; Act according to IF-INSTALLED variable
-	  ;; TODO: this assumption can be incorrect. How to fix?
-	  (progn
-	    (verbose-msg "Repository for ~A already exists in ~A~%"
-			 ilv
-			 install-directory)
-	    (ecase if-installed
-	      (:supersede
-	       (verbose-msg "Reinstalling ~A~%" ilv)
-	       (%remove-installed-library-version)
-	       (%install-library-version))
-	      (:install
-	       (verbose-msg "Reinstalling ~A~%" ilv)
-	       (%remove-installed-library-version)
-	       (%install-library-version))
-	      (:error (error "~A is already installed." ilv))
-	      (:ignore
-	       (values t install-directory))))
-	  ;; else, the library is not installed. Install.
-	  (%install-library-version)))))
+          ;; If the install directory exists, we assume the library version
+          ;; is already installed.
+          ;; Act according to IF-INSTALLED variable
+          ;; TODO: this assumption can be incorrect. How to fix?
+          (progn
+            (verbose-msg "Repository for ~A already exists in ~A~%"
+                         ilv
+                         install-directory)
+            (ecase if-installed
+              (:supersede
+               (verbose-msg "Reinstalling ~A~%" ilv)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:install
+               (verbose-msg "Reinstalling ~A~%" ilv)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:error (error "~A is already installed." ilv))
+              (:ignore
+               (values t install-directory))))
+          ;; else, the library is not installed. Install.
+          (%install-library-version)))))
 
 (defun update-library-version (library-version project)
   "Update a library version"
@@ -383,31 +404,31 @@
     (if installed-library-version
         ;; There's a library version installed already
         (if (or (equalp library-version :max-version)
-                  (version/= (version library-version)
-                             (version installed-library-version)))
-          ;; The update conditions are satisfied, try to update the repository
-          (update-repository installed-library-version library-version)
-	  ;; else, the library does not need update
-	  installed-library-version)
+                (version/= (version library-version)
+                           (version installed-library-version)))
+            ;; The update conditions are satisfied, try to update the repository
+            (update-repository installed-library-version library-version)
+            ;; else, the library does not need update
+            installed-library-version)
         ;; else, the library is not installed: install the library version
         (install-library-version library-version (libraries-directory project)))))
 
 (defun update-repository (installed-library-version library-version)
   (let ((updated-p
-	 (update-repository-from-address
-	  (repository-address (repository installed-library-version))
-	  (repository installed-library-version)
-	  (install-directory installed-library-version)
-	  library-version)))
+         (update-repository-from-address
+          (repository-address (repository installed-library-version))
+          (repository installed-library-version)
+          (install-directory installed-library-version)
+          library-version)))
     (when (not updated-p)
-      (error "Error updating ~A to ~A" 
-	     installed-library-version
-	     library-version))
+      (error "Error updating ~A to ~A"
+             installed-library-version
+             library-version))
     (make-instance 'installed-library-version
-		   :name (library-name library-version)
-		   :version (version library-version)
-		   :install-directory (install-directory installed-library-version)
-		   :repository (repository installed-library-version))))
+                   :name (library-name library-version)
+                   :version (version library-version)
+                   :install-directory (install-directory installed-library-version)
+                   :repository (repository installed-library-version))))
 
 (defmethod install-repository (repository directory)
   (install-repository-from-address (repository-address repository)
@@ -430,17 +451,17 @@
   (:documentation "Repository address"))
 
 (defgeneric update-repository-from-address (repository-address
-					    repository
-					    install-directory
-					    library-version)
-  (:method ((repository-address repository-address) 
-	    repository
-	    install-directory
-	    library-version)
+                                            repository
+                                            install-directory
+                                            library-version)
+  (:method ((repository-address repository-address)
+            repository
+            install-directory
+            library-version)
     (remove-directory install-directory)
     (install-repository-from-address repository-address
-				     repository
-				     install-directory)))
+                                     repository
+                                     install-directory)))
 
 (defclass directory-repository-address (repository-address)
   ((directory :initarg :directory
@@ -601,39 +622,39 @@
         (run-or-fail command)))
     t))
 
-(defmethod update-repository-from-address ((repository-address git-repository-address)
-                                           repository
-                                           install-directory
-                                           library-version)
-  (flet ((run-or-fail (&rest args)
-           (multiple-value-bind (result code status)
-               (apply #'trivial-shell:shell-command args)
-             (declare (ignorable result code))
-             (when (not (zerop status))
-	       (verbose-msg "Command ~A failed~A" args)
-               (return-from update-repository-from-address nil)))))
-    ;; Ok, try the update
-    (info-msg "Updating ~A...~%" (library-version-unique-name library-version))
-    (let ((command (format nil "cd ~A; git pull" install-directory)))
-      (verbose-msg (format nil "~A~%" command))
-      (run-or-fail command))
-    (awhen (branch repository-address)
-      (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-	(verbose-msg (format nil "~A~%" command))
-	(run-or-fail command)))
-    (awhen (commit repository-address)
-      (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-	(verbose-msg (format nil "~A~%" command))
-	(run-or-fail command)))
-    (awhen (tag repository-address)
-      (let ((command (format nil "cd ~A; git checkout tags/~A" install-directory it)))
-	(verbose-msg (format nil "~A~%" command))
-	(run-or-fail command)))
-    (make-instance 'installed-library-version
-		   :name (library-name library-version)
-		   :version (version library-version)
-		   :repository repository
-		   :install-directory install-directory)))
+#+nil(defmethod update-repository-from-address ((repository-address git-repository-address)
+                                                repository
+                                                install-directory
+                                                library-version)
+       (flet ((run-or-fail (&rest args)
+                (multiple-value-bind (result code status)
+                    (apply #'trivial-shell:shell-command args)
+                  (declare (ignorable result code))
+                  (when (not (zerop status))
+                    (verbose-msg "Command ~A failed~A" args)
+                    (return-from update-repository-from-address nil)))))
+         ;; Ok, try the update
+         (info-msg "Updating ~A...~%" (library-version-unique-name library-version))
+         (let ((command (format nil "cd ~A; git pull" install-directory)))
+           (verbose-msg (format nil "~A~%" command))
+           (run-or-fail command))
+         (awhen (branch repository-address)
+           (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+             (verbose-msg (format nil "~A~%" command))
+             (run-or-fail command)))
+         (awhen (commit repository-address)
+           (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+             (verbose-msg (format nil "~A~%" command))
+             (run-or-fail command)))
+         (awhen (tag repository-address)
+           (let ((command (format nil "cd ~A; git checkout tags/~A" install-directory it)))
+             (verbose-msg (format nil "~A~%" command))
+             (run-or-fail command)))
+         (make-instance 'installed-library-version
+                        :name (library-name library-version)
+                        :version (version library-version)
+                        :repository repository
+                        :install-directory install-directory)))
 
 (defun find-cld-repository (name &optional (error-p t))
   (let ((cld-repository (find name (list-cld-repositories)

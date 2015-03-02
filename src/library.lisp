@@ -480,4 +480,8 @@
     (format stream "~A-~A"
 	    (name ilv)
 	    (print-version-to-string (version ilv)))))
+
+(defmethod library-name ((library-version installed-library-version))
+  (name library-version))
+
   

@@ -190,6 +190,10 @@
     (verbose-msg "Loading ~A.~%" project)
     (when clear-registered-libraries
       (clear-registered-libraries))
+    (verbose-msg "Removing installed libraries...~%")
+    (remove-directory libraries-directory)
+    (ensure-directories-exist libraries-directory)
+    (verbose-msg "Installing project libraries...~%")
     (if (installed-library-versions project)
 	;; If there's a lock file, install versions specified there
 	(install-project-from-ilv project libraries-directory)
@@ -212,7 +216,7 @@
 					       :key #'library-name
 					       :test #'equalp))
 
-		(info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+		(info-msg "Libraries to install: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
 		;; Check the version existance and download if not
 		(let ((installed-library-versions ()))
@@ -237,16 +241,21 @@
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode)
         (version (or version
-                     (project-version project))))
+                     (project-version project)))
+	(libraries-directory (or libraries-directory
+                                 (libraries-directory project)
+                                 *local-libraries-directory*)))
     (verbose-msg "Loading ~A.~%" project)
     (when clear-registered-libraries
       (clear-registered-libraries))
-    (with-download-session ()
-      (let ((library-version (if version
-				 (find-library-version (library project) version)
-				 (first (library-versions (library project))))))
-	;; Load libraries metadata
-	(load-library-version library-version)
+    (verbose-msg "Updating project dependencies...~%")
+    (let ((project-library-versions (installed-library-versions project)))
+      (with-download-session ()
+	(let ((library-version (if version
+				   (find-library-version (library project) version)
+				   (first (library-versions (library project))))))
+	  ;; Load libraries metadata
+	  (load-library-version library-version)
 
 	;; Calculate list of library-versions involved
 	(let ((library-versions-involved
@@ -258,6 +267,19 @@
 	    (setf library-versions (remove (library-name (library project)) library-versions
 					   :key #'library-name
 					   :test #'equalp))
+
+	    (info-msg "Libraries to install/update: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+
+	    ;; Remove the unused project dependencies
+	    (loop for project-library-version in project-library-versions
+		 do
+		 (when (not (find (library-version-unique-name project-library-version)
+				  library-versions
+				  :key #'library-version-unique-name
+				  :test #'equalp))
+		   (verbose-msg "Removing ~A...~%" 
+				(library-version-unique-name project-library-version))
+		   (remove-library-version project-library-version libraries-directory)))	  
 
 	    ;; Check the version existance and download if not
 	    (let ((installed-library-versions ()))
@@ -273,7 +295,8 @@
 				 project
 				 (library-name version))))
 			   (push installed-library-version installed-library-versions)))))
-	      (create-lock-file project installed-library-versions)))))
+	      ;; Create the lock file
+	      (create-lock-file project installed-library-versions))))))
       (verbose-msg "Done.~%")
       t)))
 
