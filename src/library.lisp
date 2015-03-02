@@ -48,10 +48,13 @@
 	 (:error (error "The library ~A has already been registered" (library-name library)))
 	 (:replace (setf (gethash (library-name library) *libraries*) library))
 	 (:ignore nil)
-	(:append (append-to-library library it)))
+	 (:append (append-to-library library it)))
 					;else
-      (setf (gethash (library-name library) *libraries*) library))
+       (setf (gethash (library-name library) *libraries*) library))
   (setf *latest-registered-library* library))
+
+(defun clear-registered-libraries ()
+  (setf *libraries* (make-hash-table :test #'equalp)))
 
 (defun append-to-library (library target-library)
   "Appends library versions found in LIBRARY to TARGET-LIBRARY"

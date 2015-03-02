@@ -68,14 +68,16 @@
                        (verbose *verbose-mode*)
                        (solving-mode *solving-mode*)
                        (clean-asdf-environment *clean-asdf-environment*)
-                       (libraries-directory *libraries-directory*))
+                       (libraries-directory *libraries-directory*)
+		       (clear-registered-libraries t))
   "Installs a library if not present, and loads it in the current lisp image"
   (install-library library-name
                    :version version
                    :cld cld
                    :verbose verbose
                    :solving-mode solving-mode
-                   :libraries-directory libraries-directory)
+                   :libraries-directory libraries-directory
+		   :clear-registered-libraries clear-registered-libraries)
   (when clean-asdf-environment
     (setf asdf:*central-registry* nil)
     (asdf:clear-source-registry)
@@ -89,11 +91,14 @@
                           cld
                           (verbose *verbose-mode*)
                           (solving-mode *solving-mode*)
-                          (libraries-directory *libraries-directory*))
+                          (libraries-directory *libraries-directory*)
+			  (clear-registered-libraries t))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
         (*solving-mode* solving-mode))
+    (when clear-registered-libraries
+      (clear-registered-libraries))
     (with-download-session ()
       (let ((cld (and cld (load-cld (parse-cld-address cld)))))
 	(if cld
@@ -127,13 +132,15 @@
                            libraries-directory
                            (verbose *verbose-mode*)
                            (solving-mode *solving-mode*)
-                           (clean-asdf-environment *clean-asdf-environment*))
+                           (clean-asdf-environment *clean-asdf-environment*)
+			   (clear-registered-libraries t))
   (load-project (load-project-from-directory directory)
                 :version version
                 :libraries-directory libraries-directory
                 :verbose verbose
                 :solving-mode solving-mode
-                :clean-asdf-environment clean-asdf-environment))
+                :clean-asdf-environment clean-asdf-environment
+		:clear-registered-libraries clear-registered-libraries))
 
 (defmethod load-project ((project project)
                          &key
@@ -141,14 +148,16 @@
                            libraries-directory
                            (verbose *verbose-mode*)
                            (solving-mode *solving-mode*)
-                           (clean-asdf-environment *clean-asdf-environment*))
+                           (clean-asdf-environment *clean-asdf-environment*)
+			   (clear-registered-libraries t))
   "Install a project dependencies and load the project in the current lisp image"
 
   (install-project project
                    :version version
                    :verbose verbose
                    :solving-mode solving-mode
-                   :libraries-directory libraries-directory)
+                   :libraries-directory libraries-directory
+		   :clear-registered-libraries clear-registered-libraries)
   (when clean-asdf-environment
     (setf asdf:*central-registry* nil)
     (asdf:clear-source-registry)
@@ -162,7 +171,8 @@
                               version
                               libraries-directory
                               (verbose *verbose-mode*)
-                              (solving-mode *solving-mode*))
+                              (solving-mode *solving-mode*)
+			      (clear-registered-libraries t))
   "Installs a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
@@ -173,6 +183,8 @@
                                  (libraries-directory project)
                                  *local-libraries-directory*)))
     (verbose-msg "Loading ~A.~%" project)
+    (when clear-registered-libraries
+      (clear-registered-libraries))
     (with-download-session ()
       (let ((library-version (if version
 				 (find-library-version (library project) version)
@@ -209,7 +221,8 @@
                              version
                              libraries-directory
                              (verbose *verbose-mode*)
-                             (solving-mode *solving-mode*))
+                             (solving-mode *solving-mode*)
+			     (clear-registered-libraries t))
   "Updates a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
@@ -217,6 +230,8 @@
         (version (or version
                      (project-version project))))
     (verbose-msg "Loading ~A.~%" project)
+    (when clear-registered-libraries
+      (clear-registered-libraries))
     (with-download-session ()
       (let ((library-version (if version
 				 (find-library-version (library project) version)
