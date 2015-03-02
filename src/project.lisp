@@ -41,13 +41,13 @@
         (awhen (getf config :libraries-directory)
           (setf (libraries-directory project) it))
         (awhen (getf config :project-version)
-          (setf (project-version project) it)))
+          (setf (project-version project) it))))
 
-      ;; Configure unconfigured variables
-      (when (not (libraries-directory project))
-        (setf (libraries-directory project)
-              (merge-pathnames #p"lib/"
-                               (project-directory project)))))))
+    ;; Configure unconfigured variables
+    (when (not (libraries-directory project))
+      (setf (libraries-directory project)
+	    (merge-pathnames #p"lib/"
+			     (project-directory project))))))
 
 (defmethod installed-library-versions ((project project))
   (aif (slot-value project 'installed-library-versions)
@@ -82,6 +82,7 @@
                            :directory directory))))))
 
 (defmethod initialize-instance :after ((project project) &rest initargs)
+  (declare (ignore initargs))
   (initialize-project project))
 
 (defun find-installed-library-version (project library-name)
@@ -92,6 +93,7 @@
 (defun create-lock-file (installed-library-versions)
   (let ((lock-file-pathname (merge-pathnames "cldm.lock"
                                              (osicat:current-directory))))
+    (verbose-msg "Writing lock file ~A~%" lock-file-pathname)
     (with-open-file (f lock-file-pathname
                        :direction :output
                        :if-exists :supersede
