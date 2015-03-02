@@ -3,7 +3,7 @@ CLDM - A Common Lisp Dependency Manager
 
 **CLDM** is a distributed dependency manager for Common Lisp. 
 
-Its design is similar to that of [Smalltalk Metacello](https://code.google.com/p/metacello). But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: http://www.mancoosi.org/papers/ase10.pdf. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. https://github.com/niklasso/minisatp is the PBO solver being used at the moment, but support for other like http://www.sat4j.org/ is also planned.
+Its design is similar to that of [Smalltalk Metacello](https://code.google.com/p/metacello). But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in [this paper](http://www.mancoosi.org/papers/ase10.pdf). Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. [minisat+](https://github.com/niklasso/minisatp) is the PBO solver being used at the moment, but support for other like [sat4j](http://www.sat4j.org) is also planned.
 
 Common Lisp libraries and its versions are described in `.cld` files, that should be made accessible to **CLDM** somehow (url, filesystem, git)
 
@@ -21,7 +21,7 @@ For instance, here is the library description `.cld` file for some versions of t
   BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a
   simple framework for user-defined handlers and can be extended
   through subclassing."
-  :cld "http://mmontone.github.io/cldm-repo/cld/hunchentoot.cld"
+  :cld "http://cldm.github.io/cldm-repo/cld/hunchentoot.cld"
   :tags ("web" "web server")
   :versions
   ((:version "1.2.26"
@@ -52,12 +52,37 @@ For instance, here is the library description `.cld` file for some versions of t
 
 ```
 
-This is in alpha, doesn't have tests or documentation yet, but if you still want to try it out, it can almost load Hunchentoot at the moment. Load **CLDM** and then evaluate:
+##Install
 
-```lisp
-(cldm:with-libraries-directory #p"/tmp/cldm-test-repo/"
-    (cldm:load-library "hunchentoot"))    
+Download **CLDM**:
+
 ```
-and **CLDM** will calculate the required library versions and download them to `/tmp/cldm-test-repo`.
+git clone git@github.com:cldm/cldm.git
+```
 
-Although **CLDM** is distributed in nature, I'm building a central repository here: http://mmontone.github.io/cldm-repo for generally useful Common Lisp libraries, and **CLDM** fetches .cld definitions from there if isn't told otherwise.
+and add the library to Quicklisp:
+
+```
+cd ~/quicklisp/local-projects; ln -s <cldm_directory>
+```
+
+Then install the required dependencies via Quicklisp (recommended). 
+
+Finally, build the command line tool:
+```
+sh make.sh
+```
+
+and install it:
+```
+sudo sh install.sh
+```
+
+Now you should be able to install libraries in your system:
+```
+cldm install hunchentoot
+```
+
+**CLDM** will calculate the required library versions and download them.
+
+Although **CLDM** is distributed in nature, I'm building a central repository here: http://cldm.github.io/cldm-repo for generally useful Common Lisp libraries, and **CLDM** fetches `.cld` definitions from there if isn't told otherwise.
