@@ -385,18 +385,21 @@
         (install-library-version library-version (libraries-directory project)))))
 
 (defun update-repository (installed-library-version library-version)
-  (update-repository-from-address
-   (repository-address (repository installed-library-version))
-   (repository installed-library-version)
-   (install-directory installed-library-version)
-   library-version))
-
-(defmethod update-repository-from-address (repository-address
-                                           repository
-                                           install-directory
-                                           library-version)
-  ;; repository-addresses are not updateable by default
-  nil)
+  (let ((updated-p
+	 (update-repository-from-address
+	  (repository-address (repository installed-library-version))
+	  (repository installed-library-version)
+	  (install-directory installed-library-version)
+	  library-version)))
+    (when (not updated-p)
+      (error "Error updating ~A to ~A" 
+	     installed-library-version
+	     library-version))
+    (make-instance 'installed-library-version
+		   :name (library-name library-version)
+		   :version (version library-version)
+		   :install-directory (install-directory installed-library-version)
+		   :repository (repository installed-library-version))))
 
 (defmethod install-repository (repository directory)
   (install-repository-from-address (repository-address repository)
@@ -417,6 +420,19 @@
 (defclass repository-address ()
   ()
   (:documentation "Repository address"))
+
+(defgeneric update-repository-from-address (repository-address
+					    repository
+					    install-directory
+					    library-version)
+  (:method ((repository-address repository-address) 
+	    repository
+	    install-directory
+	    library-version)
+    (remove-directory install-directory)
+    (install-repository-from-address repository-address
+				     repository
+				     install-directory)))
 
 (defclass directory-repository-address (repository-address)
   ((directory :initarg :directory
@@ -478,18 +494,18 @@
   (print-unreadable-object (repository-address stream :type t :identity t)
     (format stream "~A" (address repository-address))))
 
-(defgeneric install-repository-from-address (repository-address repository target-directory)
-  (:documentation "Cache the given repository from repository-address to target-directory.
+(defgeneric install-repository-from-address (repository-address repository install-directory)
+  (:documentation "Cache the given repository from repository-address to install-directory.
                    Methods of this generic function should return T on success, or NIL on failure."))
 
 (defmethod install-repository-from-address ((repository-address directory-repository-address)
-                                            repository target-directory)
+                                            repository install-directory)
   (multiple-value-bind (result code status)
       (ecase *address-cache-operation*
         (:symlink
-         (let ((linkname (subseq (princ-to-string target-directory)
+         (let ((linkname (subseq (princ-to-string install-directory)
                                  0
-                                 (1- (length (princ-to-string target-directory))))))
+                                 (1- (length (princ-to-string install-directory))))))
            (verbose-msg "Symlinking ~A to ~A~%"
                         (repository-directory repository-address)
                         linkname)
@@ -498,14 +514,14 @@
         (:copy
          (verbose-msg "Copying directory ~A to ~A~%"
                       (repository-directory repository-address)
-                      target-directory)
+                      install-directory)
          (copy-directory (repository-directory repository-address)
-                         target-directory)))
+                         install-directory)))
     (declare (ignore result))
     (zerop status)))
 
 (defmethod install-repository-from-address ((repository-address url-repository-address)
-                                            repository target-directory)
+                                            repository install-directory)
   (flet ((run-or-fail (&rest args)
            (multiple-value-bind (result code status)
                (apply #'trivial-shell:shell-command args)
@@ -518,14 +534,14 @@
       (info-msg "Downloading ~A...~%" (url repository-address))
       (run-or-fail (format nil "wget -O ~A ~A" temporal-file (url repository-address)))
       (info-msg "Extracting...~%")
-      (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
+      (run-or-fail (format nil "mkdir ~A" (princ-to-string install-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
-                           (princ-to-string target-directory))))
+                           (princ-to-string install-directory))))
     t))
 
 (defmethod install-repository-from-address ((repository-address ssh-repository-address)
-                                            repository target-directory)
+                                            repository install-directory)
   (flet ((run-or-fail (&rest args)
            (multiple-value-bind (result code status)
                (apply #'trivial-shell:shell-command args)
@@ -538,14 +554,14 @@
       (info-msg "Downloading ~A...~%" (address repository-address))
       (run-or-fail (format nil "scp ~A ~A" (address repository-address) temporal-file))
       (info-msg "Extracting...~%")
-      (run-or-fail (format nil "mkdir ~A" (princ-to-string target-directory)))
+      (run-or-fail (format nil "mkdir ~A" (princ-to-string install-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
-                           (princ-to-string target-directory))))
+                           (princ-to-string install-directory))))
     t))
 
 (defmethod install-repository-from-address ((repository-address git-repository-address)
-                                            repository target-directory)
+                                            repository install-directory)
   (flet ((run-or-fail (command)
            (multiple-value-bind (result code status)
                (trivial-shell:shell-command command)
@@ -555,23 +571,23 @@
     (info-msg "Cloning repository: ~A...~%" (url repository-address))
     (run-or-fail (format nil "git clone ~A ~A"
                          (url repository-address)
-                         (princ-to-string target-directory)))
+                         (princ-to-string install-directory)))
     (when (branch repository-address)
       (info-msg "Checking out ~A branch.~%" (branch repository-address))
       (run-or-fail (format nil "cd ~A; git checkout ~A"
-                           target-directory
+                           install-directory
                            (branch repository-address))))
     (when (commit repository-address)
       (info-msg "Checking out commit ~A~%" (commit repository-address))
       (let ((command  (format nil "cd ~A; git checkout ~A"
-                              (princ-to-string target-directory)
+                              (princ-to-string install-directory)
                               (commit repository-address))))
         (verbose-msg "~A~%" command)
         (run-or-fail command)))
     (when (tag repository-address)
       (info-msg "Checking out tag ~A~%" (tag repository-address))
       (let ((command  (format nil "cd ~A; git checkout tags/~A"
-                              (princ-to-string target-directory)
+                              (princ-to-string install-directory)
                               (tag repository-address))))
         (verbose-msg "~A~%" command)
         (run-or-fail command)))
@@ -586,36 +602,30 @@
                (apply #'trivial-shell:shell-command args)
              (declare (ignorable result code))
              (when (not (zerop status))
-               (return-from update-repository-from-address (values nil nil nil))))))
-    (let ((library-version-repository (find-library-version-repository
-                                       library-version
-                                       (name repository))))
-      (when (and library-version-repository
-                 (typep (repository-address library-version-repository)
-                        'git-repository-address))
-        (let ((library-version-repository-address (repository-address library-version-repository)))
-          ;; Ok, try the update
-          (info-msg "Updating ~A...~%" (library-version-unique-name library-version))
-          (let ((command (format nil "cd ~A; git pull" install-directory)))
-            (verbose-msg (format nil "~A~%" command))
-            (run-or-fail command))
-          (awhen (branch library-version-repository-address)
-            (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-              (verbose-msg (format nil "~A~%" command))
-              (run-or-fail command)))
-          (awhen (commit library-version-repository-address)
-            (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
-              (verbose-msg (format nil "~A~%" command))
-              (run-or-fail command)))
-          (awhen (tag library-version-repository-address)
-            (let ((command (format nil "cd ~A; git checkout tags/~A" install-directory it)))
-              (verbose-msg (format nil "~A~%" command))
-              (run-or-fail command)))
-          ;; Return the install directory and repository
-          (values t                 ;; The update was successful
-                  install-directory ;; In which directory the update was made
-                  library-version-repository ;; The repository from which the update was made
-                  ))))))
+	       (verbose-msg "Command ~A failed~A" args)
+               (return-from update-repository-from-address nil)))))
+    ;; Ok, try the update
+    (info-msg "Updating ~A...~%" (library-version-unique-name library-version))
+    (let ((command (format nil "cd ~A; git pull" install-directory)))
+      (verbose-msg (format nil "~A~%" command))
+      (run-or-fail command))
+    (awhen (branch repository-address)
+      (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+	(verbose-msg (format nil "~A~%" command))
+	(run-or-fail command)))
+    (awhen (commit repository-address)
+      (let ((command (format nil "cd ~A; git checkout ~A" install-directory it)))
+	(verbose-msg (format nil "~A~%" command))
+	(run-or-fail command)))
+    (awhen (tag repository-address)
+      (let ((command (format nil "cd ~A; git checkout tags/~A" install-directory it)))
+	(verbose-msg (format nil "~A~%" command))
+	(run-or-fail command)))
+    (make-instance 'installed-library-version
+		   :name (library-name library-version)
+		   :version (version library-version)
+		   :repository repository
+		   :install-directory install-directory)))
 
 (defun find-cld-repository (name &optional (error-p t))
   (let ((cld-repository (find name (list-cld-repositories)
