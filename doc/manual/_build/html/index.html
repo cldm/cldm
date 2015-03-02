@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CLDM documentation &mdash; CLDM 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CLDM 0.0.1 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="#">CLDM 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/logo_extra_small.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CLDM documentation</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#quickstart">Quickstart</a></li>
+<li><a class="reference internal" href="#build-and-install">Build and install</a></li>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#basic-concepts">Basic concepts</a></li>
+<li><a class="reference internal" href="#cld-files">CLD files</a><ul>
+<li><a class="reference internal" href="#syntax">Syntax</a></li>
+<li><a class="reference internal" href="#distribution">Distribution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cld-repositories">CLD Repositories</a></li>
+<li><a class="reference internal" href="#command-line">Command line</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cldm-documentation">
+<h1>CLDM documentation<a class="headerlink" href="#cldm-documentation" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p><strong>CLDM</strong> is a distributed dependency manager for Common Lisp.</p>
+<p>Its design is similar to that of <a class="reference external" href="https://code.google.com/p/metacello">Smalltalk Metacello</a>. But unlike Metacello, it allows version constraints (like &lt;, &lt;=, &gt;=, &gt;) and solves them using Pseudo Boolean Optimization (PBO) as described in <a class="reference external" href="http://www.mancoosi.org/papers/ase10.pdf">this paper</a>. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. <a class="reference external" href="https://github.com/niklasso/minisatp">minisat+</a> is the PBO solver being used at the moment, but support for others like <a class="reference external" href="http://www.sat4j.org">sat4j</a> is also planned.</p>
+<p>Common Lisp libraries and its versions are described in <tt class="docutils literal"><span class="pre">.cld</span></tt> files, that should be made accessible to <strong>CLDM</strong> somehow (url, filesystem, git)</p>
+<p>Then <strong>CLDM</strong> download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their <tt class="docutils literal"><span class="pre">.asd</span></tt> definitions to <tt class="docutils literal"><span class="pre">asdf:*central-registry*</span></tt> and from that point on asdf is in charge.</p>
+<p>For instance, here is the library description <tt class="docutils literal"><span class="pre">.cld</span></tt> file for some versions of the <strong>Hunchentoot</strong> CL web server:</p>
+<div class="highlight-common-lisp"><div class="highlight"><pre><span class="c1">;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-</span>
+
+<span class="p">(</span><span class="nv">cldm:deflibrary</span> <span class="nv">hunchentoot</span>
+           <span class="ss">:author</span> <span class="s">&quot;Dr. Edmund Weitz&quot;</span>
+           <span class="ss">:description</span> <span class="s">&quot;Hunchentoot is a HTTP server based on USOCKET and</span>
+<span class="s">                         BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a</span>
+<span class="s">                         simple framework for user-defined handlers and can be extended</span>
+<span class="s">                         through subclassing.&quot;</span>
+           <span class="ss">:cld</span> <span class="s">&quot;http://cldm.github.io/cldm-repo/cld/hunchentoot.cld&quot;</span>
+           <span class="ss">:tags</span> <span class="p">(</span><span class="s">&quot;web&quot;</span> <span class="s">&quot;web server&quot;</span><span class="p">)</span>
+           <span class="ss">:versions</span>
+           <span class="p">((</span><span class="ss">:version</span> <span class="s">&quot;1.2.26&quot;</span>
+                       <span class="ss">:stability</span> <span class="ss">:beta</span>
+                       <span class="ss">:description</span> <span class="s">&quot;Latest version&quot;</span>
+                       <span class="ss">:repositories</span>
+                       <span class="p">((</span><span class="ss">:official</span> <span class="p">(</span><span class="ss">:url</span> <span class="s">&quot;http://weitz.de/files/hunchentoot.tar.gz&quot;</span><span class="p">))</span>
+                       <span class="p">(</span><span class="ss">:github</span> <span class="p">(</span><span class="ss">:git</span> <span class="s">&quot;https://github.com/edicl/hunchentoot.git&quot;</span>
+                                 <span class="ss">:commit</span> <span class="s">&quot;8885f17a15333d1c247a099ee3ced9e49a94103f&quot;</span><span class="p">)))</span>
+                       <span class="ss">:depends-on</span>
+                           <span class="p">(</span><span class="ss">:chunga</span>
+                            <span class="ss">:cl-base64</span>
+                            <span class="ss">:cl-fad</span>
+                            <span class="ss">:cl-ppcre</span>
+                            <span class="ss">:flexi-streams</span>
+                            <span class="o">#-</span><span class="p">(</span><span class="nb">or</span> <span class="ss">:lispworks</span> <span class="ss">:hunchentoot-no-ssl</span><span class="p">)</span> <span class="ss">:cl+ssl</span>
+                            <span class="ss">:md5</span>
+                            <span class="ss">:rfc2388</span>
+                            <span class="ss">:trivial-backtrace</span>
+                            <span class="o">#-</span><span class="ss">:lispworks</span> <span class="ss">:usocket</span>
+                            <span class="o">#-</span><span class="ss">:lispworks</span> <span class="ss">:bordeaux-threads</span><span class="p">))</span>
+                       <span class="p">(</span><span class="ss">:version</span> <span class="s">&quot;1.2.0&quot;</span>
+                                   <span class="ss">:description</span> <span class="s">&quot;Stable release&quot;</span>
+                                   <span class="ss">:stability</span> <span class="ss">:stable</span>
+                                   <span class="ss">:repositories</span>
+                                   <span class="p">((</span><span class="ss">:github</span> <span class="p">(</span><span class="ss">:git</span> <span class="s">&quot;https://github.com/edicl/hunchentoot.git&quot;</span>
+                                   <span class="ss">:commit</span> <span class="s">&quot;2a36b12532958d50ecf0948f8c20b6cff84c4300&quot;</span><span class="p">))))))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<p>This is in alpha but if you still want to try it out, it can almost load Hunchentoot at the moment.</p>
+<p>Download <strong>CLDM</strong> from <a class="reference external" href="https://github.com/cldm/cldm">https://github.com/cldm/cldm</a></p>
+<div class="highlight-python"><div class="highlight"><pre>git clone git@github.com:cldm/cldm.git
+</pre></div>
+</div>
+<p><strong>CLDM</strong> depends on <a class="reference external" href="http://www.sbcl.org/">**SBCL**</a> and <a class="reference external" href="https://github.com/niklasso/minisatp">minisat+</a> so you need to install to be able to build.</p>
+<p>On a Ubuntu based Linux system:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install sbcl
+sudo apt-get install minisat+
+</pre></div>
+</div>
+<p><strong>CLDM</strong> currently depends on the following Common Lisp libraries:</p>
+<ul class="simple">
+<li>alexandria</li>
+<li>anaphora</li>
+<li>ironclad</li>
+<li>md5</li>
+<li>cl-ppcre</li>
+<li>cl-syntax</li>
+<li>esrap</li>
+<li>trivial-shell</li>
+<li>puri</li>
+<li>split-sequence</li>
+<li>cl-fad</li>
+<li>osicat</li>
+</ul>
+<p>The best way to obtain them is via <a class="reference external" href="http:://www.quicklisp.org">Quicklisp</a></p>
+<p>Make <strong>CLDM</strong> loadable by adding it to quicklisp local-projects, or from <strong>SBCL</strong> systems directory:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~/quicklisp/local-projects
+ln -s &lt;cldm directory&gt;/cldm.asdf
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~/.sbcl/system
+ln -s &lt;cldm directory&gt;/cldm.asdf
+</pre></div>
+</div>
+<p>Now you should be able to build the command line binary:</p>
+<div class="highlight-python"><div class="highlight"><pre>sh make.sh
+</pre></div>
+</div>
+<p>And then install it:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo sh install.sh
+</pre></div>
+</div>
+<p>Finally, you can try to install a library:</p>
+<div class="highlight-python"><div class="highlight"><pre>cldm install hunchentoot
+</pre></div>
+</div>
+<p><strong>CLDM</strong> will calculate the required library versions and download them.</p>
+<p>Although <strong>CLDM</strong> is distributed in nature, there&#8217;s central repository in progress here: <a class="reference external" href="http://cldm.github.io/cldm-repo">http://cldm.github.io/cldm-repo</a> for generally useful Common Lisp libraries. <strong>CLDM</strong> fetches .cld definitions from there if isn&#8217;t told otherwise.</p>
+</div>
+<div class="section" id="build-and-install">
+<h1>Build and install<a class="headerlink" href="#build-and-install" title="Permalink to this headline">¶</a></h1>
+<p>Download <strong>CLDM</strong> from <a class="reference external" href="https://github.com/cldm/cldm">https://github.com/cldm/cldm</a></p>
+<div class="highlight-python"><div class="highlight"><pre>git clone git@github.com:cldm/cldm.git
+</pre></div>
+</div>
+<p><strong>CLDM</strong> depends on <a class="reference external" href="http://www.sbcl.org/">SBCL</a> and <a class="reference external" href="https://github.com/niklasso/minisatp">minisat+</a> so you need to install to be able to build.</p>
+<p>On a Ubuntu based Linux system:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install sbcl
+sudo apt-get install minisat+
+</pre></div>
+</div>
+<p><strong>CLDM</strong> currently depends on the following Common Lisp libraries:</p>
+<ul class="simple">
+<li>alexandria</li>
+<li>anaphora</li>
+<li>ironclad</li>
+<li>md5</li>
+<li>cl-ppcre</li>
+<li>cl-syntax</li>
+<li>esrap</li>
+<li>trivial-shell</li>
+<li>puri</li>
+<li>split-sequence</li>
+<li>cl-fad</li>
+<li>osicat</li>
+</ul>
+<p>The best way to obtain them is via <a class="reference external" href="http:://www.quicklisp.org">Quicklisp</a></p>
+<p>Make <strong>CLDM</strong> loadable by adding it to quicklisp local-projects, or from <strong>SBCL</strong> systems directory:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~/quicklisp/local-projects
+ln -s &lt;cldm directory&gt;/cldm.asdf
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~/.sbcl/system
+ln -s &lt;cldm directory&gt;/cldm.asdf
+</pre></div>
+</div>
+<p>Now you should be able to build the command line binary:</p>
+<div class="highlight-python"><div class="highlight"><pre>sh make.sh
+</pre></div>
+</div>
+<p>And then install it:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo sh install.sh
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="basic-concepts">
+<h1>Basic concepts<a class="headerlink" href="#basic-concepts" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="cld-files">
+<h1>CLD files<a class="headerlink" href="#cld-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="syntax">
+<h2>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="distribution">
+<h2>Distribution<a class="headerlink" href="#distribution" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+<div class="section" id="cld-repositories">
+<h1>CLD Repositories<a class="headerlink" href="#cld-repositories" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="command-line">
+<h1>Command line<a class="headerlink" href="#command-line" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="#">CLDM 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mariano Montone.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
