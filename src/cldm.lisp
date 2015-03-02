@@ -166,6 +166,11 @@
   (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
 
+(defun install-project-from-ilv (project libraries-directory)
+  "Install project form library versions in the lock file"
+  (loop for ilv in (installed-library-versions project)
+     do (install-library-version ilv libraries-directory)))       
+
 (defmethod install-project ((project project)
                             &key
                               version
@@ -185,36 +190,40 @@
     (verbose-msg "Loading ~A.~%" project)
     (when clear-registered-libraries
       (clear-registered-libraries))
-    (with-download-session ()
-      (let ((library-version (if version
-				 (find-library-version (library project) version)
-				 (first (library-versions (library project))))))
-	;; Load libraries metadata
-	(load-library-version library-version)
+    (if (installed-library-versions project)
+	;; If there's a lock file, install versions specified there
+	(install-project-from-ilv project libraries-directory)
+	;; else, calculate the dependencies
+	(with-download-session ()
+	  (let ((library-version (if version
+				     (find-library-version (library project) version)
+				     (first (library-versions (library project))))))
+	    ;; Load libraries metadata
+	    (load-library-version library-version)
 
-	;; Calculate list of library-versions involved
-	(let ((library-versions-involved
-	       (calculate-library-versions-involved library-version)))
+	    ;; Calculate list of library-versions involved
+	    (let ((library-versions-involved
+		   (calculate-library-versions-involved library-version)))
 
-	  (let ((library-versions (pbo-solve-library-versions library-version
-							      library-versions-involved)))
-	    ;; Remove the project library from the library versions list
-	    (setf library-versions (remove (library-name (library project)) library-versions
-					   :key #'library-name
-					   :test #'equalp))
+	      (let ((library-versions (pbo-solve-library-versions library-version
+								  library-versions-involved)))
+		;; Remove the project library from the library versions list
+		(setf library-versions (remove (library-name (library project)) library-versions
+					       :key #'library-name
+					       :test #'equalp))
 
-	    (info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+		(info-msg "Libraries to load: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
-	    ;; Check the version existance and download if not
-	    (let ((installed-library-versions ()))
-	      (loop for version in library-versions
-		 do
-		   (let ((installed-library-version
-			  (install-library-version version libraries-directory)))
-		     (push installed-library-version installed-library-versions)))
-	      (create-lock-file installed-library-versions)))))
-      (verbose-msg "Done.~%")
-      t)))
+		;; Check the version existance and download if not
+		(let ((installed-library-versions ()))
+		  (loop for version in library-versions
+		     do
+		       (let ((installed-library-version
+			      (install-library-version version libraries-directory)))
+			 (push installed-library-version installed-library-versions)))
+		  (create-lock-file installed-library-versions)))))
+	  (verbose-msg "Done.~%")
+	  t))))
 
 (defmethod update-project ((project project)
                            &key
