@@ -221,7 +221,7 @@
 		       (let ((installed-library-version
 			      (install-library-version version libraries-directory)))
 			 (push installed-library-version installed-library-versions)))
-		  (create-lock-file installed-library-versions)))))
+		  (create-lock-file project installed-library-versions)))))
 	  (verbose-msg "Done.~%")
 	  t))))
 
@@ -273,7 +273,7 @@
 				 project
 				 (library-name version))))
 			   (push installed-library-version installed-library-versions)))))
-	      (create-lock-file installed-library-versions)))))
+	      (create-lock-file project installed-library-versions)))))
       (verbose-msg "Done.~%")
       t)))
 
