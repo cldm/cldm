@@ -4,20 +4,27 @@
 
 #.(enable-version-syntax)
 
-(deftest library-creation-test ()
+(deftest library-version-creation-test ()
   (let ((lib (make-instance 'library
 			    :name "hunchentoot"
-			    :version #v"1.0.0")))
-    (is (equalp (library-provides lib) nil))
-    (is (equalp (library-dependencies lib) nil))
-    (is (equalp (cldm::library-id lib) nil)))
-
-  (let ((provides (list (make-requirement "chunga" '(:== #v"1.3.0")))))
-    (let ((lib (make-instance 'library
-			      :name "hunchentoot"
-			      :version #v"1.0.0"
-			      :provides provides)))
-      (is (equalp (library-provides lib) provides)))))
+			    :cld "hunchentoot.cld"
+			    :versions nil))
+	(repository (make-instance 'cldm::library-version-repository
+				   :name "main"
+				   :address (make-instance 'cldm::repository-address))))
+    (let ((lib-version (make-instance 'library-version 
+				      :library lib
+				      :version #v"1.0.0"
+				      :repositories (list repository))))
+      (is (equalp (cldm::provides lib-version) nil))
+      (is (equalp (cldm::dependencies lib-version) nil)))
+    (let ((provides (list (make-requirement "chunga" '(:== #v"1.3.0")))))
+      (let ((lib-version (make-instance 'library-version
+					:library lib
+					:version #v"1.0.0"
+					:provides provides
+					:repositories (list repository))))
+	(is (equalp (cldm::provides lib-version) provides))))))
 
 (deftest library-unique-name-test ()
   (let ((lib (make-instance 'library

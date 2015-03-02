@@ -58,7 +58,7 @@
           ;; Check the version existance and download if not
           (loop for version in library-versions
              do
-               (cache-library-version version libraries-directory))))))
+               (install-library-version version libraries-directory))))))
   (verbose-msg "Done.~%"))
 
 (defun load-library (library-name
@@ -198,7 +198,7 @@
 	      (loop for version in library-versions
 		 do
 		   (multiple-value-bind (executed pathname repository)
-		       (cache-library-version version libraries-directory)
+		       (install-library-version version libraries-directory)
 		     (assert executed)
 		     (push (list version pathname repository) installed-libraries)))
 	      (create-lock-file installed-libraries)))))

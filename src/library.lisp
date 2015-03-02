@@ -106,6 +106,7 @@
   (:documentation "A library meta description"))
 
 (defmethod library-versions ((library library))
+  "Returns the library versions, sorted by version"
   (sort (slot-value library 'versions)
 	#'version>= 
 	:key #'version))

@@ -244,7 +244,7 @@
 		      (verbose-msg "Could not cache cdl file ~A~%" downloaded-file)
 		      downloaded-file))))))))) 
 
-(defun cache-library-version (library-version &optional (libraries-directory *libraries-directory*))
+(defun install-library-version (library-version &optional (libraries-directory *libraries-directory*))
   (ensure-directories-exist libraries-directory)
   (let* ((repository-name (format nil "~A-~A"
 				  (library-name (library library-version))
@@ -259,7 +259,7 @@
 	  (verbose-msg "Repository for ~A already exists in ~A~%"
 		       library-version
 		       repository-directory)
-	  (return-from cache-library-version))
+	  (return-from install-library-version))
                                         ;else
 	(progn
 	  (info-msg "Installing ~A...~%"
@@ -270,7 +270,7 @@
 	       do (progn
 		    (verbose-msg "Trying with ~A...~%" repository)
 		    (setf return-repository repository)
-		    (setf done (cache-repository repository repository-directory))
+		    (setf done (install-repository repository repository-directory))
 		    (if (not done)
 			(verbose-msg "Failed.~%")
 			(verbose-msg "Success.~%"))))
@@ -294,7 +294,7 @@
 	    ;; The update conditions are satisfied, try to update the repository
 	    (update-repository installed-library-info library-version)))
 	;; else, the library is not installed: install the library version
-	(cache-library-version library-version (libraries-directory project)))))
+	(install-library-version library-version (libraries-directory project)))))
 
 (defun update-repository (installed-library-info library-version)
   (destructuring-bind (library-version install-directory origin-repository md5)
@@ -311,8 +311,8 @@
   ;; repository-addresses are not updateable by default
   (values nil nil nil))
 
-(defmethod cache-repository (repository directory)
-  (cache-repository-from-address (repository-address repository)
+(defmethod install-repository (repository directory)
+  (install-repository-from-address (repository-address repository)
                                  repository directory))
 
 (defun symlink (target linkname)
@@ -391,11 +391,11 @@
   (print-unreadable-object (repository-address stream :type t :identity t)
     (format stream "~A" (address repository-address))))
 
-(defgeneric cache-repository-from-address (repository-address repository target-directory)
+(defgeneric install-repository-from-address (repository-address repository target-directory)
   (:documentation "Cache the given repository from repository-address to target-directory.
                    Methods of this generic function should return T on success, or NIL on failure."))
 
-(defmethod cache-repository-from-address ((repository-address directory-repository-address)
+(defmethod install-repository-from-address ((repository-address directory-repository-address)
                                           repository target-directory)
   (multiple-value-bind (result code status)
       (ecase *address-cache-operation*
@@ -417,13 +417,13 @@
     (declare (ignore result))
     (zerop status)))
 
-(defmethod cache-repository-from-address ((repository-address url-repository-address)
+(defmethod install-repository-from-address ((repository-address url-repository-address)
                                           repository target-directory)
   (flet ((run-or-fail (&rest args)
            (multiple-value-bind (result code status)
                (apply #'trivial-shell:shell-command args)
              (when (not (zerop status))
-               (return-from cache-repository-from-address nil)))))
+               (return-from install-repository-from-address nil)))))
     (let ((temporal-file
            (merge-pathnames
             (file-namestring (url repository-address))
@@ -437,13 +437,13 @@
                            (princ-to-string target-directory))))
     t))
 
-(defmethod cache-repository-from-address ((repository-address ssh-repository-address)
+(defmethod install-repository-from-address ((repository-address ssh-repository-address)
                                           repository target-directory)
   (flet ((run-or-fail (&rest args)
            (multiple-value-bind (result code status)
                (apply #'trivial-shell:shell-command args)
              (when (not (zerop status))
-               (return-from cache-repository-from-address nil)))))
+               (return-from install-repository-from-address nil)))))
     (let ((temporal-file
            (merge-pathnames
             (file-namestring (address repository-address))
@@ -457,14 +457,14 @@
                            (princ-to-string target-directory))))
     t))
 
-(defmethod cache-repository-from-address ((repository-address git-repository-address)
+(defmethod install-repository-from-address ((repository-address git-repository-address)
                                           repository target-directory)
   (flet ((run-or-fail (command)
            (multiple-value-bind (result code status)
                (trivial-shell:shell-command command)
              (declare (ignore result code))
              (when (not (zerop status))
-               (return-from cache-repository-from-address nil)))))
+               (return-from install-repository-from-address nil)))))
     (info-msg "Cloning repository: ~A...~%" (url repository-address))
     (run-or-fail (format nil "git clone ~A ~A"
                          (url repository-address)
