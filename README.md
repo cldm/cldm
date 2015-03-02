@@ -86,3 +86,7 @@ cldm install hunchentoot
 **CLDM** will calculate the required library versions and download them.
 
 Although **CLDM** is distributed in nature, I'm building a central repository here: http://cldm.github.io/cldm-repo for generally useful Common Lisp libraries, and **CLDM** fetches `.cld` definitions from there if isn't told otherwise.
+
+## Documentation
+
+[HTML](http://cldm.github.io/cldm/doc/manual/_build/html/index.html) [PDF](http://cldm.github.io/cldm/doc/manual/_build/latex/CLDM.pdf)
