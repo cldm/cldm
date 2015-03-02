@@ -90,9 +90,9 @@
         :key #'name
         :test #'equalp))
 
-(defun create-lock-file (installed-library-versions)
+(defun create-lock-file (project installed-library-versions)
   (let ((lock-file-pathname (merge-pathnames "cldm.lock"
-                                             (osicat:current-directory))))
+                                             (project-directory project))))
     (verbose-msg "Writing lock file ~A~%" lock-file-pathname)
     (with-open-file (f lock-file-pathname
                        :direction :output
