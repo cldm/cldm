@@ -86,7 +86,7 @@
 
 (defun find-installed-library-version (project library-name)
   (find library-name (installed-library-versions project)
-        :key (compose #'library-name #'first)
+        :key #'name
         :test #'equalp))
 
 (defun create-lock-file (installed-library-versions)
