@@ -35,30 +35,39 @@
     (pbo-solve-library-versions library-version
                                 library-versions-involved)))
 
-(defun setup (library-name &optional version (libraries-directory *libraries-directory*))
-  "Setup an already loaded library and its dependencies"
+(defgeneric install-library-dependencies (library &optional version libraries-directory)
+  (:documentation "Install library dependencies"))
+
+(defmethod install-library-dependencies ((library-name string) 
+					 &optional version 
+					   (libraries-directory *libraries-directory*))
   (let ((library (find-library library-name)))
-    (verbose-msg "Loading ~A.~%" library)
-    (let ((library-version (if version
-                               (find-library-version library version)
-                               (first (library-versions library)))))
-      ;; Load libraries metadata
-      (load-library-version library-version)
+    (install-library-dependencies library version libraries-directory)))
 
-      ;; Calculate list of library-versions involved
-      (let ((library-versions-involved
-             (calculate-library-versions-involved library-version)))
+(defmethod install-library-dependencies ((library library)
+					 &optional version
+					   (libraries-directory *libraries-directory*))
+  (verbose-msg "Installing ~A dependencies.~%" library)
+  (let ((library-version (if version
+			     (find-library-version library version)
+			     (first (library-versions library)))))
+    ;; Load libraries metadata
+    (load-library-version library-version)
 
-        (let ((library-versions (pbo-solve-library-versions library-version
-                                                            library-versions-involved)))
+    ;; Calculate list of library-versions involved
+    (let ((library-versions-involved
+	   (calculate-library-versions-involved library-version)))
 
-          (info-msg "Libraries to load: ~{~A~^, ~}~%"
-                    (mapcar #'library-version-unique-name library-versions))
+      (let ((library-versions (pbo-solve-library-versions library-version
+							  library-versions-involved)))
 
-          ;; Check the version existance and download if not
-          (loop for version in library-versions
-             do
-               (install-library-version version libraries-directory))))))
+	(info-msg "Libraries to load: ~{~A~^, ~}~%"
+		  (mapcar #'library-version-unique-name library-versions))
+
+	;; Check the version existance and download if not
+	(loop for version in library-versions
+	   do
+	     (install-library-version version libraries-directory)))))
   (verbose-msg "Done.~%"))
 
 (defun load-library (library-name
@@ -102,10 +111,10 @@
     (with-download-session ()
       (let ((cld (and cld (load-cld (parse-cld-address cld)))))
 	(if cld
-	    (setup library-name version libraries-directory)
+	    (install-library-dependencies library-name version libraries-directory)
 	    ;; else
 	    (if (find-library library-name nil)
-		(setup library-name version libraries-directory)
+		(install-library-dependencies library-name version libraries-directory)
 		;; else
 		(progn
 		  (loop
@@ -122,7 +131,7 @@
 					cld-repository))))
 		  (if cld
 		      (progn
-			(setup library-name version)
+			(install-library-dependencies library-name version)
 			t)
 		      (error "Couldn't find a cld for ~S library~%" library-name)))))))))
 
