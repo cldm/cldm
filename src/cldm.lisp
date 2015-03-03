@@ -26,7 +26,7 @@
   "Calculates the library versions to install for a given LIBRARY-VERSION"
 
   ;; Load libraries metadata
-  (load-library-version library-version)
+  (load-library-version-metadata library-version)
 
   ;; Calculate list of library-versions involved
   (let ((library-versions-involved
@@ -52,7 +52,7 @@
 			     (find-library-version library version)
 			     (first (library-versions library)))))
     ;; Load libraries metadata
-    (load-library-version library-version)
+    (load-library-version-metadata library-version)
 
     ;; Calculate list of library-versions involved
     (let ((library-versions-involved
@@ -212,7 +212,7 @@
 				     (find-library-version (library project) version)
 				     (first (library-versions (library project))))))
 	    ;; Load libraries metadata
-	    (load-library-version library-version)
+	    (load-library-version-metadata library-version)
 
 	    ;; Calculate list of library-versions involved
 	    (let ((library-versions-involved
@@ -264,7 +264,7 @@
 				   (find-library-version (library project) version)
 				   (first (library-versions (library project))))))
 	  ;; Load libraries metadata
-	  (load-library-version library-version)
+	  (load-library-version-metadata library-version)
 
 	;; Calculate list of library-versions involved
 	(let ((library-versions-involved
@@ -309,7 +309,7 @@
       (verbose-msg "Done.~%")
       t)))
 
-(defun load-library-version (library-version &key (if-already-loaded *if-already-loaded-cld*))
+(defun load-library-version-metadata (library-version &key (if-already-loaded *if-already-loaded-cld*))
   "Load a library version dependencies clds"
   (verbose-msg "Loading ~A.~%" library-version)
   (labels ((load-dependency (dependency)
@@ -317,7 +317,7 @@
              (let* ((library (find-library (library-name dependency)))
                     (library-versions (find-library-versions library dependency)))
                (loop for library-version in library-versions
-                  do (load-library-version library-version :if-already-loaded if-already-loaded))))
+                  do (load-library-version-metadata library-version :if-already-loaded if-already-loaded))))
            (load-dependency-cld (dependency)
 	     ; To load a dependency cld, we try looking in repositories first, and, if we couldn't find
              ; a cld there, we try to load the cld specified in the dependency. This is so that we can give
