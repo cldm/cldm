@@ -60,15 +60,8 @@ Download **CLDM**:
 git clone git@github.com:cldm/cldm.git
 ```
 
-and add the library to Quicklisp:
+build:
 
-```
-cd ~/quicklisp/local-projects; ln -s <cldm_directory>
-```
-
-Then install the required dependencies via Quicklisp (recommended). 
-
-Finally, build the command line tool:
 ```
 make
 ```

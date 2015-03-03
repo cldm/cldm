@@ -3,12 +3,13 @@ UNAME := $(shell uname)
 BUILD_DIR ?= build
 SBCL := $(shell which sbcl)
 PWD = $(shell pwd)
+APT-GET = $(shell which apt-get)
 
 print-%  : ; @echo $* = $($*)
 
 all: cldm
 
-cldm: deps
+cldm: minisatp deps
 	$(SBCL) --no-userinit --no-sysinit --load $(BUILD_DIR)/asdf.lisp \
         --eval "(asdf:initialize-source-registry '(:source-registry (:tree \"$(PWD)/\") (:tree \"$(PWD)/$(BUILD_DIR)/\") :ignore-inherited-configuration))" \
         --script src/command-line.lisp
@@ -38,13 +39,8 @@ deps:
 	curl https://common-lisp.net/project/cffi/releases/cffi_latest.tar.gz | tar -xz -C $(BUILD_DIR)
 	curl https://common-lisp.net/project/asdf/asdf.lisp -o $(BUILD_DIR)/asdf.lisp
 
-
 minisatp: minisat
-ifeq ($(OS), LinuxMint)
-	sudo apt-get install minisat+
-else ifeq ($(OS), Ubuntu)
-	sudo apt-get install minisat+
-else
+ifndef APT-GET
 	git clone https://github.com/niklasso/minisat.git build/minisat
 	cd build/minisat && make
 	git clone https://github.com/niklasso/minisatp.git build/minisatp
@@ -52,35 +48,38 @@ else
 endif
 
 minisat:
-ifeq ($(OS), LinuxMint)
-else ifeq ($(OS), Ubuntu)
-else
+ifndef APT-GET
 	git clone https://github.com/niklasso/minisat.git build/minisat
 	cd build/minisat && make	
 endif
 
-
 install: install-minisatp
 
 install-minisatp: install-minisat
-ifeq ($(OS), LinuxMint)
-else ifeq ($(OS), Ubuntu)
+ifdef APT-GET
+	apt-get install minisat+
 else
 	cd $(BUILD_DIR)/minisat && make install
 endif
 
 install-minisat:
-ifeq ($(OS), LinuxMint)
-else ifeq ($(OS), Ubuntu)
+ifdef APT-GET
+	apt-get install minisat
 else
 	cd $(BUILD_DIR)/minisatp && make install
 endif
 
-install:
+ql-install:
+	cd ~/quicklisp/local-projects; ln -s $(PWD)
+
+install: install-minisatp
 	cp cldm /usr/local/bin
 
 uninstall:
 	rm /usr/local/bin/cldm
+
+ql-uninstall:
+	rm ~/quicklisp/local-projects/cldm	
 
 clean:
 	rm cldm
