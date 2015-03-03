@@ -33,4 +33,6 @@ THE SOFTWARE."
              ((:github (:git "git@github.com:mmontone/cldm.git")))
              :DEPENDS-ON
              (#:ALEXANDRIA #:IRONCLAD #:MD5 #:CL-PPCRE #:CL-SYNTAX #:ESRAP
-                           #:TRIVIAL-SHELL #:PURI))))
+                           #:TRIVIAL-SHELL #:PURI #:anaphora #:split-sequence
+			   #:cl-fad
+			   #:osicat))))
