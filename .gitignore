@@ -3,3 +3,5 @@
 /cache
 /cldm
 /doc/manual/_build
+/build/
+/lib/
