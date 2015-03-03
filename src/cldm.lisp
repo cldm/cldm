@@ -382,39 +382,6 @@
                           (:strict (error "Coudn't load ~A" dependency))))))))
    :test #'library-version=))
 
-(defun pick-library-version (library-versions)
-  "Picks a version from a library list of versions"
-  (let ((library-version (first library-versions)))
-    (loop for lib-version in (rest library-versions)
-       do (setf library-version (best-library-version library-version lib-version)))
-    library-version))
-
-(defun best-library-version (v1 v2)
-  (cond
-    ((not (version v2))
-     v1)
-    ((not (version v1))
-     v2)
-    (t
-     (assert (equalp (version v1) (version v2)) nil "This should not have happened")
-     v1)))
-
-(defun pick-library-versions (versions-list)
-  (flet ((pick-latest-version (library-version)
-           ;; If the library version is not specified, pick the latest version available
-           (if (not (version library-version))
-               (let ((latest-library-version
-                      (first (library-versions (library library-version)))))
-                 (verbose-msg "No specific library version specified for ~A. Picking latest library version: ~A~%"
-                              library-version
-                              latest-library-version)
-                 latest-library-version)
-               library-version)))
-    (mapcar (compose #'pick-latest-version #'pick-library-version)
-            (group-by versions-list
-                      :key (compose #'library-name #'library)
-                      :test #'equalp))))
-
 ;; ASDF plugging
 
 ;; A very bad and dumb ASDF system searcher for now
