@@ -70,12 +70,12 @@ Then install the required dependencies via Quicklisp (recommended).
 
 Finally, build the command line tool:
 ```
-sh make.sh
+make
 ```
 
 and install it:
 ```
-sudo sh install.sh
+sudo make install
 ```
 
 Now you should be able to install libraries in your system:
