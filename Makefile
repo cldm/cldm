@@ -41,8 +41,6 @@ deps:
 
 minisatp: minisat
 ifndef APT-GET
-	git clone https://github.com/niklasso/minisat.git build/minisat
-	cd build/minisat && make
 	git clone https://github.com/niklasso/minisatp.git build/minisatp
 	cd build/minisatp && make
 endif
