@@ -221,7 +221,6 @@
               cld)))))
 
 (defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
-  (break "cache")
   (ensure-directories-exist (pathname (cache-directory cld-repository)))
   (let ((cached-file (merge-pathnames
                       (pathname (format nil "~A.cld" library-name))
