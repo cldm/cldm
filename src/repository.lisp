@@ -156,7 +156,9 @@
               (when (not cld)
                 ;; the uri failed, add the uri to failed ones
                 (push cld-url-address *download-session-failed-uris*))
-              cld)))))
+              cld)))
+      ;; else, no download session
+      (call-next-method)))
 
 (defmethod cld-url-address ((cld-repository ssh-cld-repository) library-name)
   (format nil "~A/~A.cld"
@@ -218,7 +220,9 @@
               (when (not cld)
                 ;; the uri failed, add the uri to failed ones
                 (push cld-url-address *download-session-failed-uris*))
-              cld)))))
+              cld)))
+      ;; else, no download session
+      (call-next-method)))
 
 (defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
   (ensure-directories-exist (pathname (cache-directory cld-repository)))
@@ -278,14 +282,20 @@
 	  (pathname (format nil "~A/" install-directory-name))
 	  libraries-directory)))
 
-(defun installed-library-version-p (library-version &optional
+(defun library-version-installed-p (library-version &optional
 						      (libraries-directory *libraries-directory*))
+  "Returns whether a library version is installed and if it is, where"
   (if (listp libraries-directory)
       (loop for dir in libraries-directory
-	   when (installed-library-version-p library-version dir)
-	   do (return-from installed-library-version-p t))
-      ; else
-      (probe-file (library-version-install-directory library-version libraries-directory))))    
+	 do (multiple-value-bind (installed-p install-directory)
+		(library-version-installed-p library-version dir)
+	      (when installed-p
+		(return-from library-version-installed-p
+		  (values t install-directory)))))
+					; else
+      (let ((install-directory (library-version-install-directory library-version libraries-directory)))
+	(if (probe-file install-directory)
+	    (values t install-directory)))))
 
 (defmethod install-library-version ((library-version library-version)
                                     &optional

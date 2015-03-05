@@ -59,8 +59,22 @@
                        (clear-registered-libraries t))
   (when clean-asdf-environment
     (clean-asdf-environment))
-  
-  (asdf:load-system library-name :force-not (asdf:registered-systems)))
+  (load-cld-for-library library-name)
+  (let ((library (find-library library-name)))
+    (let ((library-versions (calculate-library-dependencies library
+							   :version version
+							   :libraries-directory libraries-directory))
+	  (library-version (if version 
+			       (find-library-version library version)
+			       (first (library-versions library)))))
+      (loop for library-version in (cons library-version library-versions)
+	   do
+	   (multiple-value-bind (installed-p install-directory)
+	       (library-version-installed-p library-version)
+	     (if installed-p
+		 (push asdf:*central-registry* install-directory)
+		 (error "~A is not installed" library-version))))
+      (asdf:load-system library-name :force-not (asdf:registered-systems)))))
 
 (defun install-library-dependencies (library &key version
                                                (libraries-directory *libraries-directory*)
@@ -83,7 +97,7 @@
              do
                (install-library-version version libraries-directory)))))))
 
-(defun find-cld-for-library (library-name &key (error-p t))
+(defun load-cld-for-library (library-name &key (error-p t))
   (aif (find-library library-name nil)
        it
        ;; else
@@ -124,7 +138,7 @@
                        (read-version-from-string version))))
 	(if cld 
 	    (load-cld (parse-cld-address cld))
-	    (find-cld-for-library library-name))
+	    (load-cld-for-library library-name))
 	(install-library-dependencies library-name
 				      :version version
 				      :libraries-directory libraries-directory
