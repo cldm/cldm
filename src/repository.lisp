@@ -753,6 +753,7 @@
 
 (defun download-index-file (cld-repository)
   (verbose-msg "Downloading index file ~A~%" (index-file cld-repository))
+  (ensure-directories-exist (cache-directory cld-repository))
   (let ((command (format nil "wget -O ~A ~A"
 			 (cached-index-file cld-repository)
 			 (index-file cld-repository))))
