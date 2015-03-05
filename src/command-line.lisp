@@ -135,6 +135,9 @@
                  :description "Fake the install operation. List the libraries that would be installed")
            (switch :short-name "v" :long-name "verbose"
                    :description "Run in verbose mode")
+	   (switch :short-name "i" :long-name "interactive"
+		   :description "Interactive"
+		   :default-value t)
            (switch :long-name "lenient"
                    :default-value nil
                    :description "Allow some of the dependencies not to be installed.")
@@ -148,6 +151,9 @@
                  :description "Print this help and exit.")
            (flag :short-name "d" :long-name "dry-run"
                  :description "Fake the update operation. List which libraries would be updated")
+	   (switch :short-name "i" :long-name "interactive"
+		   :description "Interactive"
+		   :default-value t)
            (switch :short-name "v" :long-name "verbose"
                    :description "Run in verbose mode")
            (switch :long-name "lenient"
@@ -388,7 +394,8 @@ Use 'cldm <command> --help' to get command-specific help.
               (cldm::libraries-directory project))
       (cldm:install-project project
 			    :solving-mode solving-mode
-			    :verbose verbose-mode)
+			    :verbose verbose-mode
+			    :interactive (clon:getopt :long-name "interactive"))
       (format t "Done.~%")
       (clon:exit 0))))
 
@@ -406,7 +413,8 @@ Use 'cldm <command> --help' to get command-specific help.
 			  :version library-version-string
 			  :libraries-directory libraries-directory
 			  :solving-mode solving-mode
-			  :verbose verbose-mode)
+			  :verbose verbose-mode
+			  :interactive (clon:getopt :long-name "interactive"))
     (format t "Done.~%")
     (clon:exit 0)))
 
@@ -429,7 +437,8 @@ Use 'cldm <command> --help' to get command-specific help.
 	      (cldm::project-name project))
       (cldm:update-project project
 			   :solving-mode solving-mode
-			   :verbose verbose-mode)
+			   :verbose verbose-mode
+			   :interactive (clon:getopt :long-name "interactive"))
       (format t "Done.~%")
       (clon:exit 0))))
 
