@@ -35,18 +35,22 @@
     (pbo-solve-library-versions library-version
                                 library-versions-involved)))
 
-(defgeneric install-library-dependencies (library &optional version libraries-directory)
+(defgeneric install-library-dependencies (library &key version libraries-directory interactive)
   (:documentation "Install library dependencies"))
 
 (defmethod install-library-dependencies ((library-name string) 
-					 &optional version 
-					   (libraries-directory *libraries-directory*))
+					 &key version 
+					   (libraries-directory *libraries-directory*)
+					   (interactive t))
   (let ((library (find-library library-name)))
-    (install-library-dependencies library version libraries-directory)))
+    (install-library-dependencies library :version version 
+				  :libraries-directory libraries-directory
+				  :interactive interactive)))
 
 (defmethod install-library-dependencies ((library library)
-					 &optional version
-					   (libraries-directory *libraries-directory*))
+					 &key version
+					   (libraries-directory *libraries-directory*)
+					   (interactive t))
   (verbose-msg "Installing ~A dependencies.~%" library)
   (let ((library-version (if version
 			     (find-library-version library version)
@@ -61,13 +65,18 @@
       (let ((library-versions (pbo-solve-library-versions library-version
 							  library-versions-involved)))
 
-	(info-msg "Libraries to load: ~{~A~^, ~}~%"
+	(info-msg "Libraries to install: ~{~A~^, ~}~%"
 		  (mapcar #'library-version-unique-name library-versions))
+	(let ((install-p t))
+	  (when interactive
+	    (info-msg "Install?~%")
+	    (setf install-p (yes-or-no-p)))
 
-	;; Check the version existance and download if not
-	(loop for version in library-versions
-	   do
-	     (install-library-version version libraries-directory)))))
+	  (when install-p
+	    ;; Check the version existance and download if not
+	    (loop for version in library-versions
+	       do
+		 (install-library-version version libraries-directory)))))))
   (verbose-msg "Done.~%"))
 
 (defun load-library (library-name
@@ -101,7 +110,8 @@
                           (verbose *verbose-mode*)
                           (solving-mode *solving-mode*)
                           (libraries-directory *libraries-directory*)
-			  (clear-registered-libraries t))
+			  (clear-registered-libraries t)
+			  (interactive t))
   "Tries to find a cld for the library and load it.
    Then setup the library and its dependencies"
   (let ((*verbose-mode* verbose)
@@ -113,10 +123,15 @@
 	    (version (when version 
 		       (read-version-from-string version))))
 	(if cld
-	    (install-library-dependencies library-name version libraries-directory)
+	    (install-library-dependencies library-name 
+					  :version version 
+					  :libraries-directory libraries-directory
+					  :interactive interactive)
 	    ;; else
 	    (if (find-library library-name nil)
-		(install-library-dependencies library-name version libraries-directory)
+		(install-library-dependencies library-name :version version
+					      :libraries-directory libraries-directory
+					      :interactive interactive)
 		;; else
 		(progn
 		  (loop
@@ -133,7 +148,10 @@
 					cld-repository))))
 		  (if cld
 		      (progn
-			(install-library-dependencies library-name version)
+			(install-library-dependencies library-name 
+						      :version version
+						      :libraries-directory libraries-directory
+						      :interactive interactive)
 			t)
 		      (error "Couldn't find a cld for ~S library~%" library-name)))))))))
 
@@ -144,14 +162,16 @@
                            (verbose *verbose-mode*)
                            (solving-mode *solving-mode*)
                            (clean-asdf-environment *clean-asdf-environment*)
-			   (clear-registered-libraries t))
+			   (clear-registered-libraries t)
+			   (interactive t))
   (load-project (load-project-from-directory directory)
                 :version version
                 :libraries-directory libraries-directory
                 :verbose verbose
                 :solving-mode solving-mode
                 :clean-asdf-environment clean-asdf-environment
-		:clear-registered-libraries clear-registered-libraries))
+		:clear-registered-libraries clear-registered-libraries
+		:interactive interactive))
 
 (defmethod load-project ((project project)
                          &key
@@ -160,7 +180,8 @@
                            (verbose *verbose-mode*)
                            (solving-mode *solving-mode*)
                            (clean-asdf-environment *clean-asdf-environment*)
-			   (clear-registered-libraries t))
+			   (clear-registered-libraries t)
+			   (interactive t))
   "Install a project dependencies and load the project in the current lisp image"
 
   (install-project project
@@ -168,7 +189,8 @@
                    :verbose verbose
                    :solving-mode solving-mode
                    :libraries-directory libraries-directory
-		   :clear-registered-libraries clear-registered-libraries)
+		   :clear-registered-libraries clear-registered-libraries
+		   :interactive interactive)
   (when clean-asdf-environment
     (setf asdf:*central-registry* nil)
     (asdf:clear-source-registry)
@@ -177,10 +199,18 @@
   (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
 
-(defun install-project-from-ilv (project libraries-directory)
+(defun install-project-from-ilv (project libraries-directory &key (interactive t))
   "Install project form library versions in the lock file"
-  (loop for ilv in (installed-library-versions project)
-     do (install-library-version ilv libraries-directory)))       
+  (info-msg "Libraries to install: ~{~A~^, ~}~%" 
+	    (mapcar #'library-version-unique-name 
+		    (installed-library-versions project)))
+  (let ((install-p t))
+    (when interactive
+      (info-msg "Install?~%")
+      (setf install-p (yes-or-no-p)))
+    (when install-p
+      (loop for ilv in (installed-library-versions project)
+	 do (install-library-version ilv libraries-directory)))))
 
 (defmethod install-project ((project project)
                             &key
@@ -188,7 +218,8 @@
                               libraries-directory
                               (verbose *verbose-mode*)
                               (solving-mode *solving-mode*)
-			      (clear-registered-libraries t))
+			      (clear-registered-libraries t)
+			      (interactive t))
   "Installs a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
@@ -207,7 +238,8 @@
     (verbose-msg "Installing project libraries...~%")
     (if (installed-library-versions project)
 	;; If there's a lock file, install versions specified there
-	(install-project-from-ilv project libraries-directory)
+	(install-project-from-ilv project libraries-directory 
+				  :interactive interactive)
 	;; else, calculate the dependencies
 	(with-download-session ()
 	  (let ((library-version (if version
@@ -228,16 +260,21 @@
 					       :test #'equalp))
 
 		(info-msg "Libraries to install: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
-
-		;; Check the version existance and download if not
-		(let ((installed-library-versions ()))
-		  (loop for version in library-versions
-		     do
-		       (let ((installed-library-version
-			      (install-library-version version libraries-directory)))
-			 (push installed-library-version installed-library-versions)))
-		  (create-lock-file project installed-library-versions)))))
-	  (verbose-msg "Done.~%")
+		(let ((install-p t))
+		  (when interactive
+		    (info-msg "Install?~%")
+		    (setf install-p (yes-or-no-p)))
+		  
+		  (when install-p
+		    ;; Check the version existance and download if not
+		    (let ((installed-library-versions ()))
+		      (loop for version in library-versions
+			 do
+			   (let ((installed-library-version
+				  (install-library-version version libraries-directory)))
+			     (push installed-library-version installed-library-versions)))
+		      (create-lock-file project installed-library-versions))
+		    (verbose-msg "Done.~%"))))))
 	  t))))
 
 (defmethod update-project ((project project)
@@ -246,7 +283,8 @@
                              libraries-directory
                              (verbose *verbose-mode*)
                              (solving-mode *solving-mode*)
-			     (clear-registered-libraries t))
+			     (clear-registered-libraries t)
+			     (interactive t))
   "Updates a CLDM project dependencies"
 
   (let ((*verbose-mode* verbose)
@@ -259,7 +297,7 @@
     (verbose-msg "Loading ~A.~%" project)
     (when clear-registered-libraries
       (clear-registered-libraries))
-    (verbose-msg "Updating project dependencies...~%")
+    (info-msg "Updating project dependencies...~%")
     (let ((project-library-versions (installed-library-versions project)))
       (with-download-session ()
 	(let ((library-version (if version
@@ -268,48 +306,53 @@
 	  ;; Load libraries metadata
 	  (load-library-version-metadata library-version)
 
-	;; Calculate list of library-versions involved
-	(let ((library-versions-involved
-	       (calculate-library-versions-involved library-version)))
+	  ;; Calculate list of library-versions involved
+	  (let ((library-versions-involved
+		 (calculate-library-versions-involved library-version)))
 	  
-	  (let ((library-versions (pbo-solve-library-versions library-version
-							      library-versions-involved)))
-	    ;; Remove the project library from the library versions list
-	    (setf library-versions (remove (library-name (library project)) library-versions
-					   :key #'library-name
-					   :test #'equalp))
+	    (let ((library-versions (pbo-solve-library-versions library-version
+								library-versions-involved)))
+	      ;; Remove the project library from the library versions list
+	      (setf library-versions (remove (library-name (library project)) library-versions
+					     :key #'library-name
+					     :test #'equalp))
 
-	    (info-msg "Libraries to install/update: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+	      (info-msg "Libraries to install/update: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
 
-	    ;; Remove the unused project dependencies
-	    (loop for project-library-version in project-library-versions
-		 do
-		 (when (not (find (library-version-unique-name project-library-version)
-				  library-versions
-				  :key #'library-version-unique-name
-				  :test #'equalp))
-		   (verbose-msg "Removing ~A...~%" 
-				(library-version-unique-name project-library-version))
-		   (remove-library-version project-library-version libraries-directory)))	  
+	      (let ((update-p t))
+		(when interactive
+		  (info-msg "Update?~%")
+		  (setf update-p (yes-or-no-p)))
+		(when update-p
+		  ;; Remove the unused project dependencies
+		  (loop for project-library-version in project-library-versions
+		     do
+		       (when (not (find (library-version-unique-name project-library-version)
+					library-versions
+					:key #'library-version-unique-name
+					:test #'equalp))
+			 (verbose-msg "Removing ~A...~%" 
+				      (library-version-unique-name project-library-version))
+			 (remove-library-version project-library-version libraries-directory)))	  
 
-	    ;; Check the version existance and download if not
-	    (let ((installed-library-versions ()))
-	      (loop for version in library-versions
-		 do
-		   (let ((updated-library-version
-			  (update-library-version version project)))
-		     (if updated-library-version
-			 (push updated-library-version installed-library-versions)
-			 ;; else
-			 (let ((installed-library-version
-				(find-installed-library-version
-				 project
-				 (library-name version))))
-			   (push installed-library-version installed-library-versions)))))
-	      ;; Create the lock file
-	      (create-lock-file project installed-library-versions))))))
-      (verbose-msg "Done.~%")
-      t)))
+		  ;; Check the version existance and download if not
+		  (let ((installed-library-versions ()))
+		    (loop for version in library-versions
+		       do
+			 (let ((updated-library-version
+				(update-library-version version project)))
+			   (if updated-library-version
+			       (push updated-library-version installed-library-versions)
+			       ;; else
+			       (let ((installed-library-version
+				      (find-installed-library-version
+				       project
+				       (library-name version))))
+				 (push installed-library-version installed-library-versions)))))
+		    ;; Create the lock file
+		    (create-lock-file project installed-library-versions))
+	          (verbose-msg "Done.~%")))))
+	  t)))))
 
 (defun load-library-version-metadata (library-version &key (if-already-loaded *if-already-loaded-cld*))
   "Load a library version dependencies clds"

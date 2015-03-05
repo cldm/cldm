@@ -261,7 +261,7 @@
 		     (loop for constraint in replaces
 			collect (make-requirement (first constraint) (second constraint)))))))
 
-(defun library-version-unique-name (library-version)
+(defmethod library-version-unique-name ((library-version library-version))
   (format nil "~A~@[-~A~]"
 	  (library-name library-version)
 	  (when (version library-version)
@@ -483,5 +483,10 @@
 
 (defmethod library-name ((library-version installed-library-version))
   (name library-version))
+
+(defmethod library-version-unique-name ((library-version installed-library-version))
+  (format nil "~A-~A" 
+	  (name library-version)
+	  (version library-version)))
 
   
