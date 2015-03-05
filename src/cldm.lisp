@@ -72,7 +72,7 @@
 	   (multiple-value-bind (installed-p install-directory)
 	       (library-version-installed-p library-version)
 	     (if installed-p
-		 (push asdf:*central-registry* install-directory)
+		 (push install-directory asdf:*central-registry*)
 		 (error "~A is not installed" library-version))))
       (asdf:load-system library-name :force-not (asdf:registered-systems)))))
 
