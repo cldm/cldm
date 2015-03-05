@@ -17,6 +17,10 @@
 (defparameter *debug-mode* nil)
 (defparameter *verbose-mode* nil)
 
+(defun verbose-msg (msg &rest args)
+  (when *verbose-mode*
+    (apply #'format t msg args)))
+
 (defparameter +CLDM-version+ "0.0.1")
 
 (defgeneric process-command (command))
@@ -199,6 +203,7 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun initialize-cldm ()
   "Load cldm config"
+  (verbose-msg "Initializing cldm~%")
   (setf cldm::*global-config-file* #p"/etc/cldm/config")
   (setf cldm::*user-config-file* #p"~/.cldm/config")
   (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm")
@@ -248,6 +253,7 @@ Use 'cldm <command> --help' to get command-specific help.
 	   (cond ((clon:getopt :short-name "h")
 		  (clon:help))
 		 (t ;; Process the command
+		  (verbose-msg "Running ~A command~%" (clon:progname))
 		  (process-command (intern (string-upcase (clon:progname)) :keyword)))))))
   (clon:exit))
 
