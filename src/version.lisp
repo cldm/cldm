@@ -39,6 +39,8 @@
       (not (null (ppcre:scan +version-re+ string)))))
 
 (defun read-version-from-string (string &optional (class 'semantic-version))
+  (when (typep string 'version)
+    (return-from read-version-from-string string))
   (when (not (version-valid-p string))
     (error "Could not parse version string ~S" string))
   (when (equalp string "latest")

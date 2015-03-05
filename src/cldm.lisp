@@ -109,7 +109,8 @@
     (when clear-registered-libraries
       (clear-registered-libraries))
     (with-download-session ()
-      (let ((cld (and cld (load-cld (parse-cld-address cld)))))
+      (let ((cld (and cld (load-cld (parse-cld-address cld))))
+	    (version (read-version-from-string version)))
 	(if cld
 	    (install-library-dependencies library-name version libraries-directory)
 	    ;; else
