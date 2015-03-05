@@ -51,17 +51,17 @@
             (repository-directory cld-repository))))
 
 (defclass http-cld-repository (cld-repository)
-  ((url :initarg :url
-        :initform (error "Provide the cld repository url address")
-        :accessor repository-url
-        :documentation "The cld repository url address"))
+  ((address :initarg :address
+            :initform (error "Provide the cld repository url address")
+            :accessor repository-address
+            :documentation "The cld repository url address"))
   (:documentation "A cld repository on http"))
 
 (defmethod print-object ((cld-repository http-cld-repository) stream)
   (print-unreadable-object (cld-repository stream :type t :identity t)
     (format stream "~A : ~A"
             (name cld-repository)
-            (repository-url cld-repository))))
+            (repository-address cld-repository))))
 
 (defclass ssh-cld-repository (cld-repository)
   ((address :initarg :address
@@ -90,7 +90,7 @@
   (print-unreadable-object (cld-repository stream :type t :identity t)
     (format stream "~A : ~A (cache: ~A)"
             (name cld-repository)
-            (repository-url cld-repository)
+            (repository-address cld-repository)
             (cache-directory cld-repository))))
 
 (defclass cached-ssh-cld-repository (ssh-cld-repository cached-cld-repository)
@@ -117,7 +117,7 @@
 
 (defmethod cld-url-address ((cld-repository http-cld-repository) library-name)
   (format nil "~A/~A.cld"
-          (repository-url cld-repository)
+          (repository-address cld-repository)
           library-name))
 
 (defmethod find-cld ((cld-repository http-cld-repository) library-name)
@@ -221,6 +221,7 @@
               cld)))))
 
 (defmethod find-cld :around ((cld-repository cached-cld-repository) library-name)
+  (break "cache")
   (ensure-directories-exist (pathname (cache-directory cld-repository)))
   (let ((cached-file (merge-pathnames
                       (pathname (format nil "~A.cld" library-name))
@@ -679,3 +680,95 @@
                    (list :branch (branch repository-address)))))
   (:method ((repository-address ssh-repository-address))
     (list :ssh (address repository-address))))
+
+;; Indexed repositories
+(defvar +index-file-name+ "libraries.idx")
+
+(defclass indexed-cld-repository (cld-repository)
+  ((index-file :initarg :index-file
+               :initform nil
+               :accessor index-file)
+   (index :initform nil
+          :accessor index)
+   (search-index :initform nil
+                 :accessor search-index)))
+
+(defmethod initialize-instance :after ((cld-repository indexed-cld-repository) &rest initargs)
+  (declare (ignore initargs))
+  (when (not (index-file cld-repository))
+    ;; Set default index file
+    (setf (index-file cld-repository)
+          (format nil "~A/~A" 
+		  (repository-address cld-repository)
+                  +index-file-name+)))
+
+  (when (not (probe-file (index-file cld-repository)))
+    ;; Download the index
+    (download-index-file cld-repository))
+  ;; Load the index
+  (setf (index cld-repository) (read-index-file (cached-index-file cld-repository))))
+
+(defclass indexed-ssh-cld-repository (indexed-cld-repository cached-ssh-cld-repository)
+  ())
+
+(defclass indexed-http-cld-repository (indexed-cld-repository cached-http-cld-repository)
+  ())
+
+(defclass indexed-directory-cld-repository (indexed-cld-repository directory-cld-repository)
+  ())
+
+(defun cached-index-file (cld-repository)
+  (merge-pathnames (pathname +index-file-name+) 
+		   (cache-directory cld-repository)))
+
+(defun download-index-file (cld-repository)
+  (let ((command (format nil "wget -O ~A ~A"
+			 (cached-index-file cld-repository)
+			 (index-file cld-repository))))
+    (multiple-value-bind (output error status)
+	(trivial-shell:shell-command command)
+      (declare (ignore output error))
+      (when (not (zerop status))
+	(error "Error downloading repository index: ~A"
+	       (index-file cld-repository))))))
+
+(defun read-index-file (pathname)
+  (read-from-string (file-to-string pathname)))
+
+(defun library-index (library)
+  "Create an index from the library description"
+  (list :name (library-name library)
+        :author (library-author library)
+        :description (library-description library)
+        :licence (library-licence library)
+        :cld (cld-address (library-cld library))
+        :keywords (library-keywords library)))
+
+(defun build-index-file (pathname)
+  (let ((*print-pretty* nil))
+    (with-open-file (f pathname :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+      (format f "(")
+      (loop for library in (list-all-libraries)
+	 do
+	   (format f "~S~%" (library-index library)))
+      (format f ")"))))
+
+(defun build-index-file-from-directory (directory index-file-pathname)
+  ;; Load the library definitions first
+  (setf *libraries* (make-hash-table :test #'equalp))
+  (loop for file in (fad:list-directory directory :follow-symlinks nil)
+     when (equalp (pathname-type file) "cld")
+     do (load file))
+  ;; build the index file
+  (build-index-file index-file-pathname))
+
+(defmethod find-cld :around ((cld-repository indexed-cld-repository) library-name)
+  "The cld file search succeeds on indexed repositories iff it is found in the index"
+  ;; TODO: should we use a hash table instead of list as index??
+  (let ((library-info (find library-name (index cld-repository) 
+			    :key (lambda (x) (getf x :name))
+			    :test #'equalp)))
+    (when library-info
+      (call-next-method))))

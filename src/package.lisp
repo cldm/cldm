@@ -65,6 +65,8 @@
 	   #:directory-cld-repository
 	   #:cached-http-cld-repository
 	   #:cached-ssh-cld-repository
+	   #:indexed-http-cld-repository
+	   #:indexed-ssh-cld-repository
 	   #:find-cld-repository
 	   #:publish-cld
 
