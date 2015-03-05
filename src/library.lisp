@@ -37,7 +37,7 @@
        when (equalp (library-version-matches library-version requirement) :match)
        collect library-version))
 
-(defun list-libraries ()
+(defun list-all-libraries ()
   (loop for library being the hash-values of *libraries*
      collect library))
 

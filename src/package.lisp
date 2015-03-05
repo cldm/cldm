@@ -69,7 +69,7 @@
 	   #:publish-cld
 
 	   #:deflibrary
-	   #:list-libraries
+	   #:list-all-libraries
 	   #:find-library
 	   #:install-library
 	   #:load-library
