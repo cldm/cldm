@@ -42,6 +42,12 @@
         (pbo-solve-library-versions library-version
                                     library-versions-involved)))))
 
+(defun clean-asdf-environment ()
+  (setf asdf:*central-registry* nil)
+  (asdf:clear-source-registry)
+  (asdf:clear-configuration)
+  (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
+
 (defun load-library (library-name
                      &key
                        version
@@ -51,19 +57,9 @@
                        (clean-asdf-environment *clean-asdf-environment*)
                        (libraries-directory *libraries-directory*)
                        (clear-registered-libraries t))
-  "Installs a library if not present, and loads it in the current lisp image"
-  (install-library library-name
-                   :version version
-                   :cld cld
-                   :verbose verbose
-                   :solving-mode solving-mode
-                   :libraries-directory libraries-directory
-                   :clear-registered-libraries clear-registered-libraries)
   (when clean-asdf-environment
-    (setf asdf:*central-registry* nil)
-    (asdf:clear-source-registry)
-    (asdf:clear-configuration)
-    (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
+    (clean-asdf-environment))
+  
   (asdf:load-system library-name :force-not (asdf:registered-systems)))
 
 (defun install-library-dependencies (library &key version
@@ -87,6 +83,26 @@
              do
                (install-library-version version libraries-directory)))))))
 
+(defun find-cld-for-library (library-name &key (error-p t))
+  (aif (find-library library-name nil)
+       it
+       ;; else
+       (let (cld)
+	 (loop
+	    for cld-repository in (list-cld-repositories)
+	    while (not cld)
+	    do
+	      (let ((repository-cld (find-cld cld-repository
+                                                       library-name)))
+                         (setf cld (and repository-cld
+                                        (load-cld repository-cld)))
+                         (when cld
+                           (verbose-msg "~A cld found in ~A~%"
+                                        library-name
+                                        cld-repository))))
+	 (when (and (not cld) error-p)
+	   (error "Couldn't find a cld for ~S library~%" library-name))
+	 cld)))
 
 (defun install-library (library-name
                         &key
@@ -104,42 +120,16 @@
     (when clear-registered-libraries
       (clear-registered-libraries))
     (with-download-session ()
-      (let ((cld (and cld (load-cld (parse-cld-address cld))))
-            (version (when version
+      (let ((version (when version
                        (read-version-from-string version))))
-        (if cld
-            (install-library-dependencies library-name
-                                          :version version
-                                          :libraries-directory libraries-directory
-                                          :interactive interactive)
-            ;; else
-            (if (find-library library-name nil)
-                (install-library-dependencies library-name :version version
-                                              :libraries-directory libraries-directory
-                                              :interactive interactive)
-                ;; else
-                (progn
-                  (loop
-                     for cld-repository in (list-cld-repositories)
-                     while (not cld)
-                     do
-                       (let ((repository-cld (find-cld cld-repository
-                                                       library-name)))
-                         (setf cld (and repository-cld
-                                        (load-cld repository-cld)))
-                         (when cld
-                           (verbose-msg "~A cld found in ~A~%"
-                                        library-name
-                                        cld-repository))))
-                  (if cld
-                      (progn
-                        (install-library-dependencies library-name
-                                                      :version version
-                                                      :libraries-directory libraries-directory
-                                                      :interactive interactive)
-                        t)
-                      (error "Couldn't find a cld for ~S library~%" library-name)))))))))
-
+	(if cld 
+	    (load-cld (parse-cld-address cld))
+	    (find-cld-for-library library-name))
+	(install-library-dependencies library-name
+				      :version version
+				      :libraries-directory libraries-directory
+				      :interactive interactive)))))
+        
 (defmethod load-project ((directory pathname)
                          &key
                            version
@@ -177,10 +167,7 @@
                    :clear-registered-libraries clear-registered-libraries
                    :interactive interactive)
   (when clean-asdf-environment
-    (setf asdf:*central-registry* nil)
-    (asdf:clear-source-registry)
-    (asdf:clear-configuration)
-    (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
+    (clean-asdf-environment))
   (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
 
