@@ -435,24 +435,3 @@
                                           dependency))
                           (:strict (error "Coudn't load ~A" dependency))))))))
    :test #'library-version=))
-
-;; ASDF plugging
-
-;; A very bad and dumb ASDF system searcher for now
-;; Try to improve using repositories metadata, among other things
-(defun asdf-system-directory-search (name directory)
-  (loop for dir in (cl-fad:list-directory directory)
-     for asd-file = (merge-pathnames (pathname (format nil "~A.asd" name)) dir)
-     when (and (cl-fad:directory-pathname-p dir)
-               (probe-file asd-file))
-     return asd-file))
-
-(defun asdf-system-search (name)
-  (let ((system-name (or (and (symbolp name)
-                              (string-downcase (symbol-name name)))
-                         name)))
-    (let ((libraries-directories (list *local-libraries-directory* *libraries-directory*)))
-      (loop for libraries-directory in libraries-directories
-         for system-filename = (asdf-system-directory-search system-name libraries-directory)
-         when system-filename
-         return system-filename))))
