@@ -269,6 +269,24 @@
                              libraries-directory)))
     (remove-directory install-directory)))
 
+(defun library-version-install-directory (library-version &optional
+							    (libraries-directory *libraries-directory*))
+    (let* ((install-directory-name (format nil "~A-~A"
+                                         (library-name (library library-version))
+                                         (print-version-to-string (version library-version)))))
+         (merge-pathnames
+	  (pathname (format nil "~A/" install-directory-name))
+	  libraries-directory)))
+
+(defun installed-library-version-p (library-version &optional
+						      (libraries-directory *libraries-directory*))
+  (if (listp libraries-directory)
+      (loop for dir in libraries-directory
+	   when (installed-library-version-p library-version dir)
+	   do (return-from installed-library-version-p t))
+      ; else
+      (probe-file (library-version-install-directory library-version libraries-directory))))    
+
 (defmethod install-library-version ((library-version library-version)
                                     &optional
                                       (libraries-directory *libraries-directory*)
