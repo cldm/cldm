@@ -247,6 +247,7 @@
 
 (defgeneric clear-cache (cld-repository)
   (:method ((cld-repository cached-cld-repository))
+    (verbose-msg "Clearing ~A cache...~%" cld-repository)
     (remove-directory (pathname (cache-directory cld-repository))))
   (:method ((cld-repository cld-repository))
     (error "Cannot clear the cache of this kind of repository")))
@@ -707,12 +708,13 @@
 	  (merge-pathnames "index" 
 			   (cache-directory cld-repository))))
 
-  (when (not (probe-file (cached-index-file cld-repository)))
+  (if (not (probe-file (cached-index-file cld-repository)))
     ;; Download the index
-    (update-cld-repository cld-repository))
-  ;; Load the index
-  (setf (index cld-repository) (read-index-file (cached-index-file cld-repository)))
-  (initialize-search-index cld-repository))
+    (update-cld-repository cld-repository)
+    ;; else, load the index
+    (progn
+      (setf (index cld-repository) (read-index-file (cached-index-file cld-repository)))
+      (initialize-search-index cld-repository))))
 
 (defclass indexed-ssh-cld-repository (indexed-cld-repository cached-ssh-cld-repository)
   ())
@@ -814,6 +816,8 @@
 (defmethod update-cld-repository ((cld-repository indexed-cld-repository))
   (verbose-msg "Updating ~A...~%" cld-repository)
   (download-index-file cld-repository)
+  (setf (index cld-repository) 
+	(read-index-file (cached-index-file cld-repository)))
   (remove-search-index cld-repository)
   (initialize-search-index cld-repository)
   (build-search-index cld-repository))
