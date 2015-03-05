@@ -44,6 +44,9 @@
         :documentation "The cld http url"))
   (:documentation "A cld in an http url"))
 
+(defmethod cld-address ((cld-address http-cld-address))
+  (cld-url cld-address))
+
 (defmethod print-object ((cld-address http-cld-address) stream)
   (print-unreadable-object (cld-address stream :type t :identity t)
     (format stream "~A" (cld-url cld-address))))
@@ -73,7 +76,7 @@
          (make-instance 'git-cld-address
                         :git-url git-url
                         :pathname (pathname pathname))))
-      ((cl-ppcre:scan "http(s)://.*$" cld-address)
+      ((cl-ppcre:scan "https?://.*$" cld-address)
        (make-instance 'http-cld-address :url cld-address))
       (t
        (make-instance 'pathname-cld-address :pathname (pathname cld-address)))))
