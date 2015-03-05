@@ -69,6 +69,16 @@
 	   (text :contents "Publish a cld file to a repository")
 	   (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))
+   (cons "update"
+	 (clon:defsynopsis (:make-default nil :postfix "REPO")
+	   (text :contents "Update a repository")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
+   (cons "search"
+	 (clon:defsynopsis (:make-default nil :postfix "REPO LIBRARY")
+	   (text :contents "Search for a library in repository")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
    (cons "clear"
          (clon:defsynopsis (:make-default nil :postfix "REPOSITORY-NAME")
            (text :contents "Clears the cache of a repository")
@@ -103,6 +113,12 @@
                    :default-value ""
                    :argument-type :optional
                    :description "The project author")))
+   ;; search command
+   (cons "search"
+	 (clon:defsynopsis (:make-default nil :postfix "LIBRARY")
+	   (text :contents "Search for a library")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
    ;; install command
    (cons "install"
          (clon:defsynopsis (:make-default nil :postfix "[LIBRARY] [VERSION]")
@@ -542,6 +558,29 @@ Use 'cldm <command> --help' to get command-specific help.
     (let ((cld-pathname (pathname cld-filepath))
 	  (cld-repository (cldm:find-cld-repository repository-name)))
       (cldm:publish-cld cld-repository cld-pathname))))
+
+(defmethod process-repo-command ((command (eql :update)) scope)
+  (let ((repository-name (car (clon:remainder))))
+    (let ((repository
+           (cldm::find-cld-repository repository-name)))
+      (cldm::update-cld-repository repository))))      
+  
+(defmethod process-repo-command ((command (eql :search)) scope)
+  (destructuring-bind (repo-name library)
+      (clon:remainder)
+    (let* ((repo
+	    (cldm::find-cld-repository repo-name))
+	   (search-result 
+	    (cldm::search-cld-repository repo (format nil "name:\"~A\"" library)))) 
+      (loop for doc in (montezuma::score-docs search-result)
+	 do (let ((docid (montezuma:doc doc))
+		  (score (montezuma:score doc)))
+	      (format t "~A ~A~%" 
+		      (montezuma:document-value 
+		       (montezuma:get-document (cldm::search-index repo)
+					       docid)
+		       "name")
+		      score))))))
 
 (defmethod process-repo-command ((command (eql :clear)) scope)
   (let ((repo-name (first (clon:remainder))))
