@@ -707,7 +707,7 @@
 	  (merge-pathnames "index" 
 			   (cache-directory cld-repository))))
 
-  (when (not (probe-file (index-file cld-repository)))
+  (when (not (probe-file (cached-index-file cld-repository)))
     ;; Download the index
     (update-cld-repository cld-repository))
   ;; Load the index
