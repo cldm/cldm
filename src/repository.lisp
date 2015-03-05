@@ -563,7 +563,7 @@
             #p"/tmp/")))
       (info-msg "Downloading ~A...~%" (url repository-address))
       (run-or-fail (format nil "wget -O ~A ~A" temporal-file (url repository-address)))
-      (info-msg "Extracting...~%")
+      (info-msg "Extracting to ~A...~%" (princ-to-string install-directory))
       (run-or-fail (format nil "mkdir ~A" (princ-to-string install-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
@@ -583,7 +583,7 @@
             #p"/tmp/")))
       (info-msg "Downloading ~A...~%" (address repository-address))
       (run-or-fail (format nil "scp ~A ~A" (address repository-address) temporal-file))
-      (info-msg "Extracting...~%")
+      (info-msg "Extracting to ~A...~%" (princ-to-string install-directory))
       (run-or-fail (format nil "mkdir ~A" (princ-to-string install-directory)))
       (run-or-fail (format nil "tar zxf ~A --strip=1 -C ~A"
                            temporal-file
@@ -598,7 +598,9 @@
              (declare (ignore result code))
              (when (not (zerop status))
                (return-from install-repository-from-address nil)))))
-    (info-msg "Cloning repository: ~A...~%" (url repository-address))
+    (info-msg "Cloning repository ~A to ~A...~%" 
+	      (url repository-address)
+	      (princ-to-string install-directory))
     (run-or-fail (format nil "git clone ~A ~A"
                          (url repository-address)
                          (princ-to-string install-directory)))
