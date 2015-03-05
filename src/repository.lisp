@@ -724,11 +724,13 @@
   ())
 
 (defun initialize-search-index (cld-repository)
+  (verbose-msg "Initializing search index...~%")
   (setf (search-index cld-repository)
 	(make-instance 'montezuma:index
 		       :path (search-index-path cld-repository))))
 
 (defun remove-search-index (cld-repository)
+  (verbose-msg "Removing search index...~%")
   (remove-directory (search-index-path cld-repository)))
 
 (defun build-search-document (library-info)
@@ -739,6 +741,7 @@
 	(cons "keywords" (getf library-info :keywords))))
 
 (defun build-search-index (cld-repository)
+  (verbose-msg "Building search index...~%")
   (loop for library-info in (index cld-repository)
        do
        (montezuma:add-document-to-index (search-index cld-repository)
@@ -749,6 +752,7 @@
 		   (cache-directory cld-repository)))
 
 (defun download-index-file (cld-repository)
+  (verbose-msg "Downloading index file ~A~%" (index-file cld-repository))
   (let ((command (format nil "wget -O ~A ~A"
 			 (cached-index-file cld-repository)
 			 (index-file cld-repository))))
@@ -760,6 +764,7 @@
 	       (index-file cld-repository))))))
 
 (defun read-index-file (pathname)
+  (verbose-msg "Reading index ~A...~%" pathname) 
   (read-from-string (file-to-string pathname)))
 
 (defun library-index (library)
@@ -806,6 +811,7 @@
     ))
 
 (defmethod update-cld-repository ((cld-repository indexed-cld-repository))
+  (verbose-msg "Updating ~A...~%" cld-repository)
   (download-index-file cld-repository)
   (remove-search-index cld-repository)
   (initialize-search-index cld-repository)
@@ -817,4 +823,5 @@
     ))
 
 (defmethod search-cld-repository ((cld-repository indexed-cld-repository) term)
+  (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
   (montezuma:search (search-index cld-repository) term))

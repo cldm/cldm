@@ -219,6 +219,7 @@ Use 'cldm <command> --help' to get command-specific help.
            (clon:exit 1))
 	 ;; Process switches
 	 (let ((*verbose-mode* (clon:getopt :long-name "verbose"))
+	       (cldm::*verbose-mode* (clon:getopt :long-name "verbose"))
 	       (*debug-mode* (clon:getopt :long-name "debug")))
 	   (clon:make-context
 	    :synopsis (let ((command-name (car (clon:remainder))))
