@@ -50,6 +50,7 @@ THE SOFTWARE."
 		 #:split-sequence
 		 #:cl-fad
 		 #:osicat
+		 #:montezuma
 		 #:cldm-loader))
 
 (defmethod perform ((o test-op) (c (eql (find-system 'cldm))))

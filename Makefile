@@ -30,6 +30,8 @@ deps:
 	git clone https://github.com/froydnj/ironclad.git $(BUILD_DIR)/ironclad
 	git clone https://github.com/sharplispers/split-sequence.git $(BUILD_DIR)/split-sequence
 	git clone https://github.com/trivial-features/trivial-features.git $(BUILD_DIR)/trivial-features
+	curl http://beta.quicklisp.org/archive/montezuma/2014-02-11/montezuma-20140211-git.tgz | tar -xz -C $(BUILD_DIR)
+#	git clone https://github.com/skypher/montezuma.git $(BUILD_DIR)/montezuma
 	curl https://common-lisp.net/project/bordeaux-threads/releases/bordeaux-threads-0.7.0.tar.gz | tar -xz -C $(BUILD_DIR)
 	curl https://common-lisp.net/project/babel/releases/babel_latest.tar.gz | tar -xz -C $(BUILD_DIR)
 	curl http://weitz.de/files/cl-fad.tar.gz | tar -xz -C $(BUILD_DIR)

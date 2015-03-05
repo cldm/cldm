@@ -689,6 +689,8 @@
                :accessor index-file)
    (index :initform nil
           :accessor index)
+   (search-index-path :initform nil
+		      :accessor search-index-path)
    (search-index :initform nil
                  :accessor search-index)))
 
@@ -700,12 +702,17 @@
           (format nil "~A/~A" 
 		  (repository-address cld-repository)
                   +index-file-name+)))
+  (when (not (search-index-path cld-repository))
+    (setf (search-index-path cld-repository)
+	  (merge-pathnames "index" 
+			   (cache-directory cld-repository))))
 
   (when (not (probe-file (index-file cld-repository)))
     ;; Download the index
-    (download-index-file cld-repository))
+    (update-cld-repository cld-repository))
   ;; Load the index
-  (setf (index cld-repository) (read-index-file (cached-index-file cld-repository))))
+  (setf (index cld-repository) (read-index-file (cached-index-file cld-repository)))
+  (initialize-search-index cld-repository))
 
 (defclass indexed-ssh-cld-repository (indexed-cld-repository cached-ssh-cld-repository)
   ())
@@ -715,6 +722,27 @@
 
 (defclass indexed-directory-cld-repository (indexed-cld-repository directory-cld-repository)
   ())
+
+(defun initialize-search-index (cld-repository)
+  (setf (search-index cld-repository)
+	(make-instance 'montezuma:index
+		       :path (search-index-path cld-repository))))
+
+(defun remove-search-index (cld-repository)
+  (remove-directory (search-index-path cld-repository)))
+
+(defun build-search-document (library-info)
+  (list (cons "name" (getf library-info :name))
+        (cons "author" (prin1-to-string (getf library-info :author)))
+	(cons "description" (getf library-info :description))
+	(cons "licence" (getf library-info :licence))
+	(cons "keywords" (getf library-info :keywords))))
+
+(defun build-search-index (cld-repository)
+  (loop for library-info in (index cld-repository)
+       do
+       (montezuma:add-document-to-index (search-index cld-repository)
+					(build-search-document library-info))))
 
 (defun cached-index-file (cld-repository)
   (merge-pathnames (pathname +index-file-name+) 
@@ -771,3 +799,22 @@
 			    :test #'equalp)))
     (when library-info
       (call-next-method))))
+
+(defgeneric update-cld-repository (cld-repository)
+  (:method ((cld-repository cld-repository))
+    ;; Do nothing
+    ))
+
+(defmethod update-cld-repository ((cld-repository indexed-cld-repository))
+  (download-index-file cld-repository)
+  (remove-search-index cld-repository)
+  (initialize-search-index cld-repository)
+  (build-search-index cld-repository))
+
+(defgeneric search-cld-repository (cld-repository term)
+  (:method ((cld-repository cld-repository) term)
+    ;; Do nothing
+    ))
+
+(defmethod search-cld-repository ((cld-repository indexed-cld-repository) term)
+  (montezuma:search (search-index cld-repository) term))
