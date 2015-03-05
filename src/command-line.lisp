@@ -401,7 +401,7 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defun install-library-command ()
   (let ((libraries-directory (or (clon:getopt :long-name "libraries-directory")
-                                 cldm:*local-libraries-directory*))
+                                 cldm:*libraries-directory*))
         (solving-mode (or (and (clon:getopt :long-name "lenient")
                                :lenient)
                           :strict))
