@@ -1,5 +1,7 @@
 (in-package :cl-user)
 
+(setq *load-verbose* nil)
+
 (require :cldm)
 (require :com.dvlsoft.clon)
 (require :trivial-backtrace)
@@ -195,16 +197,20 @@ Use 'cldm <command> --help' to get command-specific help.
           :argument-style :on/off
           :env-var "DEBUG"))
 
-(defun main ()
-  "Entry point for the standalone application."
-  ;; Load cldm config
+(defun initialize-cldm ()
+  "Load cldm config"
   (setf cldm::*global-config-file* #p"/etc/cldm/config")
   (setf cldm::*user-config-file* #p"~/.cldm/config")
   (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm")
                                                     (osicat:current-directory)))
   (setf cldm::*local-libraries-directory* (merge-pathnames (pathname "lib/")
                                                            (osicat:current-directory)))
-  (cldm::load-cldm-config)
+  (cldm::load-cldm-config))
+
+(defun main ()
+  "Entry point for the standalone application."
+  
+  (initialize-cldm)
 
   ;; Prepare to process command line
   (clon:make-context)
@@ -218,9 +224,18 @@ Use 'cldm <command> --help' to get command-specific help.
            (format t "Missing command.~%")
            (clon:exit 1))
 	 ;; Process switches
+	 ;; Careful: there's a bug in CLON. When clon:getopt on the same
+	 ;; option twice, gives wrong value the second time.
 	 (let ((*verbose-mode* (clon:getopt :long-name "verbose"))
-	       (cldm::*verbose-mode* (clon:getopt :long-name "verbose"))
+	       ;; Bug: why does this not work here?
+	       ;(cldm::*verbose-mode* *verbose-mode*)
 	       (*debug-mode* (clon:getopt :long-name "debug")))
+	   (when *debug-mode*
+	     (format t "Debug mode on~%"))
+	   (when *verbose-mode*
+	     (format t "Verbose mode on~%")
+	     ;; Bug: binding above doesn't work
+	     (setf cldm::*verbose-mode* *verbose-mode*))
 	   (clon:make-context
 	    :synopsis (let ((command-name (car (clon:remainder))))
 			(let ((command (find-command command-name)))
@@ -361,7 +376,7 @@ Use 'cldm <command> --help' to get command-specific help.
                                  :lenient)
                             :strict))
           (verbose-mode (or (clon:getopt :long-name "verbose")
-                            nil)))
+                            *verbose-mode*)))
       (format t "Installing ~A dependencies to ~A~%"
               (cldm::project-name project)
               (cldm::libraries-directory project))
@@ -378,7 +393,7 @@ Use 'cldm <command> --help' to get command-specific help.
                                :lenient)
                           :strict))
         (verbose-mode (or (clon:getopt :long-name "verbose")
-			  nil))
+			  *verbose-mode*))
         (library-name (car (clon:remainder)))
         (library-version-string (cadr (clon:remainder))))
     (cldm:install-library library-name
@@ -403,7 +418,7 @@ Use 'cldm <command> --help' to get command-specific help.
                                  :lenient)
                             :strict))
           (verbose-mode (or (clon:getopt :long-name "verbose")
-                            nil)))
+                            *verbose-mode*)))
       (format t "Updating ~A dependencies~%"
 	      (cldm::project-name project))
       (cldm:update-project project
