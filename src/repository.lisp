@@ -116,32 +116,14 @@
                               (pathname (repository-directory cld-repository)))))
 
 (defmethod cld-url-address ((cld-repository http-cld-repository) library-name)
-  (format nil "~A/~A.cld"
-          (repository-address cld-repository)
-          library-name))
+  (parse-cld-address
+   (format nil "~A/~A.cld"
+	   (repository-address cld-repository)
+	   library-name)))
 
 (defmethod find-cld ((cld-repository http-cld-repository) library-name)
-  (let* ((cld-url-address (cld-url-address cld-repository library-name))
-         (temporal-directory #p"/tmp/")
-         (temporal-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
-                                         temporal-directory)))
-    (verbose-msg "Trying to fetch ~A~%" cld-url-address)
-    (let ((command (format nil "wget -O ~A ~A"
-                           temporal-file
-                           cld-url-address)))
-      (verbose-msg "~A~%" command)
-      (multiple-value-bind (result error status)
-          (trivial-shell:shell-command command)
-        (declare (ignore result error))
-        (if (equalp status 0)
-            (progn
-              (verbose-msg "~A downloaded.~%" cld-url-address)
-              temporal-file)
-                                        ; else
-            (progn
-              (verbose-msg "Failed.~%")
-              nil ;; it is important to return nil if not found
-              ))))))
+  (let ((cld-url-address (cld-url-address cld-repository library-name)))
+    (fetch-cld-file cld-url-address)))
 
 (defmethod find-cld :around ((cld-repository http-cld-repository) library-name)
   (if *download-session*
@@ -161,34 +143,14 @@
       (call-next-method)))
 
 (defmethod cld-url-address ((cld-repository ssh-cld-repository) library-name)
-  (format nil "~A/~A.cld"
-          (repository-address cld-repository)
-          library-name))
+  (parse-cld-address
+   (format nil "~A/~A.cld"
+	   (repository-address cld-repository)
+	   library-name)))
 
 (defmethod find-cld ((cld-repository ssh-cld-repository) library-name)
-  (let* ((cld-address (format nil "~A/~A.cld"
-                              (repository-address cld-repository)
-                              library-name))
-         (temporal-directory #p"/tmp/")
-         (temporal-file (merge-pathnames (pathname (format nil "~A.cld" library-name))
-                                         temporal-directory)))
-    (verbose-msg "Trying to fetch ~A~%" cld-address)
-    (let ((command (format nil "scp ~A ~A"
-                           cld-address
-                           temporal-file)))
-      (verbose-msg "~A~%" command)
-      (multiple-value-bind (result error status)
-          (trivial-shell:shell-command command)
-        (declare (ignore result error))
-        (if (equalp status 0)
-            (progn
-              (verbose-msg "~A downloaded.~%" cld-address)
-              temporal-file)
-                                        ; else
-            (progn
-              (verbose-msg "Failed.~%")
-              nil ;; it is important to return nil if couldn't fetch
-              ))))))
+  (let ((cld-url-address (cld-url-address cld-repository library-name)))
+    (fetch-cld-file cld-url-address)))
 
 (defmethod publish-cld ((cld-repository ssh-cld-repository) cld-pathname)
   (let*  ((cld-address (format nil "~A/~A"
@@ -711,6 +673,10 @@
   (:method ((repository-address ssh-repository-address))
     (list :ssh (address repository-address))))
 
+(defgeneric cache-cld-repository (cld-repository)
+  (:method ((cld-repository cld-repository))
+    (error "Cannot cache ~A" cld-repository)))
+
 ;; Indexed repositories
 (defvar +index-file-name+ "libraries.idx")
 
@@ -860,3 +826,28 @@
 (defmethod search-cld-repository ((cld-repository indexed-cld-repository) term)
   (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
   (montezuma:search (search-index cld-repository) term))
+
+(defmethod cache-cld-repository ((cld-repository indexed-cld-repository))
+  (update-cld-repository cld-repository)
+  (info-msg "Caching ~A...%" cld-repository)
+  (ensure-directories-exist (pathname (cache-directory cld-repository)))
+  (loop for library-info in (index cld-repository)
+     do   
+       (let ((cached-file (merge-pathnames
+			   (pathname (format nil "~A.cld" (getf library-info :name)))
+			   (pathname (cache-directory cld-repository)))))
+	 (let ((downloaded-file (call-next-method)))
+	   (when downloaded-file
+	     (let ((command (format nil "cp ~A ~A"
+				    downloaded-file
+				    cached-file)))
+	       (verbose-msg "~A~%" command)
+	       (multiple-value-bind (output error status)
+		   (trivial-shell:shell-command command)
+		 (declare (ignore output error))
+		 (if (zerop status)
+		     ;; success
+		     cached-file
+		     ;; else
+		     (error "Could not cache cld file ~A~%" downloaded-file)))))))))
+

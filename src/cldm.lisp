@@ -133,6 +133,7 @@
         (*solving-mode* solving-mode))
     (when clear-registered-libraries
       (clear-registered-libraries))
+    (info-msg "Installing ~A...~%" library-name)
     (with-download-session ()
       (let ((version (when version
                        (read-version-from-string version))))
@@ -215,7 +216,7 @@
         (libraries-directory (or libraries-directory
                                  (libraries-directory project)
                                  *local-libraries-directory*)))
-    (verbose-msg "Loading ~A.~%" project)
+    (info-msg "Loading ~A...~%" project)
     (when clear-registered-libraries
       (clear-registered-libraries))
     (verbose-msg "Removing installed libraries...~%")

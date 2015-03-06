@@ -131,3 +131,62 @@
         temporal-file)))
   (:method (cld-address &key &allow-other-keys)
     (parse-cld-address cld-address)))
+
+(defgeneric fetch-cld-file (cld-address &optional error-p))
+
+(defmethod fetch-cld-file ((cld-address http-cld-address) &optional (error-p nil))
+  (let* ((temporal-directory #p"/tmp/")
+	 (filename (car (last (split-sequence:split-sequence 
+			       #\/ 
+			       (puri:uri-path 
+				(puri:parse-uri (cld-address cld-address)))))))
+         (temporal-file (merge-pathnames 
+			 (pathname filename)
+			 temporal-directory)))
+    (verbose-msg "Trying to fetch ~A~%" (cld-address cld-address))
+    (let ((command (format nil "wget -O ~A ~A"
+                           temporal-file
+                           (cld-address cld-address))))
+      (verbose-msg "~A~%" command)
+      (multiple-value-bind (result error status)
+          (trivial-shell:shell-command command)
+        (declare (ignore result error))
+        (if (equalp status 0)
+            (progn
+              (verbose-msg "~A downloaded.~%" (cld-address cld-address))
+              temporal-file)
+                                        ; else
+            (progn
+              (verbose-msg "Failed.~%")
+	      (when error-p
+		(error "Could not fetch ~A" cld-address))
+              nil ;; it is important to return nil if not found
+              ))))))
+
+(defmethod fetch-cld-file ((cld-address ssh-cld-address) &optional (error-p nil))
+  (let* ((filename (car (last (split-sequence:split-sequence 
+			       #\/ 
+			       (puri:uri-path 
+				(puri:parse-uri (cld-address cld-address)))))))
+         (temporal-directory #p"/tmp/")
+         (temporal-file (merge-pathnames (pathname filename)
+                                         temporal-directory)))
+    (verbose-msg "Trying to fetch ~A~%" (cld-address cld-address))
+    (let ((command (format nil "scp ~A ~A"
+                           (cld-address cld-address)
+                           temporal-file)))
+      (verbose-msg "~A~%" command)
+      (multiple-value-bind (result error status)
+          (trivial-shell:shell-command command)
+        (declare (ignore result error))
+        (if (equalp status 0)
+            (progn
+              (verbose-msg "~A downloaded.~%" (cld-address cld-address))
+              temporal-file)
+                                        ; else
+            (progn
+              (verbose-msg "Failed.~%")
+	      (when error-p
+		(error "Could not fetch ~A" cld-address))
+              nil ;; it is important to return nil if couldn't fetch
+              ))))))
