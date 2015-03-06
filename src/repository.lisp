@@ -673,8 +673,8 @@
   (:method ((repository-address ssh-repository-address))
     (list :ssh (address repository-address))))
 
-(defgeneric cache-cld-repository (cld-repository)
-  (:method ((cld-repository cld-repository))
+(defgeneric cache-cld-repository (cld-repository &key show-progress)
+  (:method ((cld-repository cld-repository) &key show-progress)
     (error "Cannot cache ~A" cld-repository)))
 
 ;; Indexed repositories
@@ -827,28 +827,43 @@
   (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
   (montezuma:search (search-index cld-repository) term))
 
-(defmethod cache-cld-repository ((cld-repository indexed-cld-repository))
-  (update-cld-repository cld-repository)
-  (info-msg "Caching ~A...%" cld-repository)
-  (ensure-directories-exist (pathname (cache-directory cld-repository)))
-  (loop for library-info in (index cld-repository)
-     do   
-       (let ((cached-file (merge-pathnames
-			   (pathname (format nil "~A.cld" (getf library-info :name)))
-			   (pathname (cache-directory cld-repository)))))
-	 (let ((downloaded-file (fetch-cld-file (parse-cld-address (getf library-info :cld)))))
-	   (when downloaded-file
-	     (verbose-msg "~A downloaded." downloaded-file)
-	     (let ((command (format nil "cp ~A ~A"
-				    downloaded-file
-				    cached-file)))
-	       (verbose-msg "~A~%" command)
-	       (multiple-value-bind (output error status)
-		   (trivial-shell:shell-command command)
-		 (declare (ignore output error))
-		 (if (zerop status)
-		     ;; success
-		     cached-file
-		     ;; else
-		     (error "Could not cache cld file ~A~%" downloaded-file)))))))))
+(defun percentage (n total)
+  (truncate (/ (* n 100) total)))
 
+(defmethod cache-cld-repository ((cld-repository indexed-cld-repository) &key show-progress)
+  (update-cld-repository cld-repository)
+  (if show-progress
+      (info-msg "Caching ~A: " (name cld-repository))
+      (info-msg "Caching ~A ...~%" cld-repository))
+  (ensure-directories-exist (pathname (cache-directory cld-repository)))
+  (flet ((chars-occupied (percentage)
+	   (if (> percentage 9) 3 2)))
+    (let ((libraries-number (length (index cld-repository))))
+      (loop 
+	 for library-info in (index cld-repository)
+	 for i = 1 then (1+ i)
+	 do   
+	   (when show-progress
+	     (format t "~A%" (percentage i libraries-number)))
+	   (let ((cached-file (merge-pathnames
+			       (pathname (format nil "~A.cld" (getf library-info :name)))
+			       (pathname (cache-directory cld-repository)))))
+	     (let ((downloaded-file (fetch-cld-file (parse-cld-address (getf library-info :cld)))))
+	       (when show-progress
+		 (finish-output)
+		 (dotimes (n (chars-occupied (percentage i libraries-number)))
+		   (write-char #\Backspace))) 
+	       (when downloaded-file
+		 (verbose-msg "~A downloaded." downloaded-file)
+		 (let ((command (format nil "cp ~A ~A"
+					downloaded-file
+					cached-file)))
+		   (verbose-msg "~A~%" command)
+		   (multiple-value-bind (output error status)
+		       (trivial-shell:shell-command command)
+		     (declare (ignore output error))
+		     (if (zerop status)
+			 ;; success
+			 cached-file
+			 ;; else
+			 (error "Could not cache cld file ~A~%" downloaded-file)))))))))))

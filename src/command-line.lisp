@@ -85,6 +85,11 @@
 	   (text :contents "Search for a library in repository")
 	   (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))
+   (cons "cache"
+	 (clon:defsynopsis (:make-default nil :postfix "REPO")
+	   (text :contents "Download repository cld files")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
    (cons "clear"
          (clon:defsynopsis (:make-default nil :postfix "REPOSITORY-NAME")
            (text :contents "Clears the cache of a repository")
@@ -616,5 +621,10 @@ Use 'cldm <command> --help' to get command-specific help.
 (defmethod process-repo-command ((command (eql :clear)) scope)
   (let ((repo-name (first (clon:remainder))))
     (cldm::clear-cache (cldm:find-cld-repository repo-name))))
+
+(defmethod process-repo-command ((command (eql :cache)) scope)
+  (let ((repo-name (first (clon:remainder))))
+    (cldm::cache-cld-repository (cldm:find-cld-repository repo-name)
+				:show-progress t)))
 
 (clon:dump "cldm" main)
