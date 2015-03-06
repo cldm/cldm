@@ -836,8 +836,9 @@
        (let ((cached-file (merge-pathnames
 			   (pathname (format nil "~A.cld" (getf library-info :name)))
 			   (pathname (cache-directory cld-repository)))))
-	 (let ((downloaded-file (call-next-method)))
+	 (let ((downloaded-file (fetch-cld-file (parse-cld-address (getf library-info :cld)))))
 	   (when downloaded-file
+	     (verbose-msg "~A downloaded." downloaded-file)
 	     (let ((command (format nil "cp ~A ~A"
 				    downloaded-file
 				    cached-file)))
