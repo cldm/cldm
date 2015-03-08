@@ -1,5 +1,5 @@
 (defpackage :cldm.asdf
-  (:use :cl :cldm)
+  (:use :cl :cldm :semver)
   (:export #:deflibrary-file-from-asdf-system
 	   #:deflibrary-from-asdf-system))
 	   

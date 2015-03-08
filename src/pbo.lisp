@@ -69,19 +69,6 @@
    1
    (format nil "Install ~A" (library-version-unique-name library-version))))
 
-(defun encode-library-versions (library-versions)
-  (let ((grouped-library-versions
-         (group-by
-          library-versions
-          :key #'library-name
-          :test #'equalp)))
-    (let ((pbo-constraints
-           (loop for library-versions-group in grouped-library-versions
-              appending
-                (loop for library-version in library-versions-group
-                   collect (encode-library-version library-version)))))
-      pbo-constraints)))
-
 (defun library-versions-conflict-p (library-version-1 library-version-2)
   (and (equalp (library-name library-version-1)
                (library-name library-version-2))

@@ -26,9 +26,8 @@ THE SOFTWARE."
 			((:file "package")
 			 (:file "util")
 			 (:file "config")
-			 (:file "version")
 			 (:file "interval")
-			 (:file "requirement")
+			 (:file "requirement")			 
 			 (:file "library")
 			 (:file "cld")
 			 (:file "repository")
@@ -39,7 +38,8 @@ THE SOFTWARE."
 			 (:file "cldm")
 			 (:file "initialize"))		
 			:serial t))
-    :depends-on (#:alexandria
+    :depends-on (#:cl-semver
+		 #:alexandria
 		 #:anaphora
 		 #:md5
 		 #:cl-ppcre

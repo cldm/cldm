@@ -1,5 +1,12 @@
 (in-package :cldm)
 
+(defparameter *libraries-directory*
+  (pathname "~/.cldm/cache/libraries/"))
+
+(defparameter *local-libraries-directory*
+  (merge-pathnames (pathname "lib/")
+		   (osicat:current-directory)))
+
 (defparameter *verbose-mode* nil "When true, verbose messages are displayed on the standard output")
 
 (defparameter *debug-mode* nil "When true, debugging messages are displayed on the standard output")
