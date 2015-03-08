@@ -51,7 +51,8 @@ THE SOFTWARE."
 		 #:cl-fad
 		 #:osicat
 		 #:montezuma
-		 #:cldm-loader))
+		 ;#:cldm-loader
+		 ))
 
 (defmethod perform ((o test-op) (c (eql (find-system 'cldm))))
   (oos 'load-op 'cldm-test)
