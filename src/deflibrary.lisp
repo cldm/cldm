@@ -27,7 +27,6 @@
       (check-type maintainer (or string null))
       (check-type description (or null string))
       (check-type licence (or null string))
-      (check-type cld string)
       (check-type keywords (or cons null))
       (make-instance 'library
 		     :name (if (symbolp name)
