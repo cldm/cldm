@@ -50,13 +50,9 @@
 
 (defun load-library (library-name
                      &key
-                       version
-                       cld
-                       (verbose *verbose-mode*)
-                       (solving-mode *solving-mode*)
+		       version
                        (clean-asdf-environment *clean-asdf-environment*)
-                       (libraries-directory *libraries-directory*)
-                       (clear-registered-libraries t))
+                       (libraries-directory *libraries-directory*))
   (when clean-asdf-environment
     (clean-asdf-environment))
   (load-cld-for-library library-name)
@@ -165,24 +161,14 @@
 
 (defmethod load-project ((project project)
                          &key
-                           version
-                           (libraries-directory (libraries-directory project))
-                           (verbose *verbose-mode*)
-                           (solving-mode *solving-mode*)
-                           (clean-asdf-environment *clean-asdf-environment*)
-                           (clear-registered-libraries t)
-                           (interactive t))
-  "Install a project dependencies and load the project in the current lisp image"
-
-  (install-project project
-                   :version version
-                   :verbose verbose
-                   :solving-mode solving-mode
-                   :libraries-directory libraries-directory
-                   :clear-registered-libraries clear-registered-libraries
-                   :interactive interactive)
+			   (libraries-directory (libraries-directory project))
+			   (clean-asdf-environment *clean-asdf-environment*))
+  "Load a project and its dependencies"
+  (info-msg "Loading ~A...~%" (project-name project))
   (when clean-asdf-environment
     (clean-asdf-environment))
+  (push (project-directory project) asdf:*central-registry*)
+  (push libraries-directory asdf:*central-registry*)
   (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
 
