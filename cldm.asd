@@ -51,6 +51,7 @@ THE SOFTWARE."
 		 #:cl-fad
 		 #:osicat
 		 #:montezuma
+		 #:cl-secure-read
 		 ;#:cldm-loader
 		 ))
 

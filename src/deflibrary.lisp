@@ -16,6 +16,31 @@
                     :versions (parse-library-versions ',versions)
                     :keywords ',keywords)))
 
+(defun parse-library (librarydef)
+  (destructuring-bind (deflibrary name &body options) librarydef
+    (assert (or (equalp deflibrary 'cldm:deflibrary)
+		(equalp deflibrary 'cl-user::deflibrary)))
+    (destructuring-bind (&key author maintainer description
+			      licence cld versions keywords &allow-other-keys)
+	options
+      (check-type author (or null string))
+      (check-type maintainer (or string null))
+      (check-type description (or null string))
+      (check-type licence (or null string))
+      (check-type cld string)
+      (check-type keywords (or cons null))
+      (make-instance 'library
+		     :name (if (symbolp name)
+			       (string-downcase (symbol-name name))
+			       name)
+		     :author author
+		     :maintainer maintainer
+		     :description description
+		     :licence licence
+		     :cld (parse-cld-address cld)
+		     :keywords keywords
+		     :versions (parse-library-versions versions)))))
+
 (defun parse-library-versions (versions)
   (let ((parsed-versions))
     (flet ((find-library-version-to-extend (version)
@@ -152,3 +177,11 @@
 		    :address (second address)))
     (t (error "Invalid repository ~A" address))))
 
+(cl-secure-read::define-secure-read-from-string secure-read-from-string
+    :whitelist (cons #\; cl-secure-read:safe-read-from-string-whitelist))
+
+(defun read-library-from-string (str)
+  (parse-library (secure-read-from-string str)))
+
+(defun read-library-from-file (file)
+  (read-library-from-string (file-to-string file)))
