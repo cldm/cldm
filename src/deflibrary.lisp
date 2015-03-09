@@ -181,7 +181,8 @@
     (t (error "Invalid repository ~A" address))))
 
 (cl-secure-read::define-secure-read-from-string secure-read-from-string
-    :whitelist (cons #\; cl-secure-read:safe-read-from-string-whitelist))
+    :whitelist (append  (list #\; #\#) 
+			cl-secure-read:safe-read-from-string-whitelist))
 
 (defun read-library-from-string (str)
   (parse-library (secure-read-from-string str)))
