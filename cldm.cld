@@ -2,7 +2,7 @@
 
 (cldm:DEFLIBRARY CLDM
   :CLD
-  (:GIT "git@github.com:mmontone/cldm.git" "cldm.cld")
+  (:GIT "https://github.com/cldm/cldm.git" "cldm.cld")
   :DESCRIPTION
   "Common Lisp Dependency Manager"
   :AUTHOR
@@ -30,7 +30,7 @@ THE SOFTWARE."
   :VERSIONS
   ((:VERSION "0.0.1"
              :REPOSITORIES
-             ((:github (:git "git@github.com:mmontone/cldm.git")))
+             ((:github (:git "https://github.com/cldm/cldm.git")))
              :DEPENDS-ON
              (#:ALEXANDRIA #:IRONCLAD #:MD5 #:CL-PPCRE #:CL-SYNTAX #:ESRAP
                            #:TRIVIAL-SHELL #:PURI #:anaphora #:split-sequence
