@@ -137,9 +137,18 @@
 	      `(:url ,url
 		     ,@args))))
     ((and (listp address)
+	  (equalp (first address) :darcs))
+     (make-instance 'darcs-repository-address 
+		    :url (second address)))
+    ((and (listp address)
           (equalp (first address)
                   :url))
      (make-instance 'url-repository-address
 		    :url (second address)))
+    ((and (listp address)
+	  (equalp (first address)
+		  :ssh))
+     (make-instance 'ssh-repository-address
+		    :address (second address)))
     (t (error "Invalid repository ~A" address))))
 

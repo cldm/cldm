@@ -308,7 +308,7 @@
           ;; Act according to IF-INSTALLED variable
           ;; TODO: this assumption can be incorrect. How to fix?
           (progn
-            (verbose-msg "Repository for ~A already exists in ~A~%"
+	    (verbose-msg "Repository for ~A already exists in ~A~%"
                          library-version
                          install-directory)
             (ecase if-installed
@@ -514,6 +514,13 @@
   (print-unreadable-object (repository-address stream :type t :identity t)
     (format stream "~A" (address repository-address))))
 
+(defclass darcs-repository-address (repository-address)
+  ((url :initarg :url
+        :initform (error "Provide the darcs url")
+        :accessor url
+        :documentation "The darcs url"))
+  (:documentation "A darcs repository"))
+
 (defgeneric install-repository-from-address (repository-address repository install-directory)
   (:documentation "Cache the given repository from repository-address to install-directory.
                    Methods of this generic function should return T on success, or NIL on failure."))
@@ -648,6 +655,27 @@
                         :version (version library-version)
                         :repository repository
                         :install-directory install-directory)))
+
+(defmethod install-repository-from-address ((repository-address darcs-repository-address)
+                                            repository install-directory)
+  (flet ((run-or-fail (command)
+           (multiple-value-bind (result code status)
+               (trivial-shell:shell-command command)
+					;(declare (ignore result code))
+             (when (not (zerop status))
+	       (print result)
+	       (print code)
+	       (print status)
+               (return-from install-repository-from-address nil)))))
+    (info-msg "Checking out repository ~A to ~A...~%" 
+	      (url repository-address)
+	      (princ-to-string install-directory))
+    (let ((command (format nil "darcs get ~A ~A"
+			   (url repository-address)
+			   (princ-to-string install-directory))))
+      (verbose-msg "~A~%" command)
+      (run-or-fail command))
+    t))
 
 (defun find-cld-repository (name &optional (error-p t))
   (let ((cld-repository (find name (list-cld-repositories)
