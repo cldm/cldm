@@ -24,12 +24,14 @@ deps:
 	git clone https://github.com/melisgl/named-readtables.git $(BUILD_DIR)/named-readtables
 	curl http://beta.quicklisp.org/archive/trivial-types/2012-04-07/trivial-types-20120407-git.tgz | tar -xz -C $(BUILD_DIR)
 	curl http://beta.quicklisp.org/archive/cl-syntax/2014-05-25/cl-syntax-20140525-git.tgz | tar -xz -C $(BUILD_DIR)
+	curl http://beta.quicklisp.org/archive/trivial-backtrace/2012-09-09/trivial-backtrace-20120909-git.tgz | tar -xz -C $(BUILD_DIR)
 	git clone https://github.com/edicl/cl-ppcre.git $(BUILD_DIR)/cl-ppcre
 	git clone https://github.com/pmai/md5.git $(BUILD_DIR)/md5
 	git clone https://github.com/froydnj/nibbles.git $(BUILD_DIR)/nibbles
 	git clone https://github.com/froydnj/ironclad.git $(BUILD_DIR)/ironclad
 	git clone https://github.com/sharplispers/split-sequence.git $(BUILD_DIR)/split-sequence
 	git clone https://github.com/trivial-features/trivial-features.git $(BUILD_DIR)/trivial-features
+	git clone https://github.com/cldm/cl-semver.git $(BUILD_DIR)/cl-semver
 	curl http://beta.quicklisp.org/archive/montezuma/2014-02-11/montezuma-20140211-git.tgz | tar -xz -C $(BUILD_DIR)
 #	git clone https://github.com/skypher/montezuma.git $(BUILD_DIR)/montezuma
 	curl https://common-lisp.net/project/bordeaux-threads/releases/bordeaux-threads-0.7.0.tar.gz | tar -xz -C $(BUILD_DIR)
