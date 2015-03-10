@@ -188,3 +188,15 @@
 
 (defun read-library-from-file (file)
   (read-library-from-string (file-to-string file)))
+
+(defmethod unparse-cld-address ((cld-address git-cld-address))
+  (list :git (git-url cld-address) (branch cld-address)))
+
+(defmethod unparse-cld-address ((cld-address http-cld-address))
+  (cld-url cld-address))
+
+(defun unparse-library-version-repository (lvrepo)
+  (list (name lvrepo) (unparse-repository-address (address lvrepo))))
+
+(defmethod unparse-repository-address ((repository-address git-repository-address))
+  (list :git (url repository-address)))
