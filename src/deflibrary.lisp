@@ -190,7 +190,7 @@
   (read-library-from-string (file-to-string file)))
 
 (defmethod unparse-cld-address ((cld-address git-cld-address))
-  (list :git (git-url cld-address) (branch cld-address)))
+  (list :git (git-url cld-address) (git-branch cld-address)))
 
 (defmethod unparse-cld-address ((cld-address http-cld-address))
   (cld-url cld-address))
@@ -200,3 +200,9 @@
 
 (defmethod unparse-repository-address ((repository-address git-repository-address))
   (list :git (url repository-address)))
+
+(defmethod unparse-repository-address ((repository-address ssh-repository-address))
+  (list :ssh (address repository-address)))
+
+(defmethod unparse-repository-address ((repository-address url-repository-address))
+  (list :url (url repository-address)))
