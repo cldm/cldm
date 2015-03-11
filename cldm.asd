@@ -50,8 +50,7 @@ THE SOFTWARE."
 		 #:split-sequence
 		 #:cl-fad
 		 #:osicat
-		 #:montezuma
-		 #:cl-secure-read
+		 #:montezuma		 
 		 ;#:cldm-loader
 		 ))
 

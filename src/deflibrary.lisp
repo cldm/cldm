@@ -179,16 +179,6 @@
 		    :address (second address)))
     (t (error "Invalid repository ~A" address))))
 
-(cl-secure-read::define-secure-read-from-string secure-read-from-string
-    :whitelist (append  (list #\; #\#) 
-			cl-secure-read:safe-read-from-string-whitelist))
-
-(defun read-library-from-string (str)
-  (parse-library (secure-read-from-string str)))
-
-(defun read-library-from-file (file)
-  (read-library-from-string (file-to-string file)))
-
 (defmethod unparse-cld-address ((cld-address git-cld-address))
   (list :git (git-url cld-address) (git-branch cld-address)))
 
