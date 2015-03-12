@@ -30,7 +30,7 @@
 
 ;; Configuration files
 
-(defparameter *global-config-file* #p"/etc/cldm/config")
+(defparameter *system-config-file* #p"/etc/cldm/config")
 (defparameter *user-config-file* #p"~/.cldm/config")
 (defparameter *local-config-file* (merge-pathnames (pathname ".cldm")
 						   (osicat:current-directory)))
@@ -70,7 +70,7 @@
   (let ((config-file (ecase scope
 		       (:local *local-config-file*)
 		       (:user *user-config-file*)
-		       (:global *global-config-file*))))
+		       (:system *system-config-file*))))
     (read-config-file config-file)))
 
 (defun load-config-file (pathname)
@@ -107,7 +107,7 @@
   (let ((config-file (ecase scope
 		       (:local *local-config-file*)
 		       (:user *user-config-file*)
-		       (:global *global-config-file*))))
+		       (:system *system-config-file*))))
     (dump-config-to-file config config-file)))
   
 (defun dump-config-to-file (config pathname)
@@ -118,7 +118,7 @@
     (format f "~S" config)))
 
 (defun load-cldm-config ()
-  (load-config-file *global-config-file*)
+  (load-config-file *system-config-file*)
   (load-config-file *user-config-file*)
   (load-config-file *local-config-file*))
 

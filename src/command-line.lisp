@@ -173,7 +173,7 @@ Config commands: ~{~A~^, ~}~%" (mapcar #'car +config-commands+)))
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")
            (enum :long-name "scope"
-                 :enum (list :global :user :local)
+                 :enum (list :system :user :local)
                  :default-value :local)))
    ;; repositories command
    (cons "repo"
@@ -184,7 +184,7 @@ Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repo-commands+)))
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")
            (enum :long-name "scope"
-                 :enum (list :global :user :local)
+                 :enum (list :system :user :local)
                  :default-value :local)))))
 
 (defun print-command-list ()
@@ -215,7 +215,7 @@ Use 'cldm <command> --help' to get command-specific help.
 (defun initialize-cldm ()
   "Load cldm config"
   (verbose-msg "Initializing cldm~%")
-  (setf cldm::*global-config-file* #p"/etc/cldm/config")
+  (setf cldm::*system-config-file* #p"/etc/cldm/config")
   (setf cldm::*user-config-file* #p"~/.cldm/config")
   (setf cldm:: *local-config-file* (merge-pathnames (pathname ".cldm")
                                                     (osicat:current-directory)))
