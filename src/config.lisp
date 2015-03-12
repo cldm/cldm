@@ -25,7 +25,7 @@
 
 (defparameter *clean-asdf-environment* nil "If T, load libraries in a clean ASDF environment")
 
-(defparameter *minisat+-binary* "/usr/bin/minisat+"
+(defparameter *minisat+-binary* "/usr/local/bin/minisat+"
   "minisat+ binary for PBO solving")
 
 ;; Configuration files
@@ -130,7 +130,7 @@
   (setf *address-cache-operation* :symlink)
   (setf *solving-mode* :strict)
   (setf *clean-asdf-environment* nil)
-  (setf *minisat+-binary* "/usr/bin/minisat+"))
+  (setf *minisat+-binary* "/usr/local/bin/minisat+"))
 
 (defun set-config-var (keyword type value scope &optional (reload t))
   (assert (typep value type))

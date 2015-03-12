@@ -139,7 +139,7 @@
   (format stream "* ~A *~%" (pbo-constraint-comment pbo-constraint))
   (loop for term in (pbo-constraint-terms pbo-constraint)
      do (destructuring-bind (sign constant var) term
-          (format stream "~A~A ~A " sign constant
+          (format stream "~A~A*~A " sign constant
                   (string-downcase (symbol-name var)))))
   (format stream "~A ~A ;"
           (pbo-constraint-comparison pbo-constraint)
@@ -163,7 +163,7 @@
 (defun serialize-optimization-function (optimization-function stream)
   (loop for term in optimization-function
      do (destructuring-bind (sign constant var) term
-          (format stream "~A~A ~A " sign constant
+          (format stream "~A~A*~A " sign constant
                   (string-downcase (symbol-name var))))))
 
 (defun pbo-solve-library-versions (library-version library-versions-involved)
@@ -191,7 +191,8 @@
           (multiple-value-bind (result error status)
               (trivial-shell:shell-command
                (format nil "~A ~A -v0" *minisat+-binary* pbo-file))
-            (when (not (zerop status))
+            (when (not (or (zerop status)
+			   (equalp status 30)))
               (error "Error executing ~A ~A -v0" *minisat+-binary* pbo-file))
             (flet ((find-environment-library-version (var)
                      (car (rassoc var pbo-environment))))

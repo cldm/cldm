@@ -3,13 +3,12 @@ UNAME := $(shell uname)
 BUILD_DIR ?= build
 SBCL := $(shell which sbcl)
 PWD = $(shell pwd)
-APT-GET = $(shell which apt-get)
 
 print-%  : ; @echo $* = $($*)
 
 all: cldm
 
-cldm: minisatp deps
+cldm: deps
 	$(SBCL) --no-userinit --no-sysinit --load $(BUILD_DIR)/asdf.lisp \
         --eval "(asdf:initialize-source-registry '(:source-registry (:tree \"$(PWD)/\") (:tree \"$(PWD)/$(BUILD_DIR)/\") :ignore-inherited-configuration))" \
         --script src/command-line.lisp
@@ -42,34 +41,13 @@ deps:
 	curl https://common-lisp.net/project/anaphora/files/anaphora-latest.tar.gz | tar -xz -C $(BUILD_DIR)
 	curl https://common-lisp.net/project/cffi/releases/cffi_latest.tar.gz | tar -xz -C $(BUILD_DIR)
 	curl https://common-lisp.net/project/asdf/asdf.lisp -o $(BUILD_DIR)/asdf.lisp
+	curl http://minisat.se/downloads/minisat+_2007-Jan-05.zip -o $(BUILD_DIR)/minisat+.zip
 
-minisatp: minisat
-ifndef APT-GET
-	git clone https://github.com/niklasso/minisatp.git build/minisatp
-	cd build/minisatp && make
-endif
-
-minisat:
-ifndef APT-GET
-	git clone https://github.com/niklasso/minisat.git build/minisat
-	cd build/minisat && make	
-endif
-
-install: install-minisatp
-
-install-minisatp: install-minisat
-ifdef APT-GET
-	apt-get install minisat+
-else
-	cd $(BUILD_DIR)/minisat && make install
-endif
-
-install-minisat:
-ifdef APT-GET
-	apt-get install minisat
-else
-	cd $(BUILD_DIR)/minisatp && make install
-endif
+install-minisatp:
+	cd $(BUILD_DIR); unzip minisat+.zip
+	cp $(BUILD_DIR)/minisat+/minisat+_script /usr/local/bin/minisat+
+	cp $(BUILD_DIR)/minisat+/minisat+_64-bit_static /usr/local/bin
+	cp $(BUILD_DIR)/minisat+/minisat+_bignum_static /usr/local/bin
 
 ql-install:
 	cd ~/quicklisp/local-projects; ln -s $(PWD)
