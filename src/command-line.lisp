@@ -185,7 +185,13 @@ Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repo-commands+)))
                  :description "Print this help and exit.")
            (enum :long-name "scope"
                  :enum (list :system :user :local)
-                 :default-value :local)))))
+                 :default-value :local)))
+   ;; show command
+   (cons "show"
+	 (clon:defsynopsis (:make-default nil :postfix "LIBRARY")
+	   (text :contents "Display a library information")
+	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))))
 
 (defun print-command-list ()
   (format nil "~{~A~^, ~}" (mapcar #'car +commands+)))
@@ -449,6 +455,19 @@ Use 'cldm <command> --help' to get command-specific help.
 
 (defmethod process-command ((command (eql :update)))
   (update-project-command))
+
+(defmethod process-command ((command (eql :show)))
+  (let ((library-name (car (clon:remainder))))
+    ;; Check that the library name was given
+    (when (null library-name)
+      (format t "Library name is missing.~%")
+      (clon:exit 1))
+    (let ((cld-pathname (cldm::find-library-cld library-name)))
+      (if (not cld-pathname)
+	  (progn
+	    (format t "Library information not found~%")
+	    (clon:exit 1))
+	  (format t "~%~A~%" (cldm::file-to-string cld-pathname))))))
 
 (defparameter +config-variables+
   (list (cons :libraries-directory
