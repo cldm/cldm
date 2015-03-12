@@ -30,7 +30,17 @@ THE SOFTWARE."
 			 (:file "requirement")			 
 			 (:file "library")
 			 (:file "cld")
-			 (:file "repository")
+			 (:file "repository-address")
+			 (:module :repository
+				  :components
+				  ((:file "repository")
+				   (:file "http-repository")
+				   (:file "ssh-repository")
+				   (:file "directory-repository")
+				   (:file "registry-repository")
+				   (:file "cached-repository")
+				   (:file "indexed-repository"))
+				  :serial t)
 			 (:file "project")
 			 (:file "pbo")
 			 (:file "deflibrary")

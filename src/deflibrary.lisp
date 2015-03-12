@@ -186,7 +186,8 @@
   (cld-url cld-address))
 
 (defun unparse-library-version-repository (lvrepo)
-  (list (name lvrepo) (unparse-repository-address (address lvrepo))))
+  (list (name lvrepo) 
+	(unparse-repository-address (repository-address lvrepo))))
 
 (defmethod unparse-repository-address ((repository-address git-repository-address))
   (list :git (url repository-address)))

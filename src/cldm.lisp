@@ -408,3 +408,181 @@
                                           dependency))
                           (:strict (error "Coudn't load ~A" dependency))))))))
    :test #'library-version=))
+
+(defmethod remove-library-version ((library-version library-version) libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (library-name (library library-version))
+                                         (print-version-to-string (version library-version))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory)))
+    (remove-directory install-directory)))
+
+(defun library-version-install-directory (library-version &optional
+							    (libraries-directory *libraries-directory*))
+    (let* ((install-directory-name (format nil "~A-~A"
+                                         (library-name (library library-version))
+                                         (print-version-to-string (version library-version)))))
+         (merge-pathnames
+	  (pathname (format nil "~A/" install-directory-name))
+	  libraries-directory)))
+
+(defun library-version-installed-p (library-version &optional
+						      (libraries-directory *libraries-directory*))
+  "Returns whether a library version is installed and if it is, where"
+  (if (listp libraries-directory)
+      (loop for dir in libraries-directory
+	 do (multiple-value-bind (installed-p install-directory)
+		(library-version-installed-p library-version dir)
+	      (when installed-p
+		(return-from library-version-installed-p
+		  (values t install-directory)))))
+					; else
+      (let ((install-directory (library-version-install-directory library-version libraries-directory)))
+	(if (probe-file install-directory)
+	    (values t install-directory)))))
+
+(defmethod install-library-version ((library-version library-version)
+                                    &optional
+                                      (libraries-directory *libraries-directory*)
+                                      (if-installed *if-already-installed-library-version*))
+  "Installs LIBRARY-VERSION to LIBRARIES-DIRECTORY.
+   LIBRARIES-DIRECTORY is the root directory where the library version is to be installed.
+   IF-INSTALLED controls what is done if the library is already installed. One of :supersede, :reinstall, :ignore, :error.
+   Return values: if the library was installed, returns a INSTALLED-LIBRARY-VERSION object. Else, nil"
+
+  (ensure-directories-exist libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (library-name (library library-version))
+                                         (print-version-to-string (version library-version))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory))
+         (installed-repository nil))
+    (flet ((%install-library-version ()
+             (info-msg "Installing ~A...~%"
+                       (library-version-unique-name library-version))
+             (let ((done nil))
+               (loop for repository in (repositories library-version)
+                  while (not done)
+                  do (progn
+                       (verbose-msg "Trying with ~A...~%" repository)
+                       (setf installed-repository repository)
+                       (setf done (install-repository repository install-directory))
+                       (if (not done)
+                           (verbose-msg "Failed.~%")
+                           (verbose-msg "Success.~%"))))
+               (when (not done)
+                 (error "Couldn't install repository from ~{~A~}~%"
+                        (repositories library-version))))
+             ;; Build the installed library version object to return
+             (make-instance 'installed-library-version
+                            :name (library-name library-version)
+                            :version (version library-version)
+                            :install-directory install-directory
+                            :repository installed-repository))
+           (%remove-installed-library-version ()
+             (remove-directory install-directory)
+             ))
+      (verbose-msg "Repository directory: ~A~%" install-directory)
+      (if (probe-file install-directory)
+          ;; If the install directory exists, we assume the library version
+          ;; is already installed.
+          ;; Act according to IF-INSTALLED variable
+          ;; TODO: this assumption can be incorrect. How to fix?
+          (progn
+	    (verbose-msg "Repository for ~A already exists in ~A~%"
+                         library-version
+                         install-directory)
+            (ecase if-installed
+              (:supersede
+               (verbose-msg "Reinstalling ~A~%" library-version)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:install
+               (verbose-msg "Reinstalling ~A~%" library-version)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:error (error "~A is already installed." library-version))
+              (:ignore
+               (values t install-directory))))
+          ;; else, the library is not installed. Install.
+          (%install-library-version)))))
+
+(defmethod remove-library-version ((ilv installed-library-version) libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (name ilv)
+                                         (print-version-to-string (version ilv))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory)))
+    (remove-directory install-directory)))
+
+(defmethod install-library-version ((ilv installed-library-version)
+                                    &optional
+                                      (libraries-directory *libraries-directory*)
+                                      (if-installed *if-already-installed-library-version*))
+  "Installs LIBRARY-VERSION specified in lock file to LIBRARIES-DIRECTORY.
+   LIBRARIES-DIRECTORY is the root directory where the library version is to be installed.
+   IF-INSTALLED controls what is done if the library is already installed. One of :supersede, :reinstall, :ignore, :error.
+   Return values: if the library was installed, returns a INSTALLED-LIBRARY-VERSION object. Else, nil"
+
+  (ensure-directories-exist libraries-directory)
+  (let* ((install-directory-name (format nil "~A-~A"
+                                         (name ilv)
+                                         (print-version-to-string (version ilv))))
+         (install-directory (merge-pathnames
+                             (pathname (format nil "~A/" install-directory-name))
+                             libraries-directory)))
+    (flet ((%install-library-version ()
+             (info-msg "Installing ~A-~A...~%"
+                       (name ilv)
+                       (print-version-to-string (version ilv)))
+             (when (not (install-repository (repository ilv) install-directory))
+               (error "Couldn't install from ~A~%" (repository ilv)))
+             ilv)
+           (%remove-installed-library-version ()
+             (remove-directory install-directory)
+             ))
+      (if (probe-file install-directory)
+          ;; If the install directory exists, we assume the library version
+          ;; is already installed.
+          ;; Act according to IF-INSTALLED variable
+          ;; TODO: this assumption can be incorrect. How to fix?
+          (progn
+            (verbose-msg "Repository for ~A already exists in ~A~%"
+                         ilv
+                         install-directory)
+            (ecase if-installed
+              (:supersede
+               (verbose-msg "Reinstalling ~A~%" ilv)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:install
+               (verbose-msg "Reinstalling ~A~%" ilv)
+               (%remove-installed-library-version)
+               (%install-library-version))
+              (:error (error "~A is already installed." ilv))
+              (:ignore
+               (values t install-directory))))
+          ;; else, the library is not installed. Install.
+          (%install-library-version)))))
+
+(defun update-library-version (library-version project)
+  "Update a library version"
+
+  (let ((installed-library-version
+         (find-installed-library-version
+          project
+          (library-name library-version))))
+    (if installed-library-version
+        ;; There's a library version installed already
+        (if (or (equalp library-version :max-version)
+                (version/= (version library-version)
+                           (version installed-library-version)))
+            ;; The update conditions are satisfied, try to update the repository
+            (update-repository installed-library-version library-version)
+            ;; else, the library does not need update
+            installed-library-version)
+        ;; else, the library is not installed: install the library version
+        (install-library-version library-version (libraries-directory project)))))
