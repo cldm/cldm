@@ -586,3 +586,8 @@
             installed-library-version)
         ;; else, the library is not installed: install the library version
         (install-library-version library-version (libraries-directory project)))))
+
+;; TODO: this is wrong
+;; put this initialization operation in the places it should go (toplevel operations?)
+
+(load-cldm-config)

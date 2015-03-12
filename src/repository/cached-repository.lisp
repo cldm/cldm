@@ -2,10 +2,18 @@
 
 (defclass cached-cld-repository (cld-repository)
   ((cache-directory :initarg :cache-directory
-                    :initform (error "Provide the cache directory")
+                    :initform nil
                     :accessor cache-directory
                     :documentation "The cache directory"))
   (:documentation "A cld repository in which a cache is maintained in a local directory"))
+
+(defmethod initialize-instance :after ((cld-repository cached-cld-repository) &rest initargs)
+  ;; Set default cache directory if none specified
+  (when (not (cache-directory cld-repository))
+    (setf (cache-directory cld-repository)
+	  (ensure-directories-exist
+	   (merge-pathnames (format nil "~A/" (name cld-repository))
+			    (pathname "~/.cldm/cache/"))))))
 
 (defclass cached-http-cld-repository (http-cld-repository cached-cld-repository)
   ())
@@ -21,6 +29,16 @@
   ())
 
 (defmethod print-object ((cld-repository cached-ssh-cld-repository) stream)
+  (print-unreadable-object (cld-repository stream :type t :identity t)
+    (format stream "~A : ~A (cache: ~A)"
+            (name cld-repository)
+            (repository-address cld-repository)
+            (cache-directory cld-repository))))
+
+(defclass cached-registry-cld-repository (registry-cld-repository cached-cld-repository)
+  ())
+
+(defmethod print-object ((cld-repository cached-registry-cld-repository) stream)
   (print-unreadable-object (cld-repository stream :type t :identity t)
     (format stream "~A : ~A (cache: ~A)"
             (name cld-repository)

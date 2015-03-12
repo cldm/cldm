@@ -23,7 +23,7 @@
 (defclass cld-repository ()
   ((name :initarg :name
          :accessor name
-         :initform nil
+         :initform (error "Provide the repository name")
          :documentation "The cld repository name"))
   (:documentation "A .cld files repository"))
 

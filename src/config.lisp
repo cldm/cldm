@@ -118,9 +118,19 @@
     (format f "~S" config)))
 
 (defun load-cldm-config ()
+  (clear-cldm-config)
   (load-config-file *system-config-file*)
   (load-config-file *user-config-file*)
   (load-config-file *local-config-file*))
+
+(defun clear-cldm-config ()
+  (setf *verbose-mode* nil)
+  (setf *debug-mode* nil)
+  (setf *cld-repositories* (list *standard-cldm-repo*))
+  (setf *address-cache-operation* :symlink)
+  (setf *solving-mode* :strict)
+  (setf *clean-asdf-environment* nil)
+  (setf *minisat+-binary* "/usr/bin/minisat+"))
 
 (defun set-config-var (keyword type value scope &optional (reload t))
   (assert (typep value type))
