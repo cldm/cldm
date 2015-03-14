@@ -48,26 +48,27 @@
 (defmethod publish-cld ((cld-repository registry-cld-repository) cld-pathname)
   (when (not (api-token cld-repository))
     (error "No API token configured for ~A" cld-repository))
-  (multiple-value-bind (response status 
-				 headers
-				 uri
-				 http-stream
-				 must-close
-				 status-text)
-      (drakma:http-request (format nil "~A/api/publish"
-				   (repository-address cld-repository))
-			   :method :post
-			   :content-type "text/cld"
-			   :content cld-pathname
-			   :accept "application/json"
-			   :additional-headers (list (cons "Authentication"
-							   (format nil "token ~A"
-								   (api-token cld-repository))))
-			   :want-stream t)
-    (declare (ignore headers uri http-stream must-close))
-    (unless (equalp status 200)
-      (error status-text))
-    (json:decode-json response)))
+  (let ((url (format nil "~A/api/publish"
+		     (repository-address cld-repository))))
+    (verbose-msg "Posting to ~A: ~A ... ~%" url cld-pathname)
+    (multiple-value-bind (response status 
+				   headers
+				   uri
+				   http-stream
+				   must-close
+				   status-text)
+	(drakma:http-request url
+			     :method :post
+			     :content-type "text/cld"
+			     :content cld-pathname
+			     :accept "application/json"
+			     :additional-headers (list (cons "Authentication"
+							     (api-token cld-repository)))
+			     :want-stream t)
+      (declare (ignore headers uri http-stream must-close))
+      (unless (equalp status 200)
+	(error status-text))
+      (json:decode-json response))))
 
 (defmethod search-cld-repository ((cld-repository registry-cld-repository)
 				  term)
@@ -84,8 +85,7 @@
 			   :accept "application/json"
 			   :parameters (list (cons "q" term))
 			   :additional-headers (list (cons "Authentication"
-							   (format nil "token ~A"
-								   (api-token cld-repository))))
+							   (api-token cld-repository)))
 			   :want-stream t)
     (declare (ignore headers uri http-stream must-close))
     (unless (equalp status 200)
