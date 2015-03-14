@@ -148,12 +148,12 @@
        collect 
 	 (let ((docid (montezuma:doc doc))
 	       (score (montezuma:score doc)))
-	   (list :name
-		 (montezuma:document-value 
-		  (montezuma:get-document (search-index cld-repository)
-					  docid)
-		  "name")
-		 :score score)))))
+	   (list (cons :name
+		       (montezuma:document-value 
+			(montezuma:get-document (search-index cld-repository)
+						docid)
+			"name"))
+		 (cons :score score))))))
 
 (defun percentage (n total)
   (truncate (/ (* n 100) total)))

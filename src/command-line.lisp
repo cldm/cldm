@@ -629,7 +629,9 @@ Use 'cldm <command> --help' to get command-specific help.
 	    (cldm::search-cld-repository repo (format nil "name:\"~A\"" library))))
       (loop for elem in search-result
 	   do 
-	   (format t "~A ~A~%" (getf elem :name) (getf elem :score))))))
+	   (format t "~A ~A~%" 
+		   (cdr (assoc :name elem))
+		   (cdr (assoc :score elem)))))))
 
 (defmethod process-repo-command ((command (eql :clear)) scope)
   (let ((repo-name (first (clon:remainder))))
