@@ -142,7 +142,18 @@
 
 (defmethod search-cld-repository ((cld-repository indexed-cld-repository) term)
   (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
-  (montezuma:search (search-index cld-repository) term))
+  (let ((search-result
+	 (montezuma:search (search-index cld-repository) term)))
+    (loop for doc in (montezuma::score-docs search-result)
+       collect 
+	 (let ((docid (montezuma:doc doc))
+	       (score (montezuma:score doc)))
+	   (list :name
+		 (montezuma:document-value 
+		  (montezuma:get-document (search-index cld-repository)
+					  docid)
+		  "name")
+		 :score score)))))
 
 (defun percentage (n total)
   (truncate (/ (* n 100) total)))

@@ -626,16 +626,10 @@ Use 'cldm <command> --help' to get command-specific help.
     (let* ((repo
 	    (cldm::find-cld-repository repo-name))
 	   (search-result 
-	    (cldm::search-cld-repository repo (format nil "name:\"~A\"" library)))) 
-      (loop for doc in (montezuma::score-docs search-result)
-	 do (let ((docid (montezuma:doc doc))
-		  (score (montezuma:score doc)))
-	      (format t "~A ~A~%" 
-		      (montezuma:document-value 
-		       (montezuma:get-document (cldm::search-index repo)
-					       docid)
-		       "name")
-		      score))))))
+	    (cldm::search-cld-repository repo (format nil "name:\"~A\"" library))))
+      (loop for elem in search-result
+	   do 
+	   (format t "~A ~A~%" (getf elem :name) (getf elem :score))))))
 
 (defmethod process-repo-command ((command (eql :clear)) scope)
   (let ((repo-name (first (clon:remainder))))
