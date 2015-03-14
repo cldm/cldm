@@ -469,6 +469,23 @@ Use 'cldm <command> --help' to get command-specific help.
 	    (clon:exit 1))
 	  (format t "~%~A~%" (cldm::file-to-string cld-pathname))))))
 
+(defmethod process-command ((comand (eql :search)))
+  (let ((library-name (car (clon:remainder))))
+    ;; Check that the library name was given
+    (when (null library-name)
+      (format t "Library name is missing.~%")
+      (clon:exit 1))
+    (loop for repo in (cldm::list-cld-repositories)
+       do
+	 (format t "~A:~%" (cldm::name repo))
+	 (let ((search-result 
+		(cldm::search-cld-repository repo (format nil "name:\"~A\"" library-name))))
+	   (loop for elem in search-result
+	      do 
+		(format t "~A ~A~%" 
+			(cdr (assoc :name elem))
+			(cdr (assoc :score elem))))))))
+
 (defparameter +config-variables+
   (list (cons :libraries-directory
 	      (lambda (value scope)
