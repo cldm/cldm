@@ -11,7 +11,7 @@ all: cldm
 cldm: deps
 	$(SBCL) --no-userinit --no-sysinit --load $(BUILD_DIR)/asdf.lisp \
         --eval "(asdf:initialize-source-registry '(:source-registry (:tree \"$(PWD)/\") (:tree \"$(PWD)/$(BUILD_DIR)/\") :ignore-inherited-configuration))" \
-        --script src/command-line.lisp
+        --script src/cli/build.lisp
 
 deps:
 	mkdir build
@@ -56,7 +56,7 @@ deps:
 compile:
 	$(SBCL) --no-userinit --no-sysinit --load $(BUILD_DIR)/asdf.lisp \
         --eval "(asdf:initialize-source-registry '(:source-registry (:tree \"$(PWD)/\") (:tree \"$(PWD)/$(BUILD_DIR)/\") :ignore-inherited-configuration))" \
-        --script src/command-line.lisp
+        --script src/cli/build.lisp
 
 install-minisatp:
 	cd $(BUILD_DIR); unzip minisat+.zip
