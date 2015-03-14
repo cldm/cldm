@@ -5,7 +5,11 @@
   ((address :initarg :address
             :initform (error "Provide the cld repository url address")
             :accessor repository-address
-            :documentation "The cld repository url address"))
+            :documentation "The cld repository url address")
+   (api-token :initarg :api-token
+	      :initform nil
+	      :accessor api-token
+	      :documentation "The token to access the registry api"))
   (:documentation "A registry cld repository"))
 
 (defmethod print-object ((cld-repository registry-cld-repository) stream)
@@ -40,3 +44,50 @@
               cld)))
       ;; else, no download session
       (call-next-method)))
+
+(defmethod publish-cld ((cld-repository registry-cld-repository) cld-pathname)
+  (when (not (api-token cld-repository))
+    (error "No API token configured for ~A" cld-repository))
+  (multiple-value-bind (response status 
+				 headers
+				 uri
+				 http-stream
+				 must-close
+				 status-text)
+      (drakma:http-request (format nil "~A/api/publish"
+				   (repository-address cld-repository))
+			   :method :post
+			   :content-type "text/cld"
+			   :content cld-pathname
+			   :accept "application/json"
+			   :additional-headers (list (cons "Authentication"
+							   (format nil "token ~A"
+								   (api-token cld-repository))))
+			   :want-stream t)
+    (declare (ignore headers uri http-stream must-close))
+    (unless (equalp status 200)
+      (error status-text))
+    (json:decode-json response)))
+
+(defmethod search-cld-repository ((cld-repository registry-cld-repository)
+				  term)
+  (when (not (api-token cld-repository))
+    (error "No API token configured for ~A" cld-repository))
+  (multiple-value-bind (response status 
+				 headers
+				 uri
+				 http-stream
+				 must-close
+				 status-text)
+      (drakma:http-request (format nil "~A/api/search"
+			       (repository-address cld-repository))
+			   :accept "application/json"
+			   :parameters (list (cons "q" term))
+			   :additional-headers (list (cons "Authentication"
+							   (format nil "token ~A"
+								   (api-token cld-repository))))
+			   :want-stream t)
+    (declare (ignore headers uri http-stream must-close))
+    (unless (equalp status 200)
+      (error status-text))
+    (json:decode-json response)))

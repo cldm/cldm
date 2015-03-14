@@ -91,3 +91,9 @@
     (install-repository-from-address repository-address
                                      repository
                                      install-directory)))
+
+(defgeneric search-cld-repository (cld-repository term)
+  (:method ((cld-repository cld-repository) term)
+    ;; No results
+    nil
+    ))

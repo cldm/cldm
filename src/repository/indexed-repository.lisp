@@ -140,11 +140,6 @@
   (initialize-search-index cld-repository)
   (build-search-index cld-repository))
 
-(defgeneric search-cld-repository (cld-repository term)
-  (:method ((cld-repository cld-repository) term)
-    ;; Do nothing
-    ))
-
 (defmethod search-cld-repository ((cld-repository indexed-cld-repository) term)
   (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
   (montezuma:search (search-index cld-repository) term))

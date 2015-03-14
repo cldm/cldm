@@ -59,7 +59,9 @@ THE SOFTWARE."
 		 #:split-sequence
 		 #:cl-fad
 		 #:osicat
-		 #:montezuma		 
+		 #:montezuma
+		 #:drakma
+		 #:cl-json
 		 ;#:cldm-loader
 		 ))
 
