@@ -24,30 +24,30 @@
   (list
    ;; init command
    (cons "init"
-         (clon:defsynopsis (:make-default nil :postfix "PROJECT-NAME [OPTIONS]")
+         (clon:defsynopsis (:make-default nil :postfix "[OPTIONS]")
            (text :contents "Initialize a basic cld file in the current directory.")
            (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")
            (switch :short-name "f" :long-name "force"
                    :description "Force cld file creation")
-           (stropt :long-name "project-name"
-                   :argument-name "PROJECT-NAME"
-		   :description "The project name")
+           (stropt :long-name "name"
+                   :argument-name "NAME"
+		   :description "The library name")
            (stropt :long-name "cld"
                    :argument-name "CLD"
                    :default-value ""
                    :argument-type :optional
-                   :description "The project cld address")
+                   :description "The cld address")
            (stropt :long-name "description"
                    :argument-name "DESCRIPTION"
                    :default-value ""
                    :argument-type :optional
-                   :description "The project description")
+                   :description "The library description")
            (stropt :long-name "author"
                    :argument-name "AUTHOR"
                    :default-value ""
                    :argument-type :optional
-                   :description "The project author")))
+                   :description "The library author")))
    ;; search command
    (cons "search"
 	 (clon:defsynopsis (:make-default nil :postfix "LIBRARY")
