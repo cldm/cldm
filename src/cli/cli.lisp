@@ -287,7 +287,7 @@ Use 'cldm <command> --help' to get command-specific help.
        do
 	 (format t "~A:~%" (cldm::name repo))
 	 (let ((search-result 
-		(cldm::search-cld-repository repo (format nil "name:\"~A\"" library-name))))
+		(ignore-errors (cldm::search-cld-repository repo (format nil "name:\"~A\"" library-name)))))
 	   (loop for elem in search-result
 	      do 
 		(format t "~A ~A~%" 
