@@ -12,44 +12,26 @@ Then **CLDM** download the exact versions of dependencies for a given library an
 For instance, here is the library description `.cld` file for some versions of the **Hunchentoot** CL web server:
 
 ```lisp
-
-;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-
-
-(cldm:deflibrary hunchentoot
-  :author "Dr. Edmund Weitz"
-  :description "Hunchentoot is a HTTP server based on USOCKET and
-  BORDEAUX-THREADS.  It supports HTTP 1.1, serves static files, has a
-  simple framework for user-defined handlers and can be extended
-  through subclassing."
-  :cld "http://cldm.github.io/cldm-repo/cld/hunchentoot.cld"
-  :tags ("web" "web server")
+(cldm:deflibrary cldm
+  :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
+  :description "Common Lisp Dependency Manager"
+  :author "Mariano Montone <marianomontone@gmail.com>"
+  :maintainer "Mariano Montone <marianomontone@gmail.com>"
+  :homepage "http://cldm.github.io/cldm"
+  :bug-reports "https://github.com/cldm/cldm/issues"
+  :source-repository "https://github.com/cldm/cldm"
+  :documentation "http://cldm.github.io/cldm/doc/manual/_build/html/index.html"
+  :licence "MIT"
+  :keywords ("dependency")
+  :categories ("Dependency manager")
   :versions
-  ((:version "1.2.26"
-	     :stability :beta
-	     :description "Latest version"
-	     :repositories
-	     ((:official (:url "http://weitz.de/files/hunchentoot.tar.gz"))
-	      (:github (:git "https://github.com/edicl/hunchentoot.git"
-			     :commit "8885f17a15333d1c247a099ee3ced9e49a94103f")))
-	     :depends-on
-	     (:chunga
-	      :cl-base64
-	      :cl-fad
-	      :cl-ppcre
-	      :flexi-streams
-	      #-(or :lispworks :hunchentoot-no-ssl) :cl+ssl
-	      :md5
-	      :rfc2388
-	      :trivial-backtrace
-	      #-:lispworks :usocket
-	      #-:lispworks :bordeaux-threads))
-   (:version "1.2.0"
-	     :description "Stable release"
-	     :stability :stable
-	     :repositories
-	     ((:github (:git "https://github.com/edicl/hunchentoot.git"
-			     :commit "2a36b12532958d50ecf0948f8c20b6cff84c4300"))))))
-
+  ((:version "0.0.1"
+             :repositories
+             ((:github (:git "https://github.com/cldm/cldm.git")))
+             :depends-on
+             (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
+			  :trivial-shell :puri :anaphora :split-sequence
+			  :cl-fad :osicat))))
 ```
 
 ##Install
