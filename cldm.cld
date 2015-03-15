@@ -8,6 +8,7 @@
   :homepage "http://cldm.github.io/cldm"
   :bug-reports "https://github.com/cldm/cldm/issues"
   :source-repository "https://github.com/cldm/cldm"
+  :documentation "http://cldm.github.io/cldm/doc/manual/_build/html/index.html"
   :licence "MIT"
   :versions
   ((:version "0.0.1"
