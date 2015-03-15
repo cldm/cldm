@@ -94,6 +94,22 @@
             :initform nil
             :accessor library-licence
             :documentation "The library licence")
+   (homepage :initarg :homepage
+	     :initform nil
+	     :accessor library-homepage
+	     :documentation "The library home page url")
+   (documentation :initarg :documentation
+		  :initform nil
+		  :accessor library-documentation
+		  :documentation "The url where the library documentation is")
+   (bug-reports :initarg :bug-reports
+		:initform nil
+		:accessor library-bug-reports
+		:documentation "The url where library bug reports are made")
+   (source-repository :initarg :source-repository
+		      :initform nil
+		      :accessor library-source-repository
+		      :documentation "The source repository url. For documentation purposes only.")
    (cld :initarg :cld
         :initform (error "Provide the cld")
         :accessor library-cld
@@ -154,6 +170,14 @@
                  :initform (error "Provide a repository at least")
                  :accessor repositories
                  :documentation "Library version repositories")
+   (custom-repositories :initarg :custom-repositories
+			:initform nil
+			:accessor custom-repositories
+			:documentation "Custom package repositories to use.
+
+By default CLDM just uses libraries repositories. By specifying custom repositories you can get packages from elsewhere.
+
+Repositories are not resolved recursively. Repository declarations of dependencies are ignored.")
    (dependencies :initarg :dependencies
                  :initform nil
                  :accessor dependencies

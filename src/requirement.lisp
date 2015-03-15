@@ -13,7 +13,13 @@
    (cld :initarg :cld
         :initform nil
         :accessor cld
-        :documentation "The version meta information address. Can be a pathname or url"))
+	:type cld-address
+        :documentation "The version meta information address. If this is set, then CLDM fetches the requirement CLD from there if not found elsewhere.")
+   (repository :initarg :repository
+	       :initform nil
+	       :accessor requirement-repository
+	       :type repository-address
+	       :documentation "A repository address. If this is present, then CLDM fetches the requirement from there, and doesn't calculate any versions"))
    (:documentation "Requirements instances represent a 'library requirement', that is a library + version constraints."))
 
 (defmethod initialize-instance :after ((requirement requirement) &rest initargs)
