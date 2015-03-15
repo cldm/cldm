@@ -123,7 +123,7 @@
                                (make-instance 'library-version-repository
                                               :name name
                                               :library-version nil
-                                              :address (parse-version-repository-address rep-address-sexp)))
+                                              :address (parse-repository-address rep-address-sexp)))
                  :checksum (getf data :checksum)))
 
 (defun read-lock-file (file)

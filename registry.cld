@@ -12,11 +12,10 @@
   :licence "MIT"
   :keywords ("dependency")
   :categories ("Dependency manager")
-  :versions
-  ((:version "0.0.1"
-             :repositories
-             ((:github (:git "https://github.com/cldm/cldm.git")))
-             :depends-on
+  :version "0.0.1"
+  :repositories
+  ((:github (:git "https://github.com/cldm/cldm.git")))
+  :depends-on
              (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
 			  :trivial-shell :puri :anaphora :split-sequence
-			  :cl-fad :osicat))))
+			  :cl-fad :osicat))

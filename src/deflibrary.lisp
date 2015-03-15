@@ -2,7 +2,8 @@
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
-                            licence cld versions keywords &allow-other-keys)
+                            licence cld versions keywords
+			    homepage bug-reports documentation source-repository &allow-other-keys)
       options
     `(make-instance 'library
                     :name ',(if (symbolp name)
@@ -13,6 +14,10 @@
                     :description ,description
                     :licence ,licence
                     :cld (parse-cld-address ',cld)
+		    :homepage ,homepage
+		    :bug-reports ,bug-reports
+		    :documentation ,documentation
+		    :source-repository ,source-repository
                     :versions (parse-library-versions ',versions)
                     :keywords ',keywords)))
 
@@ -21,7 +26,9 @@
     (assert (or (equalp deflibrary 'cldm:deflibrary)
 		(equalp deflibrary 'cl-user::deflibrary)))
     (destructuring-bind (&key author maintainer description
-			      licence cld versions keywords &allow-other-keys)
+			      licence cld versions keywords 
+			      homepage bug-reports documentation source-repository
+			      &allow-other-keys)
 	options
       (check-type author (or null string))
       (check-type maintainer (or string null))
@@ -37,6 +44,10 @@
 		     :description description
 		     :licence licence
 		     :cld (parse-cld-address cld)
+		     :homepage homepage
+		     :bug-reports bug-reports
+		     :documentation documentation
+		     :source-repository source-repository
 		     :keywords keywords
 		     :versions (parse-library-versions versions)))))
 
@@ -111,12 +122,12 @@
   (destructuring-bind (name address) repository
     (make-instance 'library-version-repository
 		   :name name
-		   :address (parse-version-repository-address address))))
+		   :address (parse-repository-address address))))
 
 (defun parse-version-dependency (dependency)
   (cond
     ((listp dependency)
-     (destructuring-bind (library-name &key version version-constraints cld) dependency
+     (destructuring-bind (library-name &key version version-constraints cld repository) dependency
        (when version
 	 (push (list :== (read-version-from-string version)) version-constraints))
        (apply #'make-instance 'requirement
@@ -134,7 +145,9 @@
 								(second version-constraint))
 							       (t (error "Invalid version ~A" (second version-constraint))))))))
 			      ,@(when cld
-				      (list :cld (parse-cld-address cld)))))))
+				      (list :cld (parse-cld-address cld)))
+			      ,@(when repository
+				      (list :repository (parse-repository-address repository)))))))
     ((symbolp dependency)
      (make-instance 'requirement
 		    :library-name (string-downcase (symbol-name dependency))))
@@ -147,7 +160,7 @@
      collect
        (parse-version-dependency dependency)))
 
-(defun parse-version-repository-address (address)
+(defun parse-repository-address (address)
   (cond
     ((pathnamep address)
      (make-instance 'directory-repository-address
