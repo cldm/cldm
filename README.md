@@ -9,7 +9,7 @@ Common Lisp libraries and its versions are described in `.cld` files, that shoul
 
 Then **CLDM** download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their `.asd` definitions to `asdf:*central-registry*` and from that point on asdf is in charge.
 
-For instance, here is the library description `.cld` file for some versions of the **Hunchentoot** CL web server:
+For instance, here is the library description `.cld` file for some versions of the **CLDM** library:
 
 ```lisp
 (cldm:deflibrary cldm
