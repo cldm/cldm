@@ -107,3 +107,15 @@
                     (clon:exit 1))
                   (create-cld-file))
               (create-cld-file)))))))
+
+(defun search-library (library-name)
+  (loop for repo in (cldm::list-cld-repositories)
+       do
+	 (format t "~A:~%" (cldm::name repo))
+	 (let ((search-result 
+		(ignore-errors (cldm::search-cld-repository repo (format nil "name:\"~A\"" library-name)))))
+	   (loop for elem in search-result
+	      do 
+		(format t "~A ~A~%" 
+			(cdr (assoc :name elem))
+			(cdr (assoc :score elem)))))))
