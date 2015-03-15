@@ -86,6 +86,27 @@
   (print-unreadable-object (requirement stream :type t :identity t)
     (print-requirement requirement stream)))
 
+(defun requirement-library-version (requirement)
+  "Builds a library version for requirements with a specified repository.
+   If a requirement repository was not specified, error"
+  (when (not (requirement-repository requirement))
+    ;; Note: if this happens, this a CLDM internal error!,
+    ;; not something the user can have influce on
+    (error "~A doesn't have a repository" requirement))
+  (let ((library (make-instance 'library 
+				:name (library-name requirement)
+				:cld nil
+				:versions nil)))
+    (let ((library-version (make-instance 'library-version 
+					  :library library
+					  :version :max-version
+					  :repositories
+					  (list (make-instance 'library-version-repository 
+							       :name "custom"
+							       :address (requirement-repository requirement))))))
+      (setf (slot-value library 'versions) (list library-version))
+      library-version)))
+
 ;; Requirements parser
 
 (defrule decimal (+ (or "0" "1" "2" "3" "4" "5" "6" "7" "8" "9"))

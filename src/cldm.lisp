@@ -332,7 +332,7 @@
   (verbose-msg "Loading ~A.~%" library-version)
   (labels ((load-dependency (dependency)
              "Load a dependency cld, and the cld of dependencies of the dependency"
-             (let* ((library (find-library (library-name dependency)))
+	     (let* ((library (find-library (library-name dependency)))
                     (library-versions (find-library-versions library dependency)))
                (loop for library-version in library-versions
                   do (load-library-version-metadata library-version :if-already-loaded if-already-loaded))))
@@ -341,6 +341,10 @@
                                         ; a cld there, we try to load the cld specified in the dependency. This is so that we can give
                                         ; the user an opportunity to have some control of which cld files he wants to take priority over others
                                         ; by adding a cld repository to *cld-repositories*
+	     ;; If the dependency specifies a repository, then no cld is loaded
+	     ;; The library is just fetched form there
+	     (when (requirement-repository dependency)
+	       (return-from load-dependency-cld))
              (let (cld)
                (loop
                   for cld-repository in (list-cld-repositories)
@@ -388,25 +392,33 @@
    (cons library-version
          (loop for dependency in (dependencies library-version)
             appending
-              (if (find (library-name dependency) visited
-                        :key #'library-name
-                        :test #'equalp)
-                  (error "Cyclic dependency on ~A" dependency)
+              (cond 
+		((find (library-name dependency) visited
+		       :key #'library-name
+		       :test #'equalp)
+		 ;; Error, there a cyclic dependency
+		 (error "Cyclic dependency on ~A" dependency))
+		((requirement-repository dependency)
+		 ;; If the dependency specifies a repository,
+		 ;; then don't load the cld and calculate recursively, 
+		 ;; just add the library version
+		 (list (requirement-library-version dependency)))
+		(t
+		 ;; Calculate library versions involved recursively
+		 (let ((library (find-library (library-name dependency) nil)))
+		   (if library
+		       (let ((library-versions (find-library-versions library dependency)))
+			 (append library-versions
+				 (loop for dependency-library-version in library-versions
+				    appending
+				      (calculate-library-versions-involved
+				       dependency-library-version
+				       (cons dependency visited)))))
                                         ;else
-                  (let ((library (find-library (library-name dependency) nil)))
-                    (if library
-                        (let ((library-versions (find-library-versions library dependency)))
-                          (append library-versions
-                                  (loop for dependency-library-version in library-versions
-                                     appending
-                                       (calculate-library-versions-involved
-                                        dependency-library-version
-                                        (cons dependency visited)))))
-                                        ;else
-                        (ecase *solving-mode*
-                          (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
-                                          dependency))
-                          (:strict (error "Coudn't load ~A" dependency))))))))
+		       (ecase *solving-mode*
+			 (:lenient (warn "No ASDF system is being loaded by CLDM for ~A~%"
+					 dependency))
+			 (:strict (error "Coudn't load ~A" dependency)))))))))
    :test #'library-version=))
 
 (defmethod remove-library-version ((library-version library-version) libraries-directory)

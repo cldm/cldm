@@ -191,6 +191,8 @@
           (multiple-value-bind (result error status)
               (trivial-shell:shell-command
                (format nil "~A ~A -v0" *minisat+-binary* pbo-file))
+	    (when (equalp status 20)
+	      (error "Dependencies are not satisfiable"))
             (when (not (or (zerop status)
 			   (equalp status 30)))
               (error "Error executing ~A ~A -v0" *minisat+-binary* pbo-file))
