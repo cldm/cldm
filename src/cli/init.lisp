@@ -7,7 +7,16 @@
      :author ,author
      :dependencies ,dependencies))
 
-(defun create-cld-template-interactive (&key name cld description author dependencies &allow-other-keys)
+(defun create-cld-template-interactive (&rest args &key name cld description author dependencies &allow-other-keys)
+  (format t "Are you going to publish the library in a registry?")
+  (if (yes-or-no-p)
+      (apply #'create-registry-cld-template-interactive args)
+      (apply #'create-full-cld-template-interactive args)))
+
+(defun create-registry-cld-template-interactive (&key name cld description author dependencies &allow-other-keys)
+  (error "Implement"))
+
+(defun create-full-cld-template-interactive (&key name cld description author dependencies &allow-other-keys)
   ;; Assign defaults first
   (let ((name (or name
 		  (car (last 
