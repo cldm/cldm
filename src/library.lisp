@@ -487,6 +487,4 @@
 (defmethod library-version-unique-name ((library-version installed-library-version))
   (format nil "~A-~A" 
 	  (name library-version)
-	  (version library-version)))
-
-  
+	  (semver:print-version-to-string (version library-version))))
