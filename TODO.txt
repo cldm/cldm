@@ -18,3 +18,4 @@
 * In-memory repository
 * Interactive cldm init command
 * Make a cldm-user package with top level functions like install, load, search, etc (call the functions like that instead of install-library, etc)
+* Use CLDM cld example instead of Hunchentoot in documentation
