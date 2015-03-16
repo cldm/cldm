@@ -142,22 +142,14 @@
 				      :interactive interactive)))))
         
 (defmethod load-project ((directory pathname)
+			 &rest args
                          &key
-                           version
-                           libraries-directory
-                           (verbose *verbose-mode*)
-                           (solving-mode *solving-mode*)
-                           (clean-asdf-environment *clean-asdf-environment*)
-                           (clear-registered-libraries t)
-                           (interactive t))
-  (load-project (load-project-from-directory directory)
-                :version version
-                :libraries-directory libraries-directory
-                :verbose verbose
-                :solving-mode solving-mode
-                :clean-asdf-environment clean-asdf-environment
-                :clear-registered-libraries clear-registered-libraries
-                :interactive interactive))
+			   libraries-directory
+			   (clean-asdf-environment *clean-asdf-environment*))
+  (declare (ignorable libraries-directory
+		      clean-asdf-environment))
+  (apply #'load-project (load-project-from-directory directory)
+	 args))                
 
 (defmethod load-project ((project project)
                          &key
@@ -184,6 +176,24 @@
     (when install-p
       (loop for ilv in (installed-library-versions project)
          do (install-library-version ilv libraries-directory)))))
+
+(defmethod install-project ((directory pathname)
+			    &key
+			      version
+			      libraries-directory
+			      (verbose *verbose-mode*)
+			      (solving-mode *solving-mode*)
+			      (clean-asdf-environment *clean-asdf-environment*)
+			      (clear-registered-libraries t)
+			      (interactive t))
+  (install-project (load-project-from-directory directory)
+		   :version version
+		   :libraries-directory libraries-directory
+		   :verbose verbose
+		   :solving-mode solving-mode
+		   :clean-asdf-environment clean-asdf-environment
+		   :clear-registered-libraries clear-registered-libraries
+		   :interactive interactive))
 
 (defmethod install-project ((project project)
                             &key

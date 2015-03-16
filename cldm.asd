@@ -45,7 +45,8 @@ THE SOFTWARE."
 			 (:file "pbo")
 			 (:file "deflibrary")
 			 (:file "asdf")
-			 (:file "cldm"))		
+			 (:file "cldm")
+			 (:file "cldm-user"))	
 			:serial t))
     :depends-on (#:cl-semver
 		 #:alexandria
