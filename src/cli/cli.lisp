@@ -115,6 +115,12 @@ Repositories commands: ~{~A~^, ~}~%" (mapcar #'car +repo-commands+)))
 	 (clon:defsynopsis (:make-default nil :postfix "LIBRARY")
 	   (text :contents "Display a library information")
 	   (flag :short-name "h" :long-name "help"
+                 :description "Print this help and exit.")))
+   ;; publish command
+   (cons "publish"
+	 (clon:defsynopsis (:make-default nil :postfix "REPO [CLD]")
+	   (text :contents "Publish the library to a repository")
+	   (flag :short-name "h" :long-name "help"
                  :description "Print this help and exit.")))))
 
 (defun print-command-list ()
@@ -293,3 +299,9 @@ Use 'cldm <command> --help' to get command-specific help.
 		(format t "~A ~A~%" 
 			(cdr (assoc :name elem))
 			(cdr (assoc :score elem))))))))
+
+(defmethod process-command ((command (eql :publish)))
+  (let ((repository (cldm::find-cld-repository (first (clon:remainder))))
+	(cld (or (cadr (clon:remainder))
+		 (cldm::find-project-cld-file (osicat:current-directory)))))
+    (cldm:publish-cld repository cld)))
