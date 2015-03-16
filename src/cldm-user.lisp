@@ -8,7 +8,10 @@
            :load-project
            :load-current-project
            :repo-list
-           :init))
+           :init
+	   :config-print
+	   :config-get
+	   :config-set))
 
 (in-package :cldm-user)
 
@@ -90,3 +93,47 @@
                     (format t "The cld file already exist. Use the :force option to overwrite.~%"))
                   (create-cld-file))
               (create-cld-file))))))
+
+(defparameter +config-variables+
+  (list (cons :libraries-directory
+	      (lambda (value scope)
+		(cldm::config-set-libraries-directory (pathname value) scope)))
+        (cons :local-libraries-directory
+	      (lambda (value scope)
+		(cldm::config-set-local-libraries-directory (pathname value) scope)))
+        (cons :verbose
+	      (lambda (value scope)
+		(cldm::config-set-verbose
+		 (not (member value (list "no" "false")
+			      :test #'equalp))
+		 scope)))
+        (cons :minisat+-binary
+	      #'cldm::config-set-minisat+-binary)
+        (cons :solving-mode
+	      (lambda (value scope)
+		(cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
+					       scope)))))
+
+
+(defun config-print (&optional (scope :local))
+  (loop for config-var in (mapcar #'car +config-variables+)
+       do
+       (format t "~A: ~A~%"
+	       config-var
+	       (cldm::get-config-var config-var scope))))
+
+(defun config-get (variable &optional (scope :local))
+  (if (not (assoc variable +config-variables+))
+      (format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
+	      variable
+	      (mapcar #'car +config-variables+))
+      (format t "~A~%"
+	      (cldm::get-config-var variable scope))))
+
+(defun config-set (variable value &optional (scope :local))
+  (let ((variable-setter (cdr (assoc variable +config-variables+))))
+    (if (not variable-setter)
+	(format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
+		variable
+		(mapcar #'car +config-variables+))
+	(funcall variable-setter value scope))))
