@@ -1,6 +1,6 @@
 (defpackage :cldm-user
   (:use :cl)
-  (:shadow :cl :require)
+  (:shadow :require :search)
   (:export :install
            :require
            :search
@@ -62,3 +62,15 @@
 
 (defun repo-list ()
   (cldm::list-cld-repositories))
+
+(defun search (library)
+  (loop for repo in (cldm::list-cld-repositories)
+       do
+	 (format t "~A:~%" (cldm::name repo))
+	 (let ((search-result 
+		(ignore-errors (cldm::search-cld-repository repo (format nil "name:\"~A\"" library)))))
+	   (loop for elem in search-result
+	      do 
+		(format t "~A ~A~%" 
+			(cdr (assoc :name elem))
+			(cdr (assoc :score elem)))))))
