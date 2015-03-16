@@ -46,7 +46,8 @@ THE SOFTWARE."
 			 (:file "deflibrary")
 			 (:file "asdf")
 			 (:file "cldm")
-			 (:file "cldm-user"))	
+			 (:file "commands")
+			 (:file "cldm-user"))
 			:serial t))
     :depends-on (#:cl-semver
 		 #:alexandria

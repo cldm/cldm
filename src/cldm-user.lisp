@@ -64,13 +64,29 @@
   (cldm::list-cld-repositories))
 
 (defun search (library)
-  (loop for repo in (cldm::list-cld-repositories)
-       do
-	 (format t "~A:~%" (cldm::name repo))
-	 (let ((search-result 
-		(ignore-errors (cldm::search-cld-repository repo (format nil "name:\"~A\"" library)))))
-	   (loop for elem in search-result
-	      do 
-		(format t "~A ~A~%" 
-			(cdr (assoc :name elem))
-			(cdr (assoc :score elem)))))))
+  (cldm.cmd::search-library library))
+
+(defun init (name &key force)
+  (let ((cld-filename (pathname (format nil "~A.cld" name))))
+    (flet ((create-cld-file ()
+	     (let ((cld-template
+		    (cldm.cmd::create-cld-template-interactive)))
+                 (format t "~A~%" cld-template)
+                 (format t "Create? [yes]")
+                 (let ((answer (read-line)))
+                   (when (or (equalp answer "")
+                             (not (equalp answer "no")))
+                     (with-open-file (f cld-filename :direction :output
+                                        :if-exists :supersede
+                                        :if-does-not-exist :create)
+                       (format f "~A" cld-template)))))))
+
+        ;; If the cld file exists, error unless a force option was given
+        (let ((cld-file (merge-pathnames cld-filename
+                                         (osicat:current-directory))))
+          (if (probe-file cld-file)
+              (if (not force)
+                  (progn
+                    (format t "The cld file already exist. Use the :force option to overwrite.~%"))
+                  (create-cld-file))
+              (create-cld-file))))))
