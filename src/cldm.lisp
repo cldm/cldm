@@ -32,15 +32,19 @@
     (let ((library-version (if version
                                (find-library-version library version)
                                (first (library-versions library)))))
-      ;; Load libraries metadata
-      (load-library-version-metadata library-version)
+      ;; Use library version's custom repositories, if any
+      ;; This is done only once, not recursively. Top level operation.
+      (let ((*cld-repositories* (append (custom-repositories library-version)
+					*cld-repositories*)))
+	;; Load libraries metadata
+	(load-library-version-metadata library-version)
 
-      ;; Calculate list of library-versions involved
-      (let ((library-versions-involved
-             (calculate-library-versions-involved library-version)))
+	;; Calculate list of library-versions involved
+	(let ((library-versions-involved
+	       (calculate-library-versions-involved library-version)))
 
-        (pbo-solve-library-versions library-version
-                                    library-versions-involved)))))
+	  (pbo-solve-library-versions library-version
+				      library-versions-involved))))))
 
 (defun clean-asdf-environment ()
   (setf asdf:*central-registry* nil)
@@ -78,6 +82,7 @@
   (let ((library (or (and (stringp library)
                           (find-library library))
                      library)))
+    ;; Add library's custom repositories to the list of repositories
     (let ((library-versions (calculate-library-dependencies library
 							    :version version
 							    :libraries-directory libraries-directory)))
@@ -228,37 +233,41 @@
           (let ((library-version (if version
                                      (find-library-version (library project) version)
                                      (first (library-versions (library project))))))
-            ;; Load libraries metadata
-            (load-library-version-metadata library-version)
+	    ;; Use project's custom repositories to calculate dependencies. 
+	    ;; Append them to the list of repositories before operating
+	    (let ((*cld-repositories* (append (custom-repositories library-version)
+					      *cld-repositories*)))
+	      ;; Load libraries metadata
+	      (load-library-version-metadata library-version)
 
-            ;; Calculate list of library-versions involved
-            (let ((library-versions-involved
-                   (calculate-library-versions-involved library-version)))
+	      ;; Calculate list of library-versions involved
+	      (let ((library-versions-involved
+		     (calculate-library-versions-involved library-version)))
 
-              (let ((library-versions (pbo-solve-library-versions library-version
-                                                                  library-versions-involved)))
-                ;; Remove the project library from the library versions list
-                (setf library-versions (remove (library-name (library project)) library-versions
-                                               :key #'library-name
-                                               :test #'equalp))
+		(let ((library-versions (pbo-solve-library-versions library-version
+								    library-versions-involved)))
+		  ;; Remove the project library from the library versions list
+		  (setf library-versions (remove (library-name (library project)) library-versions
+						 :key #'library-name
+						 :test #'equalp))
 
-                (info-msg "Libraries to install: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
-                (let ((install-p t))
-                  (when interactive
-                    (info-msg "Install?~%")
-                    (setf install-p (yes-or-no-p)))
+		  (info-msg "Libraries to install: ~{~A~^, ~}~%" (mapcar #'library-version-unique-name library-versions))
+		  (let ((install-p t))
+		    (when interactive
+		      (info-msg "Install?~%")
+		      (setf install-p (yes-or-no-p)))
 
-                  (when install-p
-                    ;; Check the version existance and download if not
-                    (let ((installed-library-versions ()))
-                      (loop for version in library-versions
-                         do
-                           (let ((installed-library-version
-                                  (install-library-version version libraries-directory)))
-                             (push installed-library-version installed-library-versions)))
-                      (create-lock-file project installed-library-versions))
-                    (verbose-msg "Done.~%"))))))
-          t))))
+		    (when install-p
+		      ;; Check the version existance and download if not
+		      (let ((installed-library-versions ()))
+			(loop for version in library-versions
+			   do
+			     (let ((installed-library-version
+				    (install-library-version version libraries-directory)))
+			       (push installed-library-version installed-library-versions)))
+			(create-lock-file project installed-library-versions))
+		      (verbose-msg "Done.~%"))))))
+	    t)))))
 
 (defmethod update-project ((project project)
                            &key
