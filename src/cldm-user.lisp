@@ -7,11 +7,22 @@
            :install-project
            :load-project
            :load-current-project
-           :repo-list
+           :publish
+           :show
            :init
-	   :config-print
-	   :config-get
-	   :config-set))
+           :config-print
+           :config-get
+           :config-set
+           :repo-add
+           :repo-remove
+           :repo-append
+           :repo-unappend
+           :repo-list
+           :repo-update
+           :repo-search
+           :repo-clear
+           :repo-cache
+           :repo-publish))
 
 (in-package :cldm-user)
 
@@ -72,68 +83,102 @@
 (defun init (name &key force)
   (let ((cld-filename (pathname (format nil "~A.cld" name))))
     (flet ((create-cld-file ()
-	     (let ((cld-template
-		    (cldm.cmd::create-cld-template-interactive)))
-                 (format t "~A~%" cld-template)
-                 (format t "Create? [yes]")
-                 (let ((answer (read-line)))
-                   (when (or (equalp answer "")
-                             (not (equalp answer "no")))
-                     (with-open-file (f cld-filename :direction :output
-                                        :if-exists :supersede
-                                        :if-does-not-exist :create)
-                       (format f "~A" cld-template)))))))
+             (let ((cld-template
+                    (cldm.cmd::create-cld-template-interactive)))
+               (format t "~A~%" cld-template)
+               (format t "Create? [yes]")
+               (let ((answer (read-line)))
+                 (when (or (equalp answer "")
+                           (not (equalp answer "no")))
+                   (with-open-file (f cld-filename :direction :output
+                                      :if-exists :supersede
+                                      :if-does-not-exist :create)
+                     (format f "~A" cld-template)))))))
 
-        ;; If the cld file exists, error unless a force option was given
-        (let ((cld-file (merge-pathnames cld-filename
-                                         (osicat:current-directory))))
-          (if (probe-file cld-file)
-              (if (not force)
-                  (progn
-                    (format t "The cld file already exist. Use the :force option to overwrite.~%"))
-                  (create-cld-file))
-              (create-cld-file))))))
+      ;; If the cld file exists, error unless a force option was given
+      (let ((cld-file (merge-pathnames cld-filename
+                                       (osicat:current-directory))))
+        (if (probe-file cld-file)
+            (if (not force)
+                (progn
+                  (format t "The cld file already exist. Use the :force option to overwrite.~%"))
+                (create-cld-file))
+            (create-cld-file))))))
 
 (defparameter +config-variables+
   (list (cons :libraries-directory
-	      (lambda (value scope)
-		(cldm::config-set-libraries-directory (pathname value) scope)))
+              (lambda (value scope)
+                (cldm::config-set-libraries-directory (pathname value) scope)))
         (cons :local-libraries-directory
-	      (lambda (value scope)
-		(cldm::config-set-local-libraries-directory (pathname value) scope)))
+              (lambda (value scope)
+                (cldm::config-set-local-libraries-directory (pathname value) scope)))
         (cons :verbose
-	      (lambda (value scope)
-		(cldm::config-set-verbose
-		 (not (member value (list "no" "false")
-			      :test #'equalp))
-		 scope)))
+              (lambda (value scope)
+                (cldm::config-set-verbose
+                 (not (member value (list "no" "false")
+                              :test #'equalp))
+                 scope)))
         (cons :minisat+-binary
-	      #'cldm::config-set-minisat+-binary)
+              #'cldm::config-set-minisat+-binary)
         (cons :solving-mode
-	      (lambda (value scope)
-		(cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
-					       scope)))))
+              (lambda (value scope)
+                (cldm::config-set-solving-mode (intern (string-upcase value) :keyword)
+                                               scope)))))
 
 
 (defun config-print (&optional (scope :local))
   (loop for config-var in (mapcar #'car +config-variables+)
-       do
+     do
        (format t "~A: ~A~%"
-	       config-var
-	       (cldm::get-config-var config-var scope))))
+               config-var
+               (cldm::get-config-var config-var scope))))
 
 (defun config-get (variable &optional (scope :local))
   (if (not (assoc variable +config-variables+))
       (format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
-	      variable
-	      (mapcar #'car +config-variables+))
+              variable
+              (mapcar #'car +config-variables+))
       (format t "~A~%"
-	      (cldm::get-config-var variable scope))))
+              (cldm::get-config-var variable scope))))
 
 (defun config-set (variable value &optional (scope :local))
   (let ((variable-setter (cdr (assoc variable +config-variables+))))
     (if (not variable-setter)
-	(format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
-		variable
-		(mapcar #'car +config-variables+))
-	(funcall variable-setter value scope))))
+        (format t "~A is not a valid config variable. Config variables: ~{~A~^, ~}~%"
+                variable
+                (mapcar #'car +config-variables+))
+        (funcall variable-setter value scope))))
+
+(defun publish (repository-name &optional cld)
+  (let ((repository (cldm::find-cld-repository repository-name))
+        (cld (or cld
+                 (cldm::find-project-cld-file (osicat:current-directory)))))
+    (cldm:publish-cld repository cld)))
+
+(defun repo-add (repo-spec &optional (scope :local))
+  (cldm::config-add-repository repo-spec scope))
+
+(defun repo-remove (repo-name &optional (scope :local))
+  (cldm::config-remove-repository repo-name scope))
+
+(defun repo-append (repo-spec &optional (scope :local))
+  (cldm::config-append-repository repo-spec scope))
+
+(defun repo-unappend (repo-name &optional (scope :local))
+  (cldm::config-unappend-repository repo-name scope))
+
+(defun repo-publish (repo-name cld)
+  (let ((repo (cldm::find-cld-repository repo-name)))
+    (cldm::publish-cld repo cld)))
+
+(defun repo-update (repo-name)
+  (let ((repo (cldm::find-cld-repository repo-name)))
+    (cldm::update-cld-repository repo)))
+
+(defun repo-cache (repo-name)
+  (let ((repo (cldm::find-cld-repository repo-name)))
+    (cldm::cache-cld-repository repo)))
+
+(defun repo-clear (repo-name)
+  (let ((repo (cldm::find-cld-repository repo-name)))
+    (cldm::clear-cache repo)))
