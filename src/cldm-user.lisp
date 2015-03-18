@@ -1,5 +1,5 @@
 (defpackage :cldm-user
-  (:use :cl)
+  (:use :cl :term-query)
   (:shadow :require :search)
   (:export :install
            :require
@@ -10,6 +10,7 @@
            :publish
            :show
            :init
+	   :cd
            :config-print
            :config-get
            :config-set
@@ -80,30 +81,51 @@
 (defun search (library)
   (cldm.cmd::search-library library))
 
-(defun init (name &key force)
-  (let ((cld-filename (pathname (format nil "~A.cld" name))))
-    (flet ((create-cld-file ()
-             (let ((cld-template
-                    (cldm.cmd::create-cld-template-interactive)))
-               (format t "~A~%" cld-template)
-               (format t "Create? [yes]")
-               (let ((answer (read-line)))
-                 (when (or (equalp answer "")
-                           (not (equalp answer "no")))
-                   (with-open-file (f cld-filename :direction :output
-                                      :if-exists :supersede
-                                      :if-does-not-exist :create)
-                     (format f "~A" cld-template)))))))
+(defun cd (dir)
+  (setf (osicat:current-directory) dir))
 
-      ;; If the cld file exists, error unless a force option was given
-      (let ((cld-file (merge-pathnames cld-filename
-                                       (osicat:current-directory))))
-        (if (probe-file cld-file)
-            (if (not force)
-                (progn
-                  (format t "The cld file already exist. Use the :force option to overwrite.~%"))
-                (create-cld-file))
-            (create-cld-file))))))
+(defun find-asdf-files (&optional (directory (osicat:current-directory)))
+  (directory (merge-pathnames "*.asd" directory)))
+
+(defun find-cld-files (&optional (directory (osicat:current-directory)))
+  (directory (merge-pathnames "*.cld" directory)))
+
+(defun init (&key name force (directory (osicat:current-directory)))
+  (let ((cld-files (find-cld-files directory)))
+    (when cld-files
+      (msg "A system seems to have been initialized here: ~A" cld-files)
+      (when (not (ask "Continue?" :default t))
+	(return-from init))))
+  (let* ((asdf-files (find-asdf-files directory))
+	 (asdf-file nil))
+    (when asdf-files
+      (when (ask "There are ASDF systems available. Do you want to take some info from there?" :default t)
+	(setf asdf-file
+	      (if (> (length asdf-files) 1)
+		  (choose "Choose the asdf file: " asdf-files)
+		  (first asdf-files)))
+	(msg "Using ~A" asdf-file)))
+    (let ((cld-filename (or (and name (pathname (format nil "~A.cld" name)))
+			    (format nil "~A.cld" (car (last (pathname-directory (osicat:current-directory))))))))
+      (flet ((create-cld-file ()
+	       (let ((cld-template
+		      (cldm.cmd::create-cld-template-interactive)))
+		 (msg "~A" cld-template)
+		 (when (ask "Create?" :default t)
+		   (with-open-file (f cld-filename :direction :output
+				      :if-exists :supersede
+				      :if-does-not-exist :create)
+		     (format f "~A" cld-template))))))
+
+	;; If the cld file exists, error unless a force option was given
+	(let ((cld-file (merge-pathnames cld-filename
+					 (osicat:current-directory))))
+	  (if (probe-file cld-file)
+	      (if (not force)
+		  (progn
+		    (format t "The cld file already exist. Use the :force option to overwrite.~%"))
+		  (create-cld-file))
+	      (create-cld-file)))))))
 
 (defparameter +config-variables+
   (list (cons :libraries-directory

@@ -1,5 +1,5 @@
 (defpackage :cldm.cmd
-  (:use :cl))
+  (:use :cl :term-query))
 
 (in-package :cldm.cmd)
 
