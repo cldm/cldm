@@ -1,5 +1,5 @@
 (defpackage :cldm-user
-  (:use :cl :term-query)
+  (:use :cl :duologue)
   (:shadow :require :search)
   (:export :install
            :require

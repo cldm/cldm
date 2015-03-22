@@ -64,7 +64,7 @@ THE SOFTWARE."
 		 #:montezuma
 		 #:drakma
 		 #:cl-json
-		 #:term-query
+		 #:duologue
 		 ;#:cldm-loader
 		 ))
 
