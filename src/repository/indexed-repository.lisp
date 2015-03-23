@@ -91,11 +91,11 @@
 (defun library-index (library)
   "Create an index from the library description"
   (list :name (library-name library)
-        :author (library-author library)
-        :description (library-description library)
-        :licence (library-licence library)
-        :cld (cld-address (library-cld library))
-        :keywords (library-keywords library)))
+        :author (or (library-author library) "")
+        :description (or (library-description library) "")
+        :licence (or (library-licence library) "")
+        :cld (or (cld-address (library-cld library)) "")
+	:keywords (prin1-to-string (library-keywords library))))
 
 (defun build-index-file (pathname)
   (let ((*print-pretty* nil))
@@ -144,15 +144,13 @@
   (verbose-msg "Searching for ~A in ~A...~%" term cld-repository)
   (let ((search-result
 	 (montezuma:search (search-index cld-repository) term)))
-    (loop for doc in (montezuma::score-docs search-result)
+    (loop for result in (montezuma::score-docs search-result)
        collect 
-	 (let ((docid (montezuma:doc doc))
-	       (score (montezuma:score doc)))
-	   (list (cons :name
-		       (montezuma:document-value 
-			(montezuma:get-document (search-index cld-repository)
-						docid)
-			"name"))
+	 (let ((doc (montezuma:get-document (search-index cld-repository)
+					    (montezuma:doc result)))
+	       (score (montezuma:score result)))
+	   (list (cons :name (montezuma:document-value doc "name"))
+		 (cons :description (montezuma:document-value doc "description"))
 		 (cons :score score))))))
 
 (defun percentage (n total)

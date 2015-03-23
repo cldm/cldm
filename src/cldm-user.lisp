@@ -93,7 +93,7 @@
 (defun init (&key name force (directory (osicat:current-directory)))
   (let ((cld-files (find-cld-files directory)))
     (when cld-files
-      (msg "A system seems to have been initialized here: ~A" cld-files)
+      (say "A system seems to have been initialized here: ~A" cld-files)
       (when (not (ask "Continue?" :default t))
 	(return-from init))))
   (let* ((asdf-files (find-asdf-files directory))
@@ -104,13 +104,13 @@
 	      (if (> (length asdf-files) 1)
 		  (choose "Choose the asdf file: " asdf-files)
 		  (first asdf-files)))
-	(msg "Using ~A" asdf-file)))
+	(say "Using ~A" asdf-file)))
     (let ((cld-filename (or (and name (pathname (format nil "~A.cld" name)))
 			    (format nil "~A.cld" (car (last (pathname-directory (osicat:current-directory))))))))
       (flet ((create-cld-file ()
 	       (let ((cld-template
 		      (cldm.cmd::create-cld-template-interactive)))
-		 (msg "~A" cld-template)
+		 (say "~A" cld-template)
 		 (when (ask "Create?" :default t)
 		   (with-open-file (f cld-filename :direction :output
 				      :if-exists :supersede

@@ -3,6 +3,11 @@
 
 (in-package :cldm.cmd)
 
+(defun stringp* (str)
+  (and (stringp str)
+       (not (zerop (length str)))
+       str))
+
 (defun search-library (library-name)
   (loop for repo in (cldm::list-cld-repositories)
        do
@@ -11,9 +16,9 @@
 		(ignore-errors (cldm::search-cld-repository repo (format nil "name:\"~A\"" library-name)))))
 	   (loop for elem in search-result
 	      do 
-		(format t "~A ~A~%" 
+		(format t "~A~@[ - ~A~]~%" 
 			(cdr (assoc :name elem))
-			(cdr (assoc :score elem)))))))
+			(stringp* (cdr (assoc :description elem))))))))
 
 (defun create-cld-template (name &key cld description author dependencies &allow-other-keys)
   `(cldm:deflibrary ,name
