@@ -20,23 +20,35 @@
 			(cdr (assoc :name elem))
 			(stringp* (cdr (assoc :description elem))))))))
 
-(defun create-cld-template (name &key cld description author dependencies &allow-other-keys)
+(defun create-cld-template (name &key cld description author maintainer 
+				   licence dependencies repositories keywords &allow-other-keys)
   `(cldm:deflibrary ,name
      :cld ,cld
      :description ,description
      :author ,author
      :dependencies ,dependencies))
 
-(defun create-cld-template-interactive (&rest args &key name cld description author dependencies &allow-other-keys)
+(defun create-cld-template-interactive (&rest args &key name cld 
+						     description author 
+						     maintainer licence
+						     dependencies
+						     repositories 
+						     keywords &allow-other-keys)
   (format t "Are you going to publish the library in a registry?")
   (if (yes-or-no-p)
       (apply #'create-registry-cld-template-interactive args)
       (apply #'create-full-cld-template-interactive args)))
 
-(defun create-registry-cld-template-interactive (&key name cld description author dependencies &allow-other-keys)
+(defun create-registry-cld-template-interactive (&key name cld description 
+						   author maintainer licence
+						   dependencies repositories
+						   keywords &allow-other-keys)
   (error "Implement"))
 
-(defun create-full-cld-template-interactive (&key name cld description author dependencies &allow-other-keys)
+(defun create-full-cld-template-interactive (&key name cld description author 
+					       maintainer licence 
+					       dependencies repositories
+					       keywords &allow-other-keys)
   (let ((default-name (or name
 			  (car (last 
 				(pathname-directory 
