@@ -8,12 +8,16 @@
        (not (zerop (length str)))
        str))
 
-(defun search-library (library-name)
+(defun search-library (library-name &key prefix)
   (loop for repo in (cldm::list-cld-repositories)
        do
 	 (format t "~A:~%" (cldm::name repo))
 	 (let ((search-result 
-		(ignore-errors (cldm::search-cld-repository repo (format nil "name:*~A*" library-name)))))
+		(ignore-errors (cldm::search-cld-repository 
+				repo 
+				(if prefix
+				    (format nil "name:~A*" library-name)
+				    (format nil "name:*~A*" library-name))))))
 	   (loop for elem in search-result
 	      do 
 		(format t "~A~@[ - ~A~]~%" 
@@ -48,7 +52,8 @@
 (defun create-full-cld-template-interactive (&key name cld description author 
 					       maintainer licence 
 					       dependencies repositories
-					       keywords &allow-other-keys)
+					       keywords 
+					       complete &allow-other-keys)
   (let ((default-name (or name
 			  (car (last 
 				(pathname-directory 
@@ -64,11 +69,14 @@
 		 (loop while continue
 		    do
 		      (progn
-			(let ((library (prompt "Library: " :required-p nil)))
+			(let ((library (prompt "Library: " :required-p nil
+					       :completer (or (not complete)
+							      #'library-completer))))
 			  (if (not (equalp library ""))
 			      (progn
-				(let ((version (parse-prompt #'semver:read-version-from-string
-							     "Version: " :default "latest")))
+				(let ((version (prompt "Version: " 
+						       :parser #'semver:read-version-from-string
+						       :default "latest")))
 				  (push (cons library version) dependencies)))
                                         ; else
 			      (return)))))
@@ -78,3 +86,33 @@
 			     :description description
 			     :author author
 			     :dependencies (read-dependencies))))))
+
+(defun library-completer (text start end)
+  (declare (ignorable start end))
+  (flet ((common-prefix (items)
+	   (subseq
+	    (car items) 0
+	    (position
+	     nil
+	     (mapcar
+	      (lambda (i)
+		(every (lambda (x)
+			 (char= (char (car items) i)
+				(char x           i)))
+		       (cdr items)))
+	      (alexandria:iota (reduce #'min (mapcar #'length items)))))))
+	 (search-library (library-name)
+	   (remove-duplicates
+	    (loop for repo in (cldm::list-cld-repositories)
+	       appending
+		 (let ((search-result 
+			(ignore-errors (cldm::search-cld-repository 
+					repo 
+					(format nil "name:~A*" library-name)))))
+		   (loop for elem in search-result
+		      collect (cdr (assoc :name elem)))))
+	    :test #'equalp)))
+    (let ((els (search-library text)))
+      (if (cdr els)
+	  (cons (common-prefix els) els)
+	  els))))
