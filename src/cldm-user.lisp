@@ -109,7 +109,8 @@
                                                                :dependencies dependencies
                                                                :bug-tracker bug-tracker
                                                                :repositories repositories
-                                                               :keywords keywords)))
+                                                               :keywords keywords
+							       :complete nil)))
                (say "~A" cld-template)
                (when (ask "Create?" :default t)
                  (with-open-file (f cld-filename :direction :output

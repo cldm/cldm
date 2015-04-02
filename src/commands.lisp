@@ -26,7 +26,7 @@
 
 (defun create-cld-template (name &key cld description author maintainer 
 				   licence dependencies repositories keywords &allow-other-keys)
-  (make-instance 'library
+  (make-instance 'cldm:library
 		 :name name
 		 :cld cld
 		 :description description
@@ -42,7 +42,8 @@
 						     maintainer licence
 						     dependencies
 						     repositories 
-						     keywords &allow-other-keys)
+						     keywords 
+						     &allow-other-keys)
   (format t "Are you going to publish the library in a registry?")
   (if (yes-or-no-p)
       (apply #'create-registry-cld-template-interactive args)
@@ -85,8 +86,8 @@
 		      (progn
 			(let ((library (prompt "Library: " 
 					       :required-p nil
-					       :completer (or (not complete)
-							      #'library-completer))))
+					       :completer (and complete
+							       #'library-completer))))
 			  (if (not (equalp library ""))
 			      (progn
 				(say "Library versions can be either a specific semantic version (i.e. \"1.0.0\"), or a comma separated list of versions constraints (i.e. \"> 1.0.0, < 2.0.0 \")." :color :green)
