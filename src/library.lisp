@@ -517,3 +517,27 @@ Repositories are not resolved recursively. Repository declarations of dependenci
   (format nil "~A-~A" 
 	  (name library-version)
 	  (semver:print-version-to-string (version library-version))))
+
+(defun print-library-definition (library &optional stream)
+  (let ((*print-case* :downcase))
+    (format stream "~S" (library-definition library))))
+
+(defun library-definition (library)
+  `(cldm:deflibrary ,(intern (string-upcase (library-name library)))
+     ,@(when (library-cld library)
+	     (list :cld (cldm::unparse-cld-address (library-cld library))))
+     ,@(when (library-description library)
+	     (list :description (library-description library)))
+     ,@(when (library-author library)
+	     (list :author (library-author library)))
+     ,@(when (library-licence library)
+	     (list :licence (library-licence library)))
+     :versions ,(mapcar #'library-version-definition 
+			(library-versions library))))
+
+(defun library-version-definition (library-version)
+  `(:version ,(semver:print-version-to-string (version library-version))
+	     :repositories ,(mapcar #'cldm::unparse-library-version-repository
+				    (repositories library-version))
+	     :depends-on ,(mapcar #'cldm::print-requirement-to-string 
+				  (dependencies library-version))))

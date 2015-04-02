@@ -200,11 +200,11 @@
 			  (car (last 
 				(pathname-directory 
 				 (osicat:current-directory)))))))
-    (let ((name (prompt "Name: " :default default-name))
-	  (description (prompt "Description: " :default description))
-	  (cld (prompt "CLD: " :required-p nil :default cld))
-	  (author (prompt "Author: " :default author))
-	  (library (make-instance 'cldm::library
+    (let* ((name (prompt "Name: " :default default-name))
+	   (description (prompt "Description: " :default description))
+	   (cld (prompt "CLD: " :required-p nil :default cld))
+	   (author (prompt "Author: " :default author))
+	   (library (make-instance 'cldm::library
 		     :name name
 		     :cld cld
 		     :description description

@@ -111,7 +111,7 @@
                                                                :repositories repositories
                                                                :keywords keywords
 							       :complete nil)))
-               (say "~A" cld-template)
+               (say "~A" (cldm::print-library-definition cld-template nil))
                (when (ask "Create?" :default t)
                  (with-open-file (f cld-filename :direction :output
                                     :if-exists :supersede
