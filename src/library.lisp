@@ -1,8 +1,8 @@
 (in-package :cldm)
 
-(defparameter *libraries* (make-hash-table :test #'equalp))
-(defparameter *if-already-registered-library* :append)
-(defparameter *latest-registered-library* nil)
+(defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")
+(defparameter *if-already-registered-library* :append "What to do if a library is already registered. One of :append, :replace, :error, :ignore")
+(defparameter *latest-registered-library* nil "The latest registered library")
 
 (defclass library-version-repository ()
   ((library-version :initarg :library-version
@@ -28,20 +28,24 @@
             (repository-address version-repository))))
 
 (defun find-library (name &optional (error-p t))
+  "Find a library with name"
   (or (gethash name *libraries*)
       (when error-p
         (error "Library ~A not found" name))))
 
 (defun find-library-versions (library requirement)
+  "Find library versions that satisfy the requirement"
   (loop for library-version in (library-versions library)
        when (equalp (library-version-matches library-version requirement) :match)
        collect library-version))
 
 (defun list-all-libraries ()
+  "List all registered libraries"
   (loop for library being the hash-values of *libraries*
      collect library))
 
 (defun register-library (library &key (if-already-registered *if-already-registered-library*))
+  "Registers a library"
   (check-type if-already-registered (member :append :replace :error :ignore))
   (aif (find-library (library-name library) nil)
        (ecase if-already-registered
@@ -54,6 +58,7 @@
   (setf *latest-registered-library* library))
 
 (defun clear-registered-libraries ()
+  "Clear registered libraries"
   (setf *libraries* (make-hash-table :test #'equalp)))
 
 (defun append-to-library (library target-library)
@@ -63,6 +68,7 @@
 		(library-versions library))))
 
 (defun find-library-version (library version &optional (error-p t))
+  "Find a library specific version"
   (loop for library-version in (library-versions library)
      when (version= (version library-version) version)
      do (return-from find-library-version library-version))
@@ -197,8 +203,7 @@ Repositories are not resolved recursively. Repository declarations of dependenci
    (suggests :initarg :suggests
 	     :initform nil
 	     :accessor suggests
-	     :documentation "List of requirements the library suggests")
-   )
+	     :documentation "List of requirements the library suggests"))
   (:documentation "A library version description"))
 
 (defmethod initialize-instance :after ((library-version library-version) &rest initargs)
