@@ -183,7 +183,9 @@
 					     (second version-constraint)
 					     :any))))))
 
-(defrule requirement (and distribution-constraint (? (and (? spaces) #\, (? spaces) requirement)))
+(defrule requirement (and distribution-constraint (? (and (? spaces) 
+							  #\, (? spaces) 
+							  requirement)))
   (:function (lambda (match)
 	       (destructuring-bind (constraint more) match
 		   (cons constraint (when more (nth 3 more)))))))
@@ -303,3 +305,20 @@
       (if (equalp version :any)
 	  (make-requirement name)
 	  (make-requirement name (list :== version)))))
+
+(defrule version-constraint-list (and version-constraint 
+				      (? (and (? spaces) 
+					      #\, 
+					      (? spaces) 
+					      version-constraint-list)))
+  (:function (lambda (match)
+	       (destructuring-bind (constraint more) match
+		 (cons constraint (when more (nth 3 more)))))))
+
+(defun read-version-constraint-list (string)
+  "Read a list of version constraints from a string.
+
+   Example:
+       (read-version-constraint-list \"< 2.0.0, > 1.0.0\")"
+          
+  (parse 'version-constraint-list string))
