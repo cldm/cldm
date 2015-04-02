@@ -155,12 +155,20 @@
 				    (character-ranges (#\a #\z) (#\A #\Z) #\_)))
   (:text t))
 
-(defrule version (and decimal #\. decimal #\. decimal
+(defrule version (and decimal 
+                      (? (and #\. decimal))
+                      (? (and #\. decimal))
 		      (? (and #\- version-pre-release))
 		      (? (and #\+ version-build)))
   (:function (lambda (match)
-	       (destructuring-bind (major dot1 minor dot2 patch pre-release build) match
-		 (make-semantic-version major minor patch
+	       (destructuring-bind (major minor patch pre-release build) match
+		 (make-semantic-version major 
+					(or (and minor
+						 (second minor))
+					    0)
+					(or (and patch 
+						 (second patch))
+					    0)
 					(and pre-release
 					     (second pre-release))
 					(and build
