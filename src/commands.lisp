@@ -75,7 +75,8 @@
   (let ((library (prompt "Library: " 
 			 :required-p nil
 			 :completer (and complete
-					 #'library-completer))))
+					 #'library-completer)
+			 :default nil)))
     (say "Library versions can be either a specific semantic version (i.e. \"1.0.0\"), or a comma separated list of versions constraints (i.e. \"> 1.0.0, < 2.0.0 \")." :color :green)
     (when (not library)
       (return-from read-dependency nil))
@@ -135,10 +136,12 @@
     (let ((repository-address
 	   (ecase type
 	     (:url (make-instance 'cldm::url-repository-address
-				  :url (prompt-url "Url: " :probe t)))
+				  :url (prompt-url "Url: " :probe t
+						   :if-does-not-exist :warn)))
 	     (:directory (make-instance 'cldm::directory-repository-address
 					:directory (prompt-pathname "Directory: "
 								    :probe t
+								    :if-does-not-exist :warn
 								    :complete complete)))
 	     (:ssh (make-instance 'cldm::ssh-repository-address
 				  :address (prompt-url "Address: ")))
@@ -184,8 +187,9 @@
 				(read-dependencies))))
       (make-instance 'cldm::library-version
 		     :library library
+		     :version version
 		     :repositories repositories
-		     :dependencies dependencies))))			     
+		     :dependencies dependencies))))
 
 (defun create-full-cld-template-interactive (&key name  
 					       cld description author 
@@ -199,13 +203,18 @@
     (let ((name (prompt "Name: " :default default-name))
 	  (description (prompt "Description: " :default description))
 	  (cld (prompt "CLD: " :required-p nil :default cld))
-	  (author (prompt "Author: " :default author)))
-      (make-instance 'cldm::library
+	  (author (prompt "Author: " :default author))
+	  (library (make-instance 'cldm::library
 		     :name name
 		     :cld cld
 		     :description description
 		     :author author
-		     :versions (
+		     :versions nil)))
+      (setf (slot-value library 'cldm::versions)
+	    (list (create-library-version-interactive library)
+		  (while "More library versions? " (:default nil)
+		    (create-library-version-interactive library))))
+      library)))      
 
 (defun library-completer (text start end)
   (declare (ignorable start end))
