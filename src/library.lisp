@@ -1,3 +1,10 @@
+#|
+
+Libraries
+=========
+
+|#
+
 (in-package :cldm)
 
 (defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")

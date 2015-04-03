@@ -1,20 +1,95 @@
 (in-package #:cldm)
 
+#|
+
+CLDM developer manual
+=====================
+
+Introduction
+============
+
+**CLDM** is a distributed dependency manager for Common Lisp. 
+
+Its design is similar to that of `Smalltalk Metacello <https://code.google.com/p/metacello>`_. But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in `this paper <http://www.mancoosi.org/papers/ase10.pdf>`_. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. `minisat+ <https://github.com/niklasso/minisatp>`_ is the PBO solver being used at the moment, but support for others like `sat4j <http://www.sat4j.org>`_ is also planned.
+
+Common Lisp libraries and its versions are described in ``.cld`` files, that should be made accessible to **CLDM** somehow (url, filesystem, git)
+
+Then **CLDM** download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their ``.asd`` definitions to ``asdf:*central-registry*`` and from that point on asdf is in charge.
+
+|#
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :cldm *features*))
 
+#| 
+
+Debugging
+=========
+
+**info-msg** function is used for printing INFO messages: 
+
+|#
+
 (defun info-msg (msg &rest args)
+  "Output info messages"
   (apply #'format t (cons msg args)))
+
+#|
+
+**debug-msg** function outputs messages only when *debug-mode* is on:
+
+|#
 
 (defun debug-msg (msg &rest args)
   (when *debug-mode*
     (apply #'format t (cons msg args))))
 
+
+#|
+
+**verbose-msg** function outputs messages when either *verbose-mode* or *debug-mode* are on:
+
+|#
+
 (defun verbose-msg (msg &rest args)
   (when (or *verbose-mode* *debug-mode*)
     (apply #'format t (cons msg args))))
 
+#|
+
+CLDs
+====
+
+CLDs are library description files.
+
+This is an example:
+
+.. code-block:: common-lisp
+
+     (cldm:deflibrary cldm
+       :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
+       :description "Common Lisp Dependency Manager"
+       :author "Mariano Montone <marianomontone@gmail.com>"
+       :maintainer "Mariano Montone <marianomontone@gmail.com>"
+       :homepage "http://cldm.github.io/cldm"
+       :bug-reports "https://github.com/cldm/cldm/issues"
+       :source-repository "https://github.com/cldm/cldm"
+       :documentation "http://cldm.github.io/cldm/doc/manual/_build/html/index.html"
+       :licence "MIT"
+       :keywords ("dependency")
+       :categories ("Dependency manager")
+       :versions
+       ((:version "0.0.1"
+		  :repositories
+		  ((:github (:git "https://github.com/cldm/cldm.git")))
+		  :depends-on
+		  (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
+			    :trivial-shell :puri :anaphora :split-sequence
+			    :cl-fad :osicat))))
+|#
+
 (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
+  "Given a library name and an optional list of cld-repositories, finds the library CLD."
   (loop
      for cld-repository in (list-cld-repositories)
      for cld = (find-cld cld-repository
