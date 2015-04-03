@@ -1360,6 +1360,8 @@ An intermediate representation is used. A list of PBO terms with this form:
 
 ``dep1 + dep2 + ... + depn - lib >= 0``
 
+where dep1 .. depn are library versions or a dependent library.
+
 .. code-block:: common-lisp
 
           
@@ -1484,8 +1486,8 @@ A library install is encoded like:
      
 
 
-Serialization:
---------------
+Serialization
+-------------
 
 PBO constraints are then serialized to a Minisat file:
 
@@ -1540,6 +1542,15 @@ library versions are chosen:
           do (destructuring-bind (sign constant var) term
                (format stream "~A~A*~A " sign constant
                        (string-downcase (symbol-name var))))))
+     
+     
+
+
+PBO equations are serialized to a temporal ``deps.pbo`` file.
+
+.. code-block:: common-lisp
+
+          
      
      (defun pbo-solve-library-versions (library-version library-versions-involved)
        (let ((*pbo-environment* nil)
@@ -1620,4 +1631,72 @@ library versions are chosen:
                                                              #'string-upcase)
                                                     (split-sequence:split-sequence #\  vars-string)))))
                        vars)))))))))
+     
+     
+
+
+Here is an example ``deps.pbo`` file for installing Hunchentoot library::
+
+     * variable= 20 constraint= 30
+     min: +0*x1 +0*x2 +1*x3 +0*x4 +0*x5 +0*x6 +0*x8 +0*x16 +0*x19 +0*x18 +0*x7 +0*x14 +0*x17 +0*x9 +0*x10 +0*x11 +0*x12 +0*x13 +0*x15  ;
+     * Install hunchentoot-1.2.26 *
+     +1*x1 >= 1 ;
+     * hunchentoot-1.2.26 dependency: chunga *
+     +1*x2 +1*x3 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: cl-base64 *
+     +1*x4 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: cl-fad *
+     +1*x5 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: cl-ppcre *
+     +1*x6 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: flexi-streams *
+     +1*x7 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: cl+ssl *
+     +1*x8 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: md5 *
+     +1*x9 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: rfc2388 *
+     +1*x10 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: trivial-backtrace *
+     +1*x11 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: usocket *
+     +1*x12 -1*x1 >= 0 ;
+     * hunchentoot-1.2.26 dependency: bordeaux-threads *
+     +1*x13 -1*x1 >= 0 ;
+     * chunga-1.1.5 dependency: trivial-gray-streams *
+     +1*x14 -1*x2 >= 0 ;
+     * chunga-1.1.1 dependency: trivial-gray-streams *
+     +1*x14 -1*x3 >= 0 ;
+     * cl-fad-0.7.2 dependency: bordeaux-threads *
+     +1*x13 -1*x5 >= 0 ;
+     * cl-fad-0.7.2 dependency: alexandria *
+     +1*x15 -1*x5 >= 0 ;
+     * cl+ssl-latest dependency: cffi *
+     +1*x16 -1*x8 >= 0 ;
+     * cl+ssl-latest dependency: trivial-gray-streams *
+     +1*x14 -1*x8 >= 0 ;
+     * cl+ssl-latest dependency: flexi-streams *
+     +1*x7 -1*x8 >= 0 ;
+     * cl+ssl-latest dependency: bordeaux-threads *
+     +1*x13 -1*x8 >= 0 ;
+     * cl+ssl-latest dependency: trivial-garbage *
+     +1*x17 -1*x8 >= 0 ;
+     * cffi-0.12.0 dependency: alexandria *
+     +1*x15 -1*x16 >= 0 ;
+     * cffi-0.12.0 dependency: trivial-features *
+     +1*x18 -1*x16 >= 0 ;
+     * cffi-0.12.0 dependency: babel *
+     +1*x19 -1*x16 >= 0 ;
+     * babel-0.3.0 dependency: trivial-features *
+     +1*x18 -1*x19 >= 0 ;
+     * babel-0.3.0 dependency: alexandria *
+     +1*x15 -1*x19 >= 0 ;
+     * flexi-streams-1.0.11 dependency: trivial-gray-streams *
+     +1*x14 -1*x7 >= 0 ;
+     * bordeaux-threads-0.8.3 dependency: alexandria *
+     +1*x15 -1*x13 >= 0 ;
+     * Conflict between chunga-1.1.5 and chunga-1.1.1 *
+     +1*x2 +1*x3 <= 1 ;
+     * Conflict between chunga-1.1.1 and chunga-1.1.5 *
+     +1*x3 +1*x2 <= 1 ;          
      
