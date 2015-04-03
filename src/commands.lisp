@@ -204,17 +204,18 @@
 	   (description (prompt "Description: " :default description))
 	   (cld (prompt "CLD: " :required-p nil :default cld))
 	   (author (prompt "Author: " :default author))
-	   (library (make-instance 'cldm::library
-		     :name name
-		     :cld cld
-		     :description description
-		     :author author
-		     :versions nil)))
+	   (library (let ((cldm::*register-libraries* nil))
+		      (make-instance 'cldm::library
+				     :name name
+				     :cld cld
+				     :description description
+				     :author author
+				     :versions nil))))
       (setf (slot-value library 'cldm::versions)
-	    (list (create-library-version-interactive library)
+	    (cons (create-library-version-interactive library)
 		  (while "More library versions? " (:default nil)
 		    (create-library-version-interactive library))))
-      library)))      
+      library)))
 
 (defun library-completer (text start end)
   (declare (ignorable start end))

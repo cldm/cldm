@@ -3,6 +3,7 @@
 (defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")
 (defparameter *if-already-registered-library* :append "What to do if a library is already registered. One of :append, :replace, :error, :ignore")
 (defparameter *latest-registered-library* nil "The latest registered library")
+(defparameter *register-libraries* t)
 
 (defclass library-version-repository ()
   ((library-version :initarg :library-version
@@ -46,16 +47,17 @@
 
 (defun register-library (library &key (if-already-registered *if-already-registered-library*))
   "Registers a library"
-  (check-type if-already-registered (member :append :replace :error :ignore))
-  (aif (find-library (library-name library) nil)
-       (ecase if-already-registered
-	 (:error (error "The library ~A has already been registered" (library-name library)))
-	 (:replace (setf (gethash (library-name library) *libraries*) library))
-	 (:ignore nil)
-	 (:append (append-to-library library it)))
+  (when *register-libraries*
+    (check-type if-already-registered (member :append :replace :error :ignore))
+    (aif (find-library (library-name library) nil)
+	 (ecase if-already-registered
+	   (:error (error "The library ~A has already been registered" (library-name library)))
+	   (:replace (setf (gethash (library-name library) *libraries*) library))
+	   (:ignore nil)
+	   (:append (append-to-library library it)))
 					;else
-       (setf (gethash (library-name library) *libraries*) library))
-  (setf *latest-registered-library* library))
+	 (setf (gethash (library-name library) *libraries*) library))
+    (setf *latest-registered-library* library)))
 
 (defun clear-registered-libraries ()
   "Clear registered libraries"
