@@ -99,7 +99,7 @@
                                   (car (last (pathname-directory
                                               directory)))))))
     (flet ((%create-cld-file ()
-             (let ((cld-template
+             (let ((library
                     (cldm.cmd::create-cld-template-interactive :name name
                                                                :cld cld
                                                                :author author
@@ -111,12 +111,13 @@
                                                                :repositories repositories
                                                                :keywords keywords
 							       :complete nil)))
-               (say "~A" (cldm::print-library-definition cld-template nil))
+	       (let ((librarydef (cldm::print-library-definition library nil)))
+		 (say "~A" librarydef)
                (when (ask "Create?" :default t)
                  (with-open-file (f cld-filename :direction :output
                                     :if-exists :supersede
                                     :if-does-not-exist :create)
-                   (format f "~A" cld-template))))))
+                   (format f "~S" librarydef)))))))
 
       ;; If the cld file exists, error unless a force option was given
       (let ((cld-file (merge-pathnames cld-filename
