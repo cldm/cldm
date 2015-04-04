@@ -10,6 +10,8 @@ See: \url{http://www.mancoosi.org/papers/ase10.pdf}
 
 `minisat+ \url{https://github.com/niklasso/minisatp>} is the PBO solver being used at the moment.
 
+\ignore{
+
 |#
 
 (in-package :cldm)
@@ -20,6 +22,8 @@ See: \url{http://www.mancoosi.org/papers/ase10.pdf}
 
 
 #|
+
+}
 
 A \verb+pbo-constraint+ is a constraint with:
 

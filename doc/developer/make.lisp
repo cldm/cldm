@@ -37,6 +37,7 @@
       (format f "\\maketitle                              % Print title page.~%")
       (format f "\\tableofcontents                        % Print table of contents~%")
       (format f "\\mainmatter                             % only in book class (arabic page #s)~%")
+      (format f "\\long\\def\\ignore#1{}~%")
       (write-string (embdoc:gen-latex-doc fragments) f)
       (write-string "\\end{document}" f))))
 

@@ -1,5 +1,3 @@
-(in-package #:cldm)
-
 #|
 
 \chapter{Introduction}
@@ -12,12 +10,16 @@ Common Lisp libraries and its versions are described in \verb+.cld+ files, that 
 
 Then \emph{CLDM} download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their \verb'.asd' definitions to \verb'asdf:*central-registry*' and from that point on asdf is in charge.
 
+\ignore{
 |#
+
+(in-package #:cldm)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :cldm *features*))
 
-#| 
+#|
+} 
 
 \chapter{Debugging}
 

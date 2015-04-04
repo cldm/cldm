@@ -2,9 +2,14 @@
 
 \chapter{Libraries}
 
+\ignore{
 |#
 
 (in-package :cldm)
+
+#|
+}
+|#
 
 (defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")
 (defparameter *if-already-registered-library* :append "What to do if a library is already registered. One of :append, :replace, :error, :ignore")
