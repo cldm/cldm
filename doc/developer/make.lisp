@@ -1,15 +1,15 @@
-(ql:quickload :cl-embdoc)
+(ql:quickload :erudite)
 (ql:quickload :cldm)
 
 (defpackage :cldm.doc
-  (:use :cl :cldm :embdoc)
+  (:use :cl :cldm :erudite)
   (:export :generate))
 
 (in-package :cldm.doc)
 
 (defparameter *files* 
   (list "cldm.lisp"
-	"library.lisp"
+	;"library.lisp"
 	"pbo.lisp"))
 
 (defun get-files ()
@@ -20,7 +20,7 @@
   (let ((fragments
 	 (loop for file in (get-files)
 	    appending
-	      (embdoc:parse-lisp-source (embdoc:file-to-string file)))))
+	      (erudite:parse-lisp-source (erudite:file-to-string file)))))
     (with-open-file (f pathname :direction :output 
 		       :if-exists :supersede
 		       :if-does-not-exist :create)
@@ -47,7 +47,7 @@
       (format f "\\tableofcontents                        % Print table of contents~%")
       (format f "\\mainmatter                             % only in book class (arabic page #s)~%")
       (format f "\\long\\def\\ignore#1{}~%")
-      (write-string (embdoc:gen-latex-doc fragments) f)
+      (write-string (erudite:gen-latex-doc fragments) f)
       (format f "~%\\printindex~%")
       (write-string "\\end{document}" f))))
 

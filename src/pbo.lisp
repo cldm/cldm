@@ -8,7 +8,7 @@ For solving versions constraints Pseudo-Boolean Optimization (PBO) is used.
 
 See: \url{http://www.mancoosi.org/papers/ase10.pdf}
 
-`minisat+ \url{https://github.com/niklasso/minisatp>} is the PBO solver being used at the moment.
+`minisat+ \url{https://github.com/niklasso/minisatp} is the PBO solver being used at the moment.
 
 \ignore{
 

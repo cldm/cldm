@@ -4,7 +4,7 @@
 
 \emph{CLDM} is a distributed dependency manager for Common Lisp. 
 
-Its design is similar to that of `Smalltalk Metacello \url{https://code.google.com/p/metacello}. But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: \url{http://www.mancoosi.org/papers/ase10.pdf}. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. minisat+ is the PBO solver being used at the moment.
+Its design is similar to that of `Smalltalk Metacello \url{https://code.google.com/p/metacello}. But unlike Metacello, it allows version constraints (like \verb'<, <=, >=, >') and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: \url{http://www.mancoosi.org/papers/ase10.pdf}. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. minisat+ is the PBO solver being used at the moment.
 
 Common Lisp libraries and its versions are described in \verb+.cld+ files, that should be made accessible to \emph{CLDM} somehow (url, filesystem, git)
 
