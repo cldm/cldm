@@ -6,3 +6,9 @@
 /build/
 /lib/
 /doc/developer/_build/
+/doc/developer/cldm.aux
+/doc/developer/cldm.log
+/doc/developer/cldm.out
+/doc/developer/cldm.pdf
+/doc/developer/cldm.tex
+/doc/developer/cldm.toc

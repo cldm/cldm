@@ -1,7 +1,6 @@
 #|
 
-Libraries
-=========
+\chapter{Libraries}
 
 |#
 

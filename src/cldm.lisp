@@ -2,19 +2,15 @@
 
 #|
 
-CLDM developer manual
-=====================
+\chapter{Introduction}
 
-Introduction
-============
+\emph{CLDM} is a distributed dependency manager for Common Lisp. 
 
-**CLDM** is a distributed dependency manager for Common Lisp. 
+Its design is similar to that of `Smalltalk Metacello \url{https://code.google.com/p/metacello}. But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in this paper: \url{http://www.mancoosi.org/papers/ase10.pdf}. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. minisat+ is the PBO solver being used at the moment.
 
-Its design is similar to that of `Smalltalk Metacello <https://code.google.com/p/metacello>`_. But unlike Metacello, it allows version constraints (like <, <=, >=, >) and solves them using Pseudo Boolean Optimization (PBO) as described in `this paper <http://www.mancoosi.org/papers/ase10.pdf>`_. Library dependencies are encoded to PBO and a PBO solver is run afterwards optimizing to get the newest versions of libraries. `minisat+ <https://github.com/niklasso/minisatp>`_ is the PBO solver being used at the moment, but support for others like `sat4j <http://www.sat4j.org>`_ is also planned.
+Common Lisp libraries and its versions are described in \verb+.cld+ files, that should be made accessible to \emph{CLDM} somehow (url, filesystem, git)
 
-Common Lisp libraries and its versions are described in ``.cld`` files, that should be made accessible to **CLDM** somehow (url, filesystem, git)
-
-Then **CLDM** download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their ``.asd`` definitions to ``asdf:*central-registry*`` and from that point on asdf is in charge.
+Then \emph{CLDM} download the exact versions of dependencies for a given library and version, and puts them in a filesystem directory. After that, pushes their \verb'.asd' definitions to \verb'asdf:*central-registry*' and from that point on asdf is in charge.
 
 |#
 
@@ -23,10 +19,9 @@ Then **CLDM** download the exact versions of dependencies for a given library an
 
 #| 
 
-Debugging
-=========
+\chapter{Debugging}
 
-**info-msg** function is used for printing INFO messages: 
+\textbf{info-msg} function is used for printing INFO messages: 
 
 |#
 
@@ -36,7 +31,7 @@ Debugging
 
 #|
 
-**debug-msg** function outputs messages only when *debug-mode* is on:
+\textbf{debug-msg} function outputs messages only when *debug-mode* is on:
 
 |#
 
@@ -47,7 +42,7 @@ Debugging
 
 #|
 
-**verbose-msg** function outputs messages when either *verbose-mode* or *debug-mode* are on:
+\textbf{verbose-msg} function outputs messages when either *verbose-mode* or *debug-mode* are on:
 
 |#
 
@@ -57,14 +52,13 @@ Debugging
 
 #|
 
-CLDs
-====
+\chapter{CLDs}
 
 CLDs are library description files.
 
 This is an example:
 
-.. code-block:: common-lisp
+\begin{verbatim}
 
      (cldm:deflibrary cldm
        :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
@@ -86,6 +80,7 @@ This is an example:
 		  (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
 			    :trivial-shell :puri :anaphora :split-sequence
 			    :cl-fad :osicat))))
+\end{verbatim}
 |#
 
 (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))

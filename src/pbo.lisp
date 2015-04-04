@@ -1,16 +1,14 @@
 #|
 
-Pseudo-Boolean Optimization
-===========================
+\chapter{Pseudo-Boolean Optimization}
 
-Overview
---------
+\section{Overview}
 
 For solving versions constraints Pseudo-Boolean Optimization (PBO) is used.
 
-See: <http://www.mancoosi.org/papers/ase10.pdf>`_
+See: \url{http://www.mancoosi.org/papers/ase10.pdf}
 
-`minisat+ <https://github.com/niklasso/minisatp>`_ is the PBO solver being used at the moment.
+`minisat+ \url{https://github.com/niklasso/minisatp>} is the PBO solver being used at the moment.
 
 |#
 
@@ -22,14 +20,15 @@ See: <http://www.mancoosi.org/papers/ase10.pdf>`_
 
 
 #|
-.. _pbo-constraint:
 
-A ``pbo-constraint`` is a constraint with:
+A \verb+pbo-constraint+ is a constraint with:
 
-* Terms: x1, x2, ..., xn
-* Comparision: A comparison operator
-* Result: The equation result
-* Comment: a comment that appears in the resulting .pbo file for debugging purposes mostly.
+\begin{itemize}
+\item Terms: x1, x2, ..., xn
+\item Comparision: A comparison operator
+\item Result: The equation result
+\item Comment: a comment that appears in the resulting .pbo file for debugging purposes mostly.
+\end{itemize}
 
 |#
 (defstruct (pbo-constraint
@@ -53,8 +52,7 @@ A ``pbo-constraint`` is a constraint with:
                        :comment comment))
 
 #|
-Algorithm
----------
+\section{Algorithm}
 
 Each dependent library and version is encoded as a PBO variable.
 
@@ -77,7 +75,7 @@ Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
 
 An intermediate representation is used. A list of PBO terms with this form:
 
-``dep1 + dep2 + ... + depn - lib >= 0``
+\verb'dep1 + dep2 + ... + depn - lib >= 0'
 
 where dep1 .. depn are library versions or a dependent library.
 
@@ -106,7 +104,7 @@ where dep1 .. depn are library versions or a dependent library.
 
 Conflicts are encoded like: 
 
-``lib1 + lib2 <= 1``
+\verb'lib1 + lib2 <= 1'
 
 |#
 
@@ -124,7 +122,7 @@ Conflicts are encoded like:
 
 A library install is encoded like:
 
-``lib >= 1``
+\verb'lib >= 1'
 
 |#
 
@@ -196,8 +194,7 @@ A library install is encoded like:
 
 #|
 
-Serialization
--------------
+\section{Serialization}
 
 PBO constraints are then serialized to a Minisat file:
 
@@ -250,7 +247,7 @@ library versions are chosen:
 
 #|
 
-PBO equations are serialized to a temporal ``deps.pbo`` file.
+PBO equations are serialized to a temporal \verb+deps.pbo+ file.
 
 |#
 
@@ -336,7 +333,9 @@ PBO equations are serialized to a temporal ``deps.pbo`` file.
 
 #|
 
-Here is an example ``deps.pbo`` file for installing Hunchentoot library::
+Here is an example \verb+deps.pbo+ file for installing Hunchentoot library:
+
+\begin{verbatim}
 
      * #variable= 20 #constraint= 30
      min: +0*x1 +0*x2 +1*x3 +0*x4 +0*x5 +0*x6 +0*x8 +0*x16 +0*x19 +0*x18 +0*x7 +0*x14 +0*x17 +0*x9 +0*x10 +0*x11 +0*x12 +0*x13 +0*x15  ;
@@ -400,4 +399,5 @@ Here is an example ``deps.pbo`` file for installing Hunchentoot library::
      +1*x2 +1*x3 <= 1 ;
      * Conflict between chunga-1.1.1 and chunga-1.1.5 *
      +1*x3 +1*x2 <= 1 ;
+\end{verbatim}
 |#
