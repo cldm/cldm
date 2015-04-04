@@ -29,7 +29,7 @@
       (format f "\\usepackage{hyperref}~%")
       (format f "\\usepackage{listings}~%")
       (format f "\\lstloadlanguages{Lisp}~%")
-      (format f "\\lstset{numbers=left,numberstyle=\\tiny,numbersep=5pt,language=Lisp,
+      (format f "\\lstset{frame=L,language=Lisp,
   stringstyle=\\ttfamily\\small,basicstyle=\\ttfamily\\footnotesize,
   showstringspaces=false,breaklines}~%")
       (format f "\\lstnewenvironment{code}{}{}~%")
