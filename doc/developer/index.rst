@@ -1,8 +1,6 @@
 .. code-block:: common-lisp
 
           (in-package #:cldm)
-     
-     
 
 
 CLDM developer manual
@@ -21,12 +19,8 @@ Then **CLDM** download the exact versions of dependencies for a given library an
 
 .. code-block:: common-lisp
 
-          
-     
-     (eval-when (:compile-toplevel :load-toplevel :execute)
+          (eval-when (:compile-toplevel :load-toplevel :execute)
        (pushnew :cldm *features*))
-     
-     
  
 
 Debugging
@@ -36,40 +30,27 @@ Debugging
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun info-msg (msg &rest args)
+          (defun info-msg (msg &rest args)
        "Output info messages"
        (apply #'format t (cons msg args)))
-     
-     
 
 
 **debug-msg** function outputs messages only when *debug-mode* is on:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun debug-msg (msg &rest args)
+          (defun debug-msg (msg &rest args)
        (when *debug-mode*
          (apply #'format t (cons msg args))))
-     
-     
-     
 
 
 **verbose-msg** function outputs messages when either *verbose-mode* or *debug-mode* are on:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun verbose-msg (msg &rest args)
+          (defun verbose-msg (msg &rest args)
        (when (or *verbose-mode* *debug-mode*)
          (apply #'format t (cons msg args))))
-     
-     
 
 
 CLDs
@@ -103,9 +84,7 @@ This is an example:
 			    :cl-fad :osicat))))
 .. code-block:: common-lisp
 
-          
-     
-     (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
+          (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
        "Given a library name and an optional list of cld-repositories, finds the library CLD."
        (loop
           for cld-repository in (list-cld-repositories)
@@ -714,7 +693,6 @@ This is an example:
      ;; put this initialization operation in the places it should go (toplevel operations?)
      
      (load-cldm-config)
-     
 |
 
 Libraries
@@ -722,9 +700,7 @@ Libraries
 
 .. code-block:: common-lisp
 
-          
-     
-     (in-package :cldm)
+          (in-package :cldm)
      
      (defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")
      (defparameter *if-already-registered-library* :append "What to do if a library is already registered. One of :append, :replace, :error, :ignore")
@@ -1269,7 +1245,6 @@ Libraries
      				    (repositories library-version))
      	     :depends-on ,(mapcar #'cldm::print-requirement-to-string 
      				  (dependencies library-version))))
-     
 |
 
 Pseudo-Boolean Optimization
@@ -1286,16 +1261,11 @@ See: <http://www.mancoosi.org/papers/ase10.pdf>`_
 
 .. code-block:: common-lisp
 
-          
-     
-     (in-package :cldm)
+          (in-package :cldm)
      
      (defparameter *pbo-environment* nil)
      
      (defparameter *constraint-variable-counter* 1)
-     
-     
-     
 
 .. _pbo-constraint:
 
@@ -1308,8 +1278,7 @@ A ``pbo-constraint`` is a constraint with:
 
 .. code-block:: common-lisp
 
-          
-     (defstruct (pbo-constraint
+          (defstruct (pbo-constraint
                   (:print-function print-pbo-constraint))
        terms comparison result comment)
      
@@ -1328,8 +1297,6 @@ A ``pbo-constraint`` is a constraint with:
                             :comparison comparison
                             :result result
                             :comment comment))
-     
-     
 
 Algorithm
 ---------
@@ -1340,9 +1307,7 @@ Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun gen-pbo-variable (thing)
+          (defun gen-pbo-variable (thing)
        "Return a existing PBO variable, or generate a new one"
        (if (assoc thing *pbo-environment* :test #'library-version=)
            (cdr (assoc thing *pbo-environment* :test #'library-version=))
@@ -1352,8 +1317,6 @@ Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
              (push (cons thing var) *pbo-environment*)
              (incf *constraint-variable-counter*)
              var)))
-     
-     
 
 
 An intermediate representation is used. A list of PBO terms with this form:
@@ -1364,9 +1327,7 @@ where dep1 .. depn are library versions or a dependent library.
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun encode-dependency (library-version dependency)
+          (defun encode-dependency (library-version dependency)
        (let* ((dependency-library (find-library (library-name dependency) nil)))
          ;; Note: we allow the dependency library not to exist here
          ;; This is because the library is not available for some reason, but we rely
@@ -1384,8 +1345,6 @@ where dep1 .. depn are library versions or a dependent library.
                                      (format nil "~A dependency: ~A"
                                              (library-version-unique-name library-version)
                                              (print-requirement-to-string dependency))))))))
-     
-     
 
 
 Conflicts are encoded like: 
@@ -1394,9 +1353,7 @@ Conflicts are encoded like:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun encode-conflict (library-version-1 library-version-2)
+          (defun encode-conflict (library-version-1 library-version-2)
        (make-pbo-constraint*
         `((+ 1 ,(gen-pbo-variable library-version-1))
           (+ 1 ,(gen-pbo-variable library-version-2)))
@@ -1405,8 +1362,6 @@ Conflicts are encoded like:
         (format nil "Conflict between ~A and ~A"
                 (library-version-unique-name library-version-1)
                 (library-version-unique-name library-version-2))))
-     
-     
 
 
 A library install is encoded like:
@@ -1415,9 +1370,7 @@ A library install is encoded like:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun encode-install (library-version)
+          (defun encode-install (library-version)
        (make-pbo-constraint*
         `((+ 1 ,(gen-pbo-variable library-version)))
         '>=
@@ -1482,8 +1435,6 @@ A library install is encoded like:
             *pbo-environment*
             *constraint-variable-counter*
             (length all-constraints)))))
-     
-     
 
 
 Serialization
@@ -1493,9 +1444,7 @@ PBO constraints are then serialized to a Minisat file:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun serialize-pbo-constraints (pbo-constraints stream)
+          (defun serialize-pbo-constraints (pbo-constraints stream)
        (loop for pbo-constraint in pbo-constraints
           do
             (progn
@@ -1511,8 +1460,6 @@ PBO constraints are then serialized to a Minisat file:
        (format stream "~A ~A ;"
                (pbo-constraint-comparison pbo-constraint)
                (pbo-constraint-result pbo-constraint)))
-     
-     
 
 
 The purpose of all this is to solve an optimization function so that the "best"
@@ -1520,9 +1467,7 @@ library versions are chosen:
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun create-optimization-function (library-versions-involved)
+          (defun create-optimization-function (library-versions-involved)
        (flet ((sort-library-versions-by-freshness (library-versions)
                 (sort library-versions #'version> :key #'version)))
          (let ((grouped-library-versions
@@ -1542,17 +1487,13 @@ library versions are chosen:
           do (destructuring-bind (sign constant var) term
                (format stream "~A~A*~A " sign constant
                        (string-downcase (symbol-name var))))))
-     
-     
 
 
 PBO equations are serialized to a temporal ``deps.pbo`` file.
 
 .. code-block:: common-lisp
 
-          
-     
-     (defun pbo-solve-library-versions (library-version library-versions-involved)
+          (defun pbo-solve-library-versions (library-version library-versions-involved)
        (let ((*pbo-environment* nil)
              (*constraint-variable-counter* 1))
          (multiple-value-bind (constraints pbo-environment
@@ -1631,8 +1572,6 @@ PBO equations are serialized to a temporal ``deps.pbo`` file.
                                                              #'string-upcase)
                                                     (split-sequence:split-sequence #\  vars-string)))))
                        vars)))))))))
-     
-     
 
 
 Here is an example ``deps.pbo`` file for installing Hunchentoot library::
@@ -1698,5 +1637,6 @@ Here is an example ``deps.pbo`` file for installing Hunchentoot library::
      * Conflict between chunga-1.1.5 and chunga-1.1.1 *
      +1*x2 +1*x3 <= 1 ;
      * Conflict between chunga-1.1.1 and chunga-1.1.5 *
-     +1*x3 +1*x2 <= 1 ;          
-     
+     +1*x3 +1*x2 <= 1 ;
+
+          
