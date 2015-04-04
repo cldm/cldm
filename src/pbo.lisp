@@ -34,6 +34,8 @@ A \verb+pbo-constraint+ is a constraint with:
 \item Comment: a comment that appears in the resulting .pbo file for debugging purposes mostly.
 \end{itemize}
 
+\label{code:pbo-constraint}
+
 |#
 (defstruct (pbo-constraint
              (:print-function print-pbo-constraint))
@@ -58,11 +60,13 @@ A \verb+pbo-constraint+ is a constraint with:
 #|
 \section{Algorithm}
 
+\label{code:gen-pbo-variable}
+
 Each dependent library and version is encoded as a PBO variable.
 
 Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
 
-The \emph{gen-pbo-variable} function is used for that:
+The \ref{code:gen-pbo-variable} function is used for that:
 
 |#
 
@@ -91,6 +95,7 @@ For example, if \emph{hunchentoot} depends on \emph{chunga}, and \emph{chunga} h
 
 \verb'chunga-1.0 + chunga-2.0 - hunchentoot >= 0'
 
+\label{code:encode-dependency}
 |#
 
 (defun encode-dependency (library-version dependency)
@@ -347,7 +352,7 @@ PBO equations are serialized to a temporal \verb+deps.pbo+ file.
 
 Here is an example \verb+deps.pbo+ file for installing Hunchentoot library:
 
-\begin{verbatim}
+\begin{code}
 
      * #variable= 20 #constraint= 30
      min: +0*x1 +0*x2 +1*x3 +0*x4 +0*x5 +0*x6 +0*x8 +0*x16 +0*x19 +0*x18 +0*x7 +0*x14 +0*x17 +0*x9 +0*x10 +0*x11 +0*x12 +0*x13 +0*x15  ;
@@ -411,5 +416,5 @@ Here is an example \verb+deps.pbo+ file for installing Hunchentoot library:
      +1*x2 +1*x3 <= 1 ;
      * Conflict between chunga-1.1.1 and chunga-1.1.5 *
      +1*x3 +1*x2 <= 1 ;
-\end{verbatim}
+\end{code}
 |#

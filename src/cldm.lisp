@@ -60,7 +60,7 @@ CLDs are library description files.
 
 This is an example:
 
-\begin{verbatim}
+\begin{code}
 
      (cldm:deflibrary cldm
        :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
@@ -82,7 +82,7 @@ This is an example:
 		  (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
 			    :trivial-shell :puri :anaphora :split-sequence
 			    :cl-fad :osicat))))
-\end{verbatim}
+\end{code}
 |#
 
 (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
