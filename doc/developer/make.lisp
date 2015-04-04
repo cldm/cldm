@@ -25,6 +25,7 @@
 		       :if-exists :supersede
 		       :if-does-not-exist :create)
       (format f "\\documentclass[11pt,pdflatex,makeidx]{book}              % Book class in 11 points~%")
+      (format f "\\usepackage[margin=0.5in]{geometry}~%")
       (format f "\\usepackage{makeidx}~%")
       (format f "\\usepackage{hyperref}~%")
       (format f "\\usepackage{listings}~%")
@@ -37,7 +38,7 @@
       (format f "\\raggedright                            % do not right justify~%")
       (format f "\\title{\\bf ~A}    % Supply information~%" title)
       (format f "\\author{~A}              %   for the title page.~%" author)
-      (format f "\\date{\today}                           %   Use current date.~%")
+      (format f "\\date{\\today}                           %   Use current date.~%")
       (format f "% Note that book class by default is formatted to be printed back-to-back.~%")
       (format f "\\makeindex~%")
       (format f "\\begin{document}                        % End of preamble, start of text.~%")
