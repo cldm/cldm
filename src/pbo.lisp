@@ -62,6 +62,8 @@ Each dependent library and version is encoded as a PBO variable.
 
 Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
 
+The \emph{gen-pbo-variable} function is used for that:
+
 |#
 
 (defun gen-pbo-variable (thing)
@@ -77,11 +79,17 @@ Example: hunchentoot-1.0 is x1, and hunchentoot-2.0 is x2
 
 #|
 
-An intermediate representation is used. A list of PBO terms with this form:
+An intermediate representation is used, that is then serialized to a file to be processed and solved by minisat. 
+
+A \emph{lib} library dependency on some other library is encoded like this:
 
 \verb'dep1 + dep2 + ... + depn - lib >= 0'
 
-where dep1 .. depn are library versions or a dependent library.
+where dep1 .. depn are library versions of the dependee library.
+
+For example, if \emph{hunchentoot} depends on \emph{chunga}, and \emph{chunga} has versions 1.0 and 2.0, then that dependency is encoded like this:
+
+\verb'chunga-1.0 + chunga-2.0 - hunchentoot >= 0'
 
 |#
 
