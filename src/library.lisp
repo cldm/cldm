@@ -11,33 +11,81 @@
 }
 |#
 
+#|
+
+\section{Overview}
+
+When a library is created, it is registered on \emph{*libraries*} hash-table, unless \emph{*register-libraries*} is bound to \emph{NIL}
+|#
+
 (defparameter *libraries* (make-hash-table :test #'equalp) "Registered libraries table")
+
 (defparameter *if-already-registered-library* :append "What to do if a library is already registered. One of :append, :replace, :error, :ignore")
 (defparameter *latest-registered-library* nil "The latest registered library")
-(defparameter *register-libraries* t)
+(defparameter *register-libraries* t "Libraries are registered after creation iff it is T")
 
-(defclass library-version-repository ()
-  ((library-version :initarg :library-version
-                    :initform nil
-                    :accessor library-version
-                    :documentation "The library version of the repository")
-   (name :initarg :name
-         :initform (error "Provide the repository name")
-         :accessor name
-         :documentation "The repository name")
-   (address :initarg :address
-            :initform (error "Provide the repository address")
-            :accessor repository-address
-            :documentation "The repository address. Can be a pathname, an url or a git reference"))
-  (:documentation "A library version repository"))
+#|
+A library is a mutable entity that holds the name, author, maintainer, description, etc. And each library has a list of versions.
 
-(defmethod print-object ((version-repository library-version-repository) stream)
-  (print-unreadable-object (version-repository stream :type t :identity t)
-    (print-library-version (library-version version-repository)
-                           stream)
-    (format stream " ~A ~A"
-            (name version-repository)
-            (repository-address version-repository))))
+Note that libraries are mutable entities. In other systems, libraries are just a collection of library versions. They are immutable. This could be a better design, but it is not implemented like that at the moment.
+|#
+
+(defclass library ()
+  ((name :initarg :name
+         :initform (error "Provide the library name")
+         :accessor library-name
+         :documentation "The library name")
+   (author :initarg :author
+           :initform nil
+           :accessor library-author
+           :documentation "The library author")
+   (maintainer :initarg :maintainer
+               :initform nil
+               :accessor library-maintainer
+               :documentation "The library maintainer")
+   (description :initarg :description
+                :initform nil
+                :accessor library-description
+                :documentation "The library description")
+   (licence :initarg :licence
+            :initform nil
+            :accessor library-licence
+            :documentation "The library licence")
+   (homepage :initarg :homepage
+	     :initform nil
+	     :accessor library-homepage
+	     :documentation "The library home page url")
+   (documentation :initarg :documentation
+		  :initform nil
+		  :accessor library-documentation
+		  :documentation "The url where the library documentation is")
+   (bug-reports :initarg :bug-reports
+		:initform nil
+		:accessor library-bug-reports
+		:documentation "The url where library bug reports are made")
+   (source-repository :initarg :source-repository
+		      :initform nil
+		      :accessor library-source-repository
+		      :documentation "The source repository url. For documentation purposes only.")
+   (cld :initarg :cld
+        :initform (error "Provide the cld")
+        :accessor library-cld
+        :documentation "The library meta description address. Can be a pathname or an url")
+   (versions :initarg :versions
+             :initform (error "Provide a library version at least")
+             :accessor library-versions
+             :documentation "The library versions")
+   (keywords :initarg :keywords
+	     :initform nil
+	     :accessor library-keywords
+         :documentation "Library keywords"))
+  (:documentation "A library meta description"))
+
+#|
+
+\section{Some library functions}
+
+|#
 
 (defun find-library (name &optional (error-p t))
   "Find a library with name"
@@ -92,57 +140,6 @@
   (when error-p
     (error "~A version ~A not found" library version)))
 
-(defclass library ()
-  ((name :initarg :name
-         :initform (error "Provide the library name")
-         :accessor library-name
-         :documentation "The library name")
-   (author :initarg :author
-           :initform nil
-           :accessor library-author
-           :documentation "The library author")
-   (maintainer :initarg :maintainer
-               :initform nil
-               :accessor library-maintainer
-               :documentation "The library maintainer")
-   (description :initarg :description
-                :initform nil
-                :accessor library-description
-                :documentation "The library description")
-   (licence :initarg :licence
-            :initform nil
-            :accessor library-licence
-            :documentation "The library licence")
-   (homepage :initarg :homepage
-	     :initform nil
-	     :accessor library-homepage
-	     :documentation "The library home page url")
-   (documentation :initarg :documentation
-		  :initform nil
-		  :accessor library-documentation
-		  :documentation "The url where the library documentation is")
-   (bug-reports :initarg :bug-reports
-		:initform nil
-		:accessor library-bug-reports
-		:documentation "The url where library bug reports are made")
-   (source-repository :initarg :source-repository
-		      :initform nil
-		      :accessor library-source-repository
-		      :documentation "The source repository url. For documentation purposes only.")
-   (cld :initarg :cld
-        :initform (error "Provide the cld")
-        :accessor library-cld
-        :documentation "The library meta description address. Can be a pathname or an url")
-   (versions :initarg :versions
-             :initform (error "Provide a library version at least")
-             :accessor library-versions
-             :documentation "The library versions")
-   (keywords :initarg :keywords
-	     :initform nil
-	     :accessor library-keywords
-         :documentation "Library keywords"))
-  (:documentation "A library meta description"))
-
 (defmethod library-versions ((library library))
   "Returns the library versions, sorted by version"
   (sort (slot-value library 'versions)
@@ -167,6 +164,13 @@
 
   ;; Register the library
   (register-library library))
+
+#|
+\section{Library versions}
+
+Library versions hold information about a particular version of a library, like its stability, repositories (places where the library version can be downloaded from), dependencies and conflicts with other libraries, etc.
+
+|#
 
 (defclass library-version ()
   ((library :initarg :library
@@ -233,6 +237,12 @@ Repositories are not resolved recursively. Repository declarations of dependenci
 
 (defmethod library-name ((library-version library-version))
   (library-name (library library-version)))
+
+#|
+
+\section{Parsing}
+
+|#
 
 (defrule requirement-type (or "depends" "provides" "suggests" "conflicts" "replaces")
   (:function (lambda (match)
@@ -303,6 +313,12 @@ Repositories are not resolved recursively. Repository declarations of dependenci
 		     (loop for constraint in replaces
 			collect (make-requirement (first constraint) (second constraint)))))))
 
+#|
+
+\section{Printing}
+
+|#
+
 (defmethod library-version-unique-name ((library-version library-version))
   (format nil "~A~@[-~A~]"
 	  (library-name library-version)
@@ -364,6 +380,31 @@ Repositories are not resolved recursively. Repository declarations of dependenci
 (defmethod print-object ((library-version library-version) stream)
   (print-unreadable-object (library-version stream :type t :identity t)
     (print-library-version library-version stream)))
+
+(defun print-library-definition (library &optional stream)
+  (let ((*print-case* :downcase))
+    (format stream "~S" (library-definition library))))
+
+(defun library-definition (library)
+  `(cldm:deflibrary ,(intern (string-upcase (library-name library)))
+     ,@(when (library-cld library)
+	     (list :cld (cldm::unparse-cld-address (library-cld library))))
+     ,@(when (library-description library)
+	     (list :description (library-description library)))
+     ,@(when (library-author library)
+	     (list :author (library-author library)))
+     ,@(when (library-licence library)
+	     (list :licence (library-licence library)))
+     :versions ,(mapcar #'library-version-definition 
+			(library-versions library))))
+
+(defun library-version-definition (library-version)
+  `(:version ,(semver:print-version-to-string (version library-version))
+	     :repositories ,(mapcar #'cldm::unparse-library-version-repository
+				    (repositories library-version))
+	     :depends-on ,(mapcar #'cldm::print-requirement-to-string 
+				  (dependencies library-version))))
+
 
 (defmethod library-version-matches ((library-version library-version) (requirement requirement))
   "Checks whether the candidate library-version matches the requirement, either directly or through provides.
@@ -431,27 +472,7 @@ Repositories are not resolved recursively. Repository declarations of dependenci
   (find repository-name (repositories library-version)
 	:key #'name))	
 
-(defmethod add-repository ((library-version library-version)
-			   (repository library-version-repository))
-  "Adds REPOSITORY to LIBRARY-VERSION.
 
-   Args: - LIBRARY-VERSION (library-version): The library version.
-         - REPOSITORY (repository): The repository.
-
-   If the library version contains a repository with the given repository name, replaces the repository"
-  
-  (if (find (name repository)
-	    (repositories library-version)
-	    :key #'name :test #'equalp)
-      ;; There's a repository with the same name, replace it
-      (setf (repositories library-version)
-	    (cons repository
-		  (remove (name repository)
-			  (repositories library-version)
-			  :key #'name :test #'equalp)))
-      ;; else, just add the repository
-      (push repository (repositories library-version)))
-  (setf (library-version repository) library-version))
 
 (defmethod remove-repository ((library-version library-version)
 			      repository-name)
@@ -530,27 +551,57 @@ Repositories are not resolved recursively. Repository declarations of dependenci
   (format nil "~A-~A" 
 	  (name library-version)
 	  (semver:print-version-to-string (version library-version))))
+#|
 
-(defun print-library-definition (library &optional stream)
-  (let ((*print-case* :downcase))
-    (format stream "~S" (library-definition library))))
+\section{Library versions repositories}
 
-(defun library-definition (library)
-  `(cldm:deflibrary ,(intern (string-upcase (library-name library)))
-     ,@(when (library-cld library)
-	     (list :cld (cldm::unparse-cld-address (library-cld library))))
-     ,@(when (library-description library)
-	     (list :description (library-description library)))
-     ,@(when (library-author library)
-	     (list :author (library-author library)))
-     ,@(when (library-licence library)
-	     (list :licence (library-licence library)))
-     :versions ,(mapcar #'library-version-definition 
-			(library-versions library))))
+Library versions repositories are those specified with \emph{:repositories} in \emph{deflibrary} and indicate the list of location from where the library version can be downloaded.
 
-(defun library-version-definition (library-version)
-  `(:version ,(semver:print-version-to-string (version library-version))
-	     :repositories ,(mapcar #'cldm::unparse-library-version-repository
-				    (repositories library-version))
-	     :depends-on ,(mapcar #'cldm::print-requirement-to-string 
-				  (dependencies library-version))))
+They have a \emph{name} and a \emph{repository address}.
+
+|#
+
+(defclass library-version-repository ()
+  ((library-version :initarg :library-version
+                    :initform nil
+                    :accessor library-version
+                    :documentation "The library version of the repository")
+   (name :initarg :name
+         :initform (error "Provide the repository name")
+         :accessor name
+         :documentation "The repository name")
+   (address :initarg :address
+            :initform (error "Provide the repository address")
+            :accessor repository-address
+            :documentation "The repository address. Can be a pathname, an url or a git reference"))
+  (:documentation "A library version repository (a location from which the library version can be downloaded)"))
+
+(defmethod print-object ((version-repository library-version-repository) stream)
+  (print-unreadable-object (version-repository stream :type t :identity t)
+    (print-library-version (library-version version-repository)
+                           stream)
+    (format stream " ~A ~A"
+            (name version-repository)
+            (repository-address version-repository))))
+
+(defmethod add-repository ((library-version library-version)
+			   (repository library-version-repository))
+  "Adds REPOSITORY to LIBRARY-VERSION.
+
+   Args: - LIBRARY-VERSION (library-version): The library version.
+         - REPOSITORY (repository): The repository.
+
+   If the library version contains a repository with the given repository name, replaces the repository"
+  
+  (if (find (name repository)
+	    (repositories library-version)
+	    :key #'name :test #'equalp)
+      ;; There's a repository with the same name, replace it
+      (setf (repositories library-version)
+	    (cons repository
+		  (remove (name repository)
+			  (repositories library-version)
+			  :key #'name :test #'equalp)))
+      ;; else, just add the repository
+      (push repository (repositories library-version)))
+  (setf (library-version repository) library-version))

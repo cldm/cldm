@@ -9,7 +9,7 @@
 
 (defparameter *files* 
   (list "cldm.lisp"
-	;"library.lisp"
+	"library.lisp"
 	"pbo.lisp"))
 
 (defun get-files ()
