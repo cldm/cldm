@@ -12,6 +12,7 @@
 	"library.lisp"
 	"deflibrary.lisp"
 	"pbo.lisp"
+	"repository-address.lisp"
 	"project.lisp"))
 
 (defun get-files ()

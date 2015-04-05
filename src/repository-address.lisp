@@ -1,9 +1,35 @@
+#|
+
+\chapter{Repository addresses}
+
+\ignore{
+|#
+
+
 (in-package :cldm)
 
+#|
+}
+
+\section{Overview}
+
+A repository address is the address from which a library can be downloaded.
+
+There are different types of repository addresses that can be handled by \textbf{CLDM}.
+
+|#
 
 (defclass repository-address ()
   ()
   (:documentation "Repository address"))
+
+#|
+
+\section{Directory repository address}
+
+A directory repository address points to a filesystem directory. CLDM can copy the library from the directory specified.
+
+|#
 
 (defclass directory-repository-address (repository-address)
   ((directory :initarg :directory
@@ -15,6 +41,14 @@
 (defmethod print-object ((repository-address directory-repository-address) stream)
   (print-unreadable-object (repository-address stream :type t :identity t)
     (format stream "~A" (repository-directory repository-address))))
+
+#|
+
+\section{Git repository address}
+
+A Git repository address points to a git repository. Url, branch, commit and tag can be specified.
+
+|#
 
 (defclass git-repository-address (repository-address)
   ((url :initarg :url
@@ -42,6 +76,14 @@
             (commit repository-address)
             (tag repository-address)
             (branch repository-address))))
+
+#|
+
+\section{URL repository address}
+
+An URL repository address points to some HTTP url where \verb'tar.gz' of the library can be found.
+
+|#
 
 (defclass url-repository-address (repository-address)
   ((url :initarg :url
