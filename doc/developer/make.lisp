@@ -10,6 +10,7 @@
 (defparameter *files* 
   (list "cldm.lisp"
 	"library.lisp"
+	"deflibrary.lisp"
 	"pbo.lisp"
 	"project.lisp"))
 

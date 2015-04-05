@@ -1,4 +1,29 @@
+#|
+
+\chapter{Libraries definition}
+
+\ignore{
+|#
+
 (in-package :cldm)
+
+#|
+}
+
+\section{deflibrary macro}
+
+Libraries are defined used the \emph{deflibrary} macro.
+
+There are two different semantics for library definition.
+
+\begin{itemize}
+
+\item \textbf{Standard or full:}  The library definition contains all of the library versions descriptions listed after the \verb':versions' keyword.
+
+\item \textbf{To publish in a registry:} The library definition contains the current library version description only. Descriptions of older library versions can be found in older versions of the CLD file (in VCS history). This kind of definition is meant to be published in a CLD registry.
+
+\end{itemize}
+|#
 
 (defmacro deflibrary (name &body options)
   (destructuring-bind (&key author maintainer description
