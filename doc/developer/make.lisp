@@ -12,6 +12,8 @@
 	"library.lisp"
 	"deflibrary.lisp"
 	"pbo.lisp"
+	"repository/repository.lisp"
+	"repository/download-session.lisp"
 	"repository-address.lisp"
 	"project.lisp"))
 

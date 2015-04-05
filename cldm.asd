@@ -34,6 +34,7 @@ THE SOFTWARE."
 			 (:module :repository
 				  :components
 				  ((:file "repository")
+				   (:file "download-session")
 				   (:file "http-repository")
 				   (:file "ssh-repository")
 				   (:file "directory-repository")

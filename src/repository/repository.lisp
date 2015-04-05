@@ -1,24 +1,23 @@
+#|
+
+\chapter{CLD repositories}
+
+\ignore{
+
+|#
+
 (in-package :cldm)
 
-(defvar *download-session-enabled-p* t)
-(defvar *download-session* nil)
-(defvar *download-session-failed-uris* nil)
 (defvar *if-already-installed-library-version* :supersede)
 
-(defun call-with-download-session (function)
-  (let ((*download-session* t)
-        (*download-session-failed-uris* nil))
-    (let ((repos (list-cld-repositories)))
-      (loop for repo in repos
-         do (start-download-session repo))
-      (unwind-protect
-           (funcall function)
-        (loop for repo in repos
-           do (stop-download-session repo))))))
+#|
+}
 
-(defmacro with-download-session ((&optional (enabled-p '*download-session-enabled-p*)) &body body)
-  `(when ,enabled-p
-     (call-with-download-session (lambda () ,@body))))
+\section{Overview}
+
+CLD repositories are places where CLD files can be found and downloaded.
+
+|#
 
 (defclass cld-repository ()
   ((name :initarg :name
@@ -27,24 +26,23 @@
          :documentation "The cld repository name"))
   (:documentation "A .cld files repository"))
 
-(defgeneric start-download-session (cld-repository)
-  (:method ((cld-repository cld-repository))))
+#|
 
-(defgeneric stop-download-session (cld-repository)
-  (:method ((cld-repository cld-repository))))
+\section{Publishing}
+
+CLDs can be published to some kind of CLD repositories
+
+|#
 
 (defgeneric publish-cld (cld-repository cld-pathname)
   (:method ((cld-repository cld-repository) cld-pathname)
     (error "~A repository doesn't support publishing" cld-repository)))
 
+#|
 
-(defun remove-directory (directory)
-  (when (fad:directory-exists-p directory)
-    (multiple-value-bind (output error status)
-        (trivial-shell:shell-command (format nil "rm -r ~A" directory))
-      (declare (ignore output))
-      (when (not (zerop status))
-        (error error)))))
+\section{Updating}
+
+|#
 
 (defun update-repository (installed-library-version library-version)
   (let ((updated-p
@@ -67,18 +65,6 @@
   (install-repository-from-address (repository-address repository)
                                    repository directory))
 
-(defun symlink (target linkname)
-  (trivial-shell:shell-command
-   (format nil "ln -s ~A ~A"
-           (princ-to-string target) ;; target directory
-           (princ-to-string linkname))))
-
-(defun copy-directory (from to)
-  (trivial-shell:shell-command
-   (format nil "cp -r ~A ~A"
-           (princ-to-string from)
-           (princ-to-string to))))
-
 (defgeneric update-repository-from-address (repository-address
                                             repository
                                             install-directory
@@ -97,3 +83,36 @@
     ;; No results
     nil
     ))
+
+;; Util
+
+#|
+
+\ignore {
+
+|#
+
+(defun remove-directory (directory)
+  (when (fad:directory-exists-p directory)
+    (multiple-value-bind (output error status)
+        (trivial-shell:shell-command (format nil "rm -r ~A" directory))
+      (declare (ignore output))
+      (when (not (zerop status))
+        (error error)))))
+
+
+(defun symlink (target linkname)
+  (trivial-shell:shell-command
+   (format nil "ln -s ~A ~A"
+           (princ-to-string target) ;; target directory
+           (princ-to-string linkname))))
+
+(defun copy-directory (from to)
+  (trivial-shell:shell-command
+   (format nil "cp -r ~A ~A"
+           (princ-to-string from)
+           (princ-to-string to))))
+
+#|
+}
+|#
