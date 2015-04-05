@@ -1,4 +1,28 @@
+#|
+\chapter{Projects}
+|#
+
+#|
+
+\ignore{
+
+|#
+
 (in-package :cldm)
+
+#|
+}
+|#
+
+#|
+
+\section{Overview}
+
+CLDM projects are filesystem directories with a CLD library definition file.
+
+In the context of a CLDM project, dependencies are installed and loaded from a folder relative to the project directory, usually from the \verb'lib' folder. This way, projects dependencies can be installed, updated and loaded locally, without interference with libraries installed elsewhere.
+
+|# 
 
 (defclass project ()
   ((name :initarg :name
@@ -125,6 +149,14 @@
                                               :library-version nil
                                               :address (parse-repository-address rep-address-sexp)))
                  :checksum (getf data :checksum)))
+
+#|
+
+\section{Lock files}
+
+The currently installed library versions are saved to a .lock file.
+
+|#
 
 (defun read-lock-file (file)
   (verbose-msg "Reading lock file ~A~%" file)

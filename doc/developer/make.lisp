@@ -10,7 +10,8 @@
 (defparameter *files* 
   (list "cldm.lisp"
 	"library.lisp"
-	"pbo.lisp"))
+	"pbo.lisp"
+	"project.lisp"))
 
 (defun get-files ()
   (loop for file in *files*

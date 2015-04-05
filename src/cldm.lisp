@@ -18,15 +18,6 @@ Then \emph{CLDM} download the exact versions of dependencies for a given library
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :cldm *features*))
 
-#|
-} 
-
-\chapter{Debugging}
-
-\textbf{info-msg} function is used for printing INFO messages: 
-
-|#
-
 (defun info-msg (msg &rest args)
   "Output info messages"
   (apply #'format t (cons msg args)))
@@ -53,36 +44,47 @@ Then \emph{CLDM} download the exact versions of dependencies for a given library
     (apply #'format t (cons msg args))))
 
 #|
+} 
+|#
 
-\chapter{CLDs}
+#|
 
-CLDs are library description files.
+\chapter{Fundamental concepts}
 
-This is an example:
+\emph{CLDM} manages Common Lisp libraries and its dependencies. Libraries information is found in files with \verb'.cld' extension called \emph{CLD} files. CLDs contain an \emph{deflibrary} definition the library characteristics: name, author, dependencies (libraries and specific versions of those libraries), conflicting library versions, etc
+
+For example, this is the CLD for the \emph{CLDM} system:
 
 \begin{code}
-
-     (cldm:deflibrary cldm
-       :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
-       :description "Common Lisp Dependency Manager"
-       :author "Mariano Montone <marianomontone@gmail.com>"
-       :maintainer "Mariano Montone <marianomontone@gmail.com>"
-       :homepage "http://cldm.github.io/cldm"
-       :bug-reports "https://github.com/cldm/cldm/issues"
-       :source-repository "https://github.com/cldm/cldm"
-       :documentation "http://cldm.github.io/cldm/doc/manual/_build/html/index.html"
-       :licence "MIT"
-       :keywords ("dependency")
-       :categories ("Dependency manager")
-       :versions
-       ((:version "0.0.1"
-		  :repositories
-		  ((:github (:git "https://github.com/cldm/cldm.git")))
-		  :depends-on
-		  (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
-			    :trivial-shell :puri :anaphora :split-sequence
-			    :cl-fad :osicat))))
+ (cldm:deflibrary cldm
+   :cld (:git "https://github.com/cldm/cldm.git" "cldm.cld")
+   :description "Common Lisp Dependency Manager"
+   :author "Mariano Montone <marianomontone@gmail.com>"
+   :maintainer "Mariano Montone <marianomontone@gmail.com>"
+   :homepage "http://cldm.github.io/cldm"
+   :bug-reports "https://github.com/cldm/cldm/issues"
+   :source-repository "https://github.com/cldm/cldm"
+   :documentation "http://cldm.github.io/cldm/doc/manual/_build/html/index.html"
+   :licence "MIT"
+   :keywords ("dependency")
+   :categories ("Dependency manager")
+   :versions
+   ((:version "0.0.1"
+	      :repositories
+	      ((:github (:git "https://github.com/cldm/cldm.git")))
+	      :depends-on
+	      (:alexandria :ironclad :md5 :cl-ppcre :cl-syntax :esrap
+			:trivial-shell :puri :anaphora :split-sequence
+			   :cl-fad :osicat))))
 \end{code}
+|#
+
+#|
+\section{Finding CLDs}
+
+\textbf{CLDM} is distributed because CLD files can be hosted anywhere, and there are no problems when resolving dependencies as long as the dependencie's CLD files can be found by the system.
+
+CLDs are looked up in the list of repositories returned by \verb'(list-cld-repositories)'. If no CLD is found, \emph{find-library-cld} returns \verb'NIL'.
 |#
 
 (defun find-library-cld (library-name &optional (cld-repositories (list-cld-repositories)))
@@ -94,9 +96,17 @@ This is an example:
      when cld
      return (values cld cld-repository)))
 
+#|
+\section{Libraries dependencies calculation}
+
+The \verb'calculate-library-dependencies' returns the list of libraries the library passed depends on, recursively.
+
+This is how it is done:
+
+|#
+
 (defun calculate-library-dependencies (library
-                                       &key version
-                                         (libraries-directory *libraries-directory*))
+                                       &key version)
   (let ((library (or (and (stringp library)
                           (find-library library))
                      library)))
@@ -104,17 +114,20 @@ This is an example:
     (let ((library-version (if version
                                (find-library-version library version)
                                (first (library-versions library)))))
-      ;; Use library version's custom repositories, if any
-      ;; This is done only once, not recursively. Top level operation.
+
+      #| If the library version has custom repositories, then 
+      dependencies are looked up there first. Note that the look up is done only once, not recursively. |#
+      
       (let ((*cld-repositories* (append (custom-repositories library-version)
 					*cld-repositories*)))
-	;; Load libraries metadata
+
+	#| Load the library version metadata |#
 	(load-library-version-metadata library-version)
 
-	;; Calculate list of library-versions involved
+	#| Calculate list of library-versions involved |#
 	(let ((library-versions-involved
 	       (calculate-library-versions-involved library-version)))
-
+	  #| Return library versions selected by the PBO solver |#
 	  (pbo-solve-library-versions library-version
 				      library-versions-involved))))))
 
@@ -123,6 +136,12 @@ This is an example:
   (asdf:clear-source-registry)
   (asdf:clear-configuration)
   (setf asdf:*system-definition-search-functions* (list 'ASDF/FIND-SYSTEM:SYSDEF-CENTRAL-REGISTRY-SEARCH)))
+
+#|
+
+\section{Library loading}
+
+|#
 
 (defun load-library (library-name
                      &key
@@ -148,28 +167,6 @@ This is an example:
 		 (error "~A is not installed" library-version))))
       (asdf:load-system library-name :force-not (asdf:registered-systems)))))
 
-(defun install-library-dependencies (library &key version
-                                               (libraries-directory *libraries-directory*)
-                                               (interactive t))
-  (let ((library (or (and (stringp library)
-                          (find-library library))
-                     library)))
-    ;; Add library's custom repositories to the list of repositories
-    (let ((library-versions (calculate-library-dependencies library
-							    :version version
-							    :libraries-directory libraries-directory)))
-      (info-msg "Libraries to install: ~{~A~^, ~}~%"
-                (mapcar #'library-version-unique-name library-versions))
-      (let ((install-p t))
-        (when interactive
-          (info-msg "Install?~%")
-          (setf install-p (yes-or-no-p)))
-        (when install-p
-          ;; Check the version existance and download if not
-          (loop for version in library-versions
-             do
-               (install-library-version version libraries-directory)))))))
-
 (defun load-cld-for-library (library-name &key (error-p t))
   (aif (find-library library-name nil)
        it
@@ -190,6 +187,12 @@ This is an example:
 	 (when (and (not cld) error-p)
 	   (error "Couldn't find a cld for ~S library~%" library-name))
 	 cld)))
+
+#|
+
+\section{Libraries installation}
+
+|#
 
 (defun install-library (library-name
                         &key
@@ -217,6 +220,32 @@ This is an example:
 				      :version version
 				      :libraries-directory libraries-directory
 				      :interactive interactive)))))
+
+(defun install-library-dependencies (library &key version
+                                               (libraries-directory *libraries-directory*)
+                                               (interactive t))
+  (let ((library (or (and (stringp library)
+                          (find-library library))
+                     library)))
+    ;; Add library's custom repositories to the list of repositories
+    (let ((library-versions (calculate-library-dependencies library
+							    :version version
+							    :libraries-directory libraries-directory)))
+      (info-msg "Libraries to install: ~{~A~^, ~}~%"
+                (mapcar #'library-version-unique-name library-versions))
+      (let ((install-p t))
+        (when interactive
+          (info-msg "Install?~%")
+          (setf install-p (yes-or-no-p)))
+        (when install-p
+          ;; Check the version existance and download if not
+          (loop for version in library-versions
+             do
+               (install-library-version version libraries-directory)))))))
+
+#|
+\section{Projects loading}
+|#
         
 (defmethod load-project ((directory pathname)
 			 &rest args
@@ -226,7 +255,7 @@ This is an example:
   (declare (ignorable libraries-directory
 		      clean-asdf-environment))
   (apply #'load-project (load-project-from-directory directory)
-	 args))                
+	 args))
 
 (defmethod load-project ((project project)
                          &key
@@ -240,6 +269,10 @@ This is an example:
   (push libraries-directory asdf:*central-registry*)
   (asdf:load-system (library-name (library project))
                     :force-not (asdf:registered-systems)))
+
+#|
+\section{Projects installation}
+|#
 
 (defun install-project-from-ilv (project libraries-directory &key (interactive t))
   "Install project form library versions in the lock file"
@@ -340,6 +373,10 @@ This is an example:
 			(create-lock-file project installed-library-versions))
 		      (verbose-msg "Done.~%"))))))
 	    t)))))
+
+#|
+\section{Projects update}
+|#
 
 (defmethod update-project ((project project)
                            &key
