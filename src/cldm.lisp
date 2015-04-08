@@ -115,19 +115,20 @@ This is how it is done:
                                (find-library-version library version)
                                (first (library-versions library)))))
 
-      #| If the library version has custom repositories, then 
-      dependencies are looked up there first. Note that the look up is done only once, not recursively. |#
+      ;; If the library version has custom repositories, then 
+      ;; dependencies are looked up there first. Note that the look up 
+      ;; is done only once, not recursively.
       
       (let ((*cld-repositories* (append (custom-repositories library-version)
 					*cld-repositories*)))
 
-	#| Load the library version metadata |#
+	;; Load the library version metadata
 	(load-library-version-metadata library-version)
 
-	#| Calculate list of library-versions involved |#
+	;; Calculate list of library-versions involved
 	(let ((library-versions-involved
 	       (calculate-library-versions-involved library-version)))
-	  #| Return library versions selected by the PBO solver |#
+	  ;; Return library versions selected by the PBO solver
 	  (pbo-solve-library-versions library-version
 				      library-versions-involved))))))
 

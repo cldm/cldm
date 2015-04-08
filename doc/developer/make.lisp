@@ -22,8 +22,10 @@
      collect (asdf:system-relative-pathname :cldm (format nil "src/~A" file))))
 
 (defun generate ()
-  (erudite:gen-latex-doc 
+  (erudite:erudite 
    (asdf:system-relative-pathname :cldm "doc/developer/cldm.tex")
    (get-files)
    :title "CLDM developer manual"
-   :author "Mariano Montone"))
+   :author "Mariano Montone"
+   :input-type :latex
+   :output-type :latex))
